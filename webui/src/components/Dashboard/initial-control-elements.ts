@@ -23,7 +23,7 @@ export const useControlData = () => {
           id: "cfm-service",
           data: { label: "CFM Service", },
           position: position,
-          style: { backgroundColor: "#6ebe4a", color: "#000" },
+          style: { backgroundColor: useLayout().Colors.serviceColor, border: "none" },
           type: serviceNodeType,
         },
       ]
@@ -35,26 +35,33 @@ export const useControlData = () => {
           id: `appliance-${appliance.id}`,
           data: { label: appliance.id, url: `/appliances/${appliance.id}` },
           position: position,
-          style: { backgroundColor: "#f2ae72", color: "#000" },
+          style: { backgroundColor: useLayout().Colors.applianceColor, border: "none" },
           type: applianceNodeType,
         },
-        ...appliance.blades.map((blade, bladeIndex) => ({
-          id: `blade-${blade.id}`,
-          data: { label: blade.id, url: `/appliances/${appliance.id}/blades/${blade.id}`, associatedAppliance: appliance.id },
-          position: position,
-          style: { backgroundColor: "#f2e394", color: "#000" },
-          type: bladeNodeType,
-        })),
+        ...appliance.blades.map((blade, bladeIndex) => {
+          const borderColor = useLayout().borderColorChange(blade.status);
+          return {
+            id: `blade-${blade.id}`,
+            data: { label: blade.id, url: `/appliances/${appliance.id}/blades/${blade.id}`, associatedAppliance: appliance.id },
+            position: position,
+            style: { backgroundColor: useLayout().Colors.baldeColor, border: `3px solid ${borderColor}` },
+            type: bladeNodeType,
+          }
+        }),
       ]
     );
 
-    const hostNodes = hostStore.hostIds.map((host, index) => ({
-      id: `host-${host.id}`,
-      data: { label: host.id, url: `/hosts/${host.id}` },
-      position: position,
-      style: { backgroundColor: "#d9ecd0", color: "#000" },
-      type: hostNodeType,
-    }));
+    const hostNodes = hostStore.hostIds.map((host, index) => {
+      const borderColor = useLayout().borderColorChange(host.status);
+
+      return {
+        id: `host-${host.id}`,
+        data: { label: host.id, url: `/hosts/${host.id}` },
+        position: position,
+        style: { backgroundColor: useLayout().Colors.hostColor, border: `3px solid ${borderColor}` },
+        type: hostNodeType,
+      }
+    });
 
     const allNodes = [...coreNode, ...applianceNodes, ...hostNodes];
 

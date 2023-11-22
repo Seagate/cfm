@@ -20,6 +20,26 @@ export function measureText(text: string, font = '16px Arial') {
   };
 };
 
+export const Colors = {
+  applianceColor: '#f2ae72',
+  baldeColor: '#f2e394',
+  hostColor: '#d9ecd0',
+  serviceColor: '#6ebe4a',
+};
+
+export function borderColorChange(status: string | undefined) {
+  switch (status) {
+    case "online":
+      return "#6ebe4a"; // green
+    case "offline":
+      return "#b00020"; // Red
+    case "unavailable":
+      return "#ff9f40"; // Orange
+    default:
+      return "#ffffff"; // White
+  }
+};
+
 export function useLayout() {
   const { findNode } = useVueFlow();
 
@@ -74,5 +94,5 @@ export function useLayout() {
     });
   }
 
-  return { graph, layout, previousDirection, measureText };
+  return { graph, layout, previousDirection, measureText, borderColorChange, Colors };
 }

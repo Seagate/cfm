@@ -3,7 +3,7 @@
   <v-container
     style="
       width: 100%;
-      height: 80vh;
+      height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -47,22 +47,93 @@
         {{ "mdi-close" }}
       </v-icon>
     </div>
-
-    <VueFlow
-      :nodes="nodes"
-      :edges="edges"
-      class="basic-flow"
-      :default-viewport="{ zoom: 1 }"
-      :min-zoom="0.2"
-      :max-zoom="4"
-      @node-click="handleNodeClick"
-    >
-      <Controls position="top-left">
-        <ControlButton title="Search" @click="toggleSearch">
-          <v-icon>mdi-magnify</v-icon>
-        </ControlButton>
-      </Controls>
-    </VueFlow>
+        <v-card class="parent-card"
+          style="
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+          "
+        >
+          <div
+            style="
+              width: 100%;
+              height: 100%;
+              position: relative;
+              overflow: hidden;
+            "
+          >
+            <VueFlow
+              :nodes="nodes"
+              :edges="edges"
+              class="basic-flow"
+              :default-viewport="{ zoom: 1 }"
+              :min-zoom="0.2"
+              :max-zoom="4"
+              @node-click="handleNodeClick"
+              style="width: 100%; height: 100%;"
+            >
+              <Controls position="top-left">
+                <ControlButton title="Search" @click="toggleSearch">
+                  <v-icon>mdi-magnify</v-icon>
+                </ControlButton>
+              </Controls>
+            </VueFlow>
+          </div>
+          <v-card class="child-card"
+          style="
+            width: 20%;
+            height: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+          "
+        >
+          <v-card-text>
+            Devices
+            <v-list-item>
+              <v-list-item-title>
+                <v-icon color="#f2ae72" class="mr-2">mdi-rectangle</v-icon>
+                CMA
+              </v-list-item-title>
+            </v-list-item>
+            <v-list-item>
+              <v-list-item-title>
+                <v-icon color="#f2e394" class="mr-2">mdi-rectangle</v-icon>
+                Blade
+              </v-list-item-title>
+            </v-list-item>
+            <v-list-item>
+              <v-list-item-title>
+                <v-icon color="#d9ecd0" class="mr-2">mdi-rectangle</v-icon>
+                Host
+              </v-list-item-title>
+            </v-list-item>
+            <br>Status
+            <v-list-item>
+              <v-list-item-title>
+                <v-icon color="#6ebe4a" class="mr-2">mdi-rectangle-outline</v-icon>
+                online
+              </v-list-item-title>
+            </v-list-item>
+            <v-list-item>
+              <v-list-item-title>
+                <v-icon color="#b00020" class="mr-2">mdi-rectangle-outline</v-icon>
+                offline
+              </v-list-item-title>
+            </v-list-item>
+            <v-list-item>
+              <v-list-item-title>
+                <v-icon color="#ff9f40" class="mr-2">mdi-rectangle-outline</v-icon>
+                unavailable
+              </v-list-item-title>
+            </v-list-item>
+          </v-card-text>
+        </v-card>
+        </v-card>
 
     <!-- The dialog of the warning before the adding the new discovered devices(blades or cxl-hosts) -->
     <v-dialog v-model="dialogNewDiscoveredDevices" max-width="600px">
@@ -208,7 +279,7 @@ export default {
     return {
       addNewDiscoveredDevicesProgressText:
         "Adding the selected devices, please wait...",
-      discoverDevicesProgressText:"Discovering the selected devices, please wait...",
+      discoverDevicesProgressText:"Discovering devices, please wait...",
 
       dialogNewDiscoveredDevices: false,
       dialogAddNewDiscoveredDevicesWait: false,
@@ -445,5 +516,17 @@ export default {
 .scrollable-content {
   max-height: 300px;
   overflow-y: auto;
+}
+
+.parent-card {
+  position: relative;
+}
+
+.child-card {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: #f5f5f5;
+  border: 1px solid #ccc;
 }
 </style>

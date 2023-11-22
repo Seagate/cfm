@@ -19,7 +19,7 @@ export const useHostStore = defineStore('host', {
         deleteHostError: null as unknown,
         resyncHostError: null as unknown,
         renameHostError: null as unknown,
-        hostIds: [] as { id: string, ipAddress: string }[],
+        hostIds: [] as { id: string, ipAddress: string, status: string | undefined }[],
         discoveredHosts: [] as DiscoveredDevice[],
 
         prefixHostId: "Discoverd_Host_",
@@ -56,7 +56,7 @@ export const useHostStore = defineStore('host', {
                     // Store host in hosts
                     if (detailsResponseOfHost) {
                         this.hosts.push(detailsResponseOfHost.data);
-                        const host = { id: detailsResponseOfHost.data.id, ipAddress: detailsResponseOfHost.data.ipAddress }
+                        const host = { id: detailsResponseOfHost.data.id, ipAddress: detailsResponseOfHost.data.ipAddress, status: detailsResponseOfHost.data.status }
                         this.hostIds.push(host)
                     }
                 }
@@ -119,7 +119,7 @@ export const useHostStore = defineStore('host', {
 
             // Update the applianceIds and appliances
             if (responseOfHost) {
-                const response = { id: responseOfHost.data.id, ipAddress: responseOfHost.data.ipAddress }
+                const response = { id: responseOfHost.data.id, ipAddress: responseOfHost.data.ipAddress, status: responseOfHost.data.status }
                 this.hosts.push(responseOfHost.data);
                 this.hostIds.push(response)
             }

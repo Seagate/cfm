@@ -14,7 +14,7 @@ export const useApplianceStore = defineStore('appliance', {
         addApplianceError: null as unknown,
         deleteApplianceError: null as unknown,
         renameApplianceError: null as unknown,
-        applianceIds: [] as { id: string, blades: { id: string, ipAddress: string }[] }[],
+        applianceIds: [] as { id: string, blades: { id: string, ipAddress: string, status: string | undefined }[] }[],
         discoveredBlades: [] as DiscoveredDevice[],
 
         prefixBladeId: "Discoverd_Blade_",
@@ -104,7 +104,7 @@ export const useApplianceStore = defineStore('appliance', {
                             // Store blade in blades
                             if (bladeId) {
                                 const responseOfBlade = await defaultApi.bladesGetById(applianceId, bladeId);
-                                const response = { id: responseOfBlade.data.id, ipAddress: responseOfBlade.data.ipAddress }
+                                const response = { id: responseOfBlade.data.id, ipAddress: responseOfBlade.data.ipAddress, status: responseOfBlade.data.status }
                                 associatedBlades.push(response);
                             }
                         }
@@ -172,7 +172,7 @@ export const useApplianceStore = defineStore('appliance', {
             const responseOfBlade = await defaultApi.bladesPost(this.defaultApplianceId, this.newBladeCredentials);
 
             if (responseOfBlade) {
-                const response = { id: responseOfBlade.data.id, ipAddress: responseOfBlade.data.ipAddress };
+                const response = { id: responseOfBlade.data.id, ipAddress: responseOfBlade.data.ipAddress, status: responseOfBlade.data.status };
                 appliance!.blades.push(response);
             }
 
