@@ -1,0 +1,6 @@
+# OpenAPI Generator Ignore
+# Lines beginning with a # are comments
+
+# Exclude a single file explicitly
+pkg/client/go.mod
+pkg/client/go.sum

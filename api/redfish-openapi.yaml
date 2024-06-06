@@ -1,0 +1,951 @@
+openapi: 3.0.1
+info:
+  title: Composer and Fabric Manager Redfish Service OpenAPI
+  description: |
+    This API allows users to interact through the CFM Service with CXL Hosts and Memory Appliances.
+    The main purpose of this interface is to allow the retrieval of information and the creation and
+    mapping of memory from a Memory Appliance to a CXL host.
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+
+servers:
+- url: http://localhost:8080/
+- url: https://localhost:8080/
+
+paths:
+
+  /redfish:
+    get:
+      responses:
+        '200':
+          description: The current supported version
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /redfish/v1:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/ServiceRoot_v1_16_1_ServiceRoot
+          description: The response contains a representation of the ServiceRoot resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/$metadata:
+    get:
+      responses:
+        '200':
+          content:
+            application/xml: {}
+          description: OData $metadata.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Chassis:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/ChassisCollection_ChassisCollection
+          description: The response contains a representation of the ChassisCollection
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Chassis/{ChassisId}:
+    get:
+      parameters:
+      - description: The value of the Id property of the Chassis resource
+        in: path
+        name: ChassisId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/Chassis_v1_25_0_Chassis
+          description: The response contains a representation of the Chassis resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Chassis/{ChassisId}/MemoryDomains:
+    get:
+      parameters:
+      - description: The value of the Id property of the Chassis resource
+        in: path
+        name: ChassisId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/MemoryDomainCollection_MemoryDomainCollection
+          description: The response contains a representation of the MemoryDomainCollection
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Chassis/{ChassisId}/MemoryDomains/{MemoryDomainId}:
+    get:
+      parameters:
+      - description: The value of the Id property of the Chassis resource
+        in: path
+        name: ChassisId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the MemoryDomain resource
+        in: path
+        name: MemoryDomainId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/MemoryDomain_v1_5_0_MemoryDomain
+          description: The response contains a representation of the MemoryDomain
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Chassis/{ChassisId}/MemoryDomains/{MemoryDomainId}/MemoryChunks:
+    get:
+      parameters:
+      - description: The value of the Id property of the Chassis resource
+        in: path
+        name: ChassisId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the MemoryDomain resource
+        in: path
+        name: MemoryDomainId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/MemoryChunksCollection_MemoryChunksCollection
+          description: The response contains a representation of the MemoryChunksCollection
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Chassis/{ChassisId}/MemoryDomains/{MemoryDomainId}/MemoryChunks/{MemoryChunksId}:
+    get:
+      parameters:
+      - description: The value of the Id property of the Chassis resource
+        in: path
+        name: ChassisId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the MemoryDomain resource
+        in: path
+        name: MemoryDomainId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the MemoryChunks resource
+        in: path
+        name: MemoryChunksId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/MemoryChunks_v1_6_1_MemoryChunks
+          description: The response contains a representation of the MemoryChunks
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Chassis/{ChassisId}/PCIeDevices:
+    get:
+      parameters:
+      - description: The value of the Id property of the Chassis resource
+        in: path
+        name: ChassisId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/PCIeDeviceCollection_PCIeDeviceCollection
+          description: The response contains a representation of the PCIeDeviceCollection
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Chassis/{ChassisId}/PCIeDevices/{PCIeDeviceId}:
+    get:
+      parameters:
+      - description: The value of the Id property of the Chassis resource
+        in: path
+        name: ChassisId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the PCIeDevice resource
+        in: path
+        name: PCIeDeviceId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/PCIeDevice_v1_13_0_PCIeDevice
+          description: The response contains a representation of the PCIeDevice resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Chassis/{ChassisId}/PCIeDevices/{PCIeDeviceId}/CXLLogicalDevices:
+    get:
+      parameters:
+      - description: The value of the Id property of the Chassis resource
+        in: path
+        name: ChassisId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the PCIeDevice resource
+        in: path
+        name: PCIeDeviceId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/CXLLogicalDeviceCollection_CXLLogicalDeviceCollection
+          description: The response contains a representation of the CXLLogicalDeviceCollection
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Chassis/{ChassisId}/PCIeDevices/{PCIeDeviceId}/CXLLogicalDevices/{CXLLogicalDeviceId}:
+    get:
+      parameters:
+      - description: The value of the Id property of the Chassis resource
+        in: path
+        name: ChassisId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the PCIeDevice resource
+        in: path
+        name: PCIeDeviceId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the CXLLogicalDevice resource
+        in: path
+        name: CXLLogicalDeviceId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/CXLLogicalDevice_v1_1_1_CXLLogicalDevice
+          description: The response contains a representation of the CXLLogicalDevice
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Fabrics:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/FabricCollection_FabricCollection
+          description: The response contains a representation of the FabricCollection
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Fabrics/{FabricId}:
+    get:
+      parameters:
+      - description: The value of the Id property of the Fabric resource
+        in: path
+        name: FabricId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/Fabric_v1_3_1_Fabric
+          description: The response contains a representation of the Fabric resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Fabrics/{FabricId}/Connections:
+    get:
+      parameters:
+      - description: The value of the Id property of the Fabric resource
+        in: path
+        name: FabricId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/ConnectionCollection_ConnectionCollection
+          description: The response contains a representation of the ConnectionCollection
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+    post:
+      parameters:
+      - description: The value of the Id property of the Fabric resource
+        in: path
+        name: FabricId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: ./redfish-components.yaml#/components/schemas/Connection_v1_3_1_Connection
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/Connection_v1_3_1_Connection
+          description: A resource of type Connection has been created
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Fabrics/{FabricId}/Connections/{ConnectionId}:
+    delete:
+      parameters:
+      - description: The value of the Id property of the Fabric resource
+        in: path
+        name: FabricId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the Connection resource
+        in: path
+        name: ConnectionId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/Connection_v1_3_1_Connection
+          description: The response contains a representation of the Connection resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+    get:
+      parameters:
+      - description: The value of the Id property of the Fabric resource
+        in: path
+        name: FabricId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the Connection resource
+        in: path
+        name: ConnectionId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/Connection_v1_3_1_Connection
+          description: The response contains a representation of the Connection resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Fabrics/{FabricId}/Endpoints:
+    get:
+      parameters:
+      - description: The value of the Id property of the Fabric resource
+        in: path
+        name: FabricId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/EndpointCollection_EndpointCollection
+          description: The response contains a representation of the EndpointCollection
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Fabrics/{FabricId}/Endpoints/{EndpointId}:
+    get:
+      parameters:
+      - description: The value of the Id property of the Fabric resource
+        in: path
+        name: FabricId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the Endpoint resource
+        in: path
+        name: EndpointId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/Endpoint_v1_8_1_Endpoint
+          description: The response contains a representation of the Endpoint resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Fabrics/{FabricId}/Switches:
+    get:
+      parameters:
+      - description: The value of the Id property of the Fabric resource
+        in: path
+        name: FabricId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/SwitchCollection_SwitchCollection
+          description: The response contains a representation of the SwitchCollection
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Fabrics/{FabricId}/Switches/{SwitchId}:
+    get:
+      parameters:
+      - description: The value of the Id property of the Fabric resource
+        in: path
+        name: FabricId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the Switch resource
+        in: path
+        name: SwitchId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/Switch_v1_9_2_Switch
+          description: The response contains a representation of the Switch resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Fabrics/{FabricId}/Switches/{SwitchId}/Ports:
+    get:
+      parameters:
+      - description: The value of the Id property of the Fabric resource
+        in: path
+        name: FabricId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the Switch resource
+        in: path
+        name: SwitchId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/PortCollection_PortCollection
+          description: The response contains a representation of the PortCollection
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Fabrics/{FabricId}/Switches/{SwitchId}/Ports/{PortId}:
+    get:
+      parameters:
+      - description: The value of the Id property of the Fabric resource
+        in: path
+        name: FabricId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the Switch resource
+        in: path
+        name: SwitchId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the Port resource
+        in: path
+        name: PortId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/Port_v1_11_0_Port
+          description: The response contains a representation of the Port resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Systems:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/ComputerSystemCollection_ComputerSystemCollection
+          description: The response contains a representation of the ComputerSystemCollection
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Systems/{ComputerSystemId}:
+    get:
+      parameters:
+      - description: The value of the Id property of the ComputerSystem resource
+        in: path
+        name: ComputerSystemId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/ComputerSystem_v1_22_0_ComputerSystem
+          description: The response contains a representation of the ComputerSystem
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Systems/{ComputerSystemId}/Memory:
+    get:
+      parameters:
+      - description: The value of the Id property of the ComputerSystem resource
+        in: path
+        name: ComputerSystemId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/MemoryCollection_MemoryCollection
+          description: The response contains a representation of the MemoryCollection
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Systems/{ComputerSystemId}/Memory/{MemoryId}:
+    get:
+      parameters:
+      - description: The value of the Id property of the ComputerSystem resource
+        in: path
+        name: ComputerSystemId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the Memory resource
+        in: path
+        name: MemoryId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/Memory_v1_19_0_Memory
+          description: The response contains a representation of the Memory resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Systems/{ComputerSystemId}/MemoryDomains:
+    get:
+      parameters:
+      - description: The value of the Id property of the ComputerSystem resource
+        in: path
+        name: ComputerSystemId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/MemoryDomainCollection_MemoryDomainCollection
+          description: The response contains a representation of the MemoryDomainCollection
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Systems/{ComputerSystemId}/MemoryDomains/{MemoryDomainId}:
+    get:
+      parameters:
+      - description: The value of the Id property of the ComputerSystem resource
+        in: path
+        name: ComputerSystemId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the MemoryDomain resource
+        in: path
+        name: MemoryDomainId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/MemoryDomain_v1_5_0_MemoryDomain
+          description: The response contains a representation of the MemoryDomain
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Systems/{ComputerSystemId}/MemoryDomains/{MemoryDomainId}/MemoryChunks:
+    get:
+      parameters:
+      - description: The value of the Id property of the ComputerSystem resource
+        in: path
+        name: ComputerSystemId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the MemoryDomain resource
+        in: path
+        name: MemoryDomainId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/MemoryChunksCollection_MemoryChunksCollection
+          description: The response contains a representation of the MemoryChunksCollection
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+    post:
+      parameters:
+      - description: The value of the Id property of the ComputerSystem resource
+        in: path
+        name: ComputerSystemId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the MemoryDomain resource
+        in: path
+        name: MemoryDomainId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: ./redfish-components.yaml#/components/schemas/MemoryChunks_v1_6_1_MemoryChunks
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/MemoryChunks_v1_6_1_MemoryChunks
+          description: A resource of type MemoryChunks has been created
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Systems/{ComputerSystemId}/MemoryDomains/{MemoryDomainId}/MemoryChunks/{MemoryChunksId}:
+    delete:
+      parameters:
+      - description: The value of the Id property of the ComputerSystem resource
+        in: path
+        name: ComputerSystemId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the MemoryDomain resource
+        in: path
+        name: MemoryDomainId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the MemoryChunks resource
+        in: path
+        name: MemoryChunksId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/MemoryChunks_v1_6_1_MemoryChunks
+          description: The response contains a representation of the MemoryChunks
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+    get:
+      parameters:
+      - description: The value of the Id property of the ComputerSystem resource
+        in: path
+        name: ComputerSystemId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the MemoryDomain resource
+        in: path
+        name: MemoryDomainId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the MemoryChunks resource
+        in: path
+        name: MemoryChunksId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: ./redfish-components.yaml#/components/schemas/MemoryChunks_v1_6_1_MemoryChunks
+          description: The response contains a representation of the MemoryChunks
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/odata:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: The OData service document from a Redfish service.
+                properties:
+                  '@odata.context':
+                    $ref: ./redfish-components.yaml#/components/schemas/odata-v4_context
+                  value:
+                    description: The list of services provided by the Redfish service.
+                    items:
+                      properties:
+                        kind:
+                          description: Type of resource.  Value is `Singleton` for
+                            all cases defined by Redfish.
+                          readOnly: true
+                          type: string
+                        name:
+                          description: User-friendly resource name of the resource.
+                          readOnly: true
+                          type: string
+                        url:
+                          description: Relative URL for the top-level resource.
+                          readOnly: true
+                          type: string
+                      required:
+                      - name
+                      - kind
+                      - url
+                      type: object
+                    type: array
+                required:
+                - '@odata.context'
+                - value
+                type: object
+          description: OData service document
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+          description: Error condition
