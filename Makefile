@@ -1,5 +1,5 @@
 # Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
-.PHONY: help clean local run run-defaults validate generate generate-client generate-redfish generate-axios webui-dist fmt test-go vet-go test-go-backend regression run-regression
+.PHONY: help clean local run run-defaults validate generate generate-openapi generate-client generate-redfish generate-axios webui-dist docker-image fmt test-go vet-go test-go-backend regression run-regression
 
 APP_NAME := cfm-service
 CLIAPP_NAME := cfm-cli
@@ -20,11 +20,13 @@ help:
 	@echo "make run              - Build a local $(APP_NAME) executable and run it using config file $(CONF_NAME)"
 	@echo "make run-defaults     - Build a local $(APP_NAME) executable and run it using its' internal config defaults"
 	@echo "make validate         - validate the openapi specification using openapi-generator-cli"
-	@echo "make generate         - Generate go server code for the openapi specification using openapi-generator-cli"
+	@echo "make generate         - Generate supporting code for the whole suite using openapi-generator-cli"
+	@echo "make generate-openapi - Generate go server code for the openapi specification using openapi-generator-cli"
 	@echo "make generate-client  - Generate go client code for the openapi specification using openapi-generator-cli"
 	@echo "make generate-redfish - Generate go server code for the redfish specification using openapi-generator-cli"
 	@echo "make generate-axios   - Generate axios server code for the openapi specification using openapi-generator-cli"
 	@echo "make webui-dist       - Build the webui distribution package for cfm-service"
+	@echo "make docker-iamge     - Build the docker image for cfm-service"
 	@echo "make fmt              - Run gofmt"
 	@echo "make test-go          - Run all Go tests"
 	@echo "make vet-go           - Run go vet"
@@ -57,34 +59,44 @@ validate:
 	docker run --rm -v ${PWD}:/local openapitools/openapi-generator-cli:v7.0.0 version
 	docker run --rm -v ${PWD}:/local openapitools/openapi-generator-cli:v7.0.0 validate -i /local/$(OPENAPI_YAML)
 
-generate:
+generate-openapi:
 	@echo "Generating $(OPENAPI_YAML) go server using openapi-generator-cli"
-	docker run -u $(GENERATE_USER) --rm -v ${PWD}:/local openapitools/openapi-generator-cli:v7.0.0 generate -i /local/$(OPENAPI_YAML) -g go-server -o /local/pkg/openapi --additional-properties=sourceFolder=,outputAsLibrary=true,router=mux,serverPort=8080,enumClassPrefix=true -t /local/templates/go-server --skip-validate-spec
+	docker run -u $(GENERATE_USER) --rm -v ${PWD}:/local openapitools/openapi-generator-cli:v7.0.0 generate -i /local/$(OPENAPI_YAML) -g go-server -o /local/pkg/openapi --additional-properties=sourceFolder=,outputAsLibrary=true,router=mux,serverPort=8080,enumClassPrefix=true -t /local/api/templates/go-server --skip-validate-spec
 	@echo "Format files after generation to conform to project standard"
 	docker run --rm -v ${PWD}:/local golang:$(GO_VERSION) $(GOFMT_OPTS)
 
 generate-client:
 	@echo "Generating $(OPENAPI_YAML) go client using openapi-generator-cli"
-	docker run -u $(GENERATE_USER) --rm -v ${PWD}:/local openapitools/openapi-generator-cli:v7.0.0 generate -i /local/$(OPENAPI_YAML) -g go -o /local/pkg/client -p isGoSubmodule=true --package-name client --ignore-file-override /local/api/.openapi-generator-ignore-client -t /local/templates/go
+	docker run -u $(GENERATE_USER) --rm -v ${PWD}:/local openapitools/openapi-generator-cli:v7.0.0 generate -i /local/$(OPENAPI_YAML) -g go -o /local/pkg/client -p isGoSubmodule=true,withGoMod=false --package-name client --ignore-file-override /local/api/ignore/.openapi-generator-ignore-client -t /local/api/templates/go
+	# workaround for withGoMod=false not functioning with openapi-generator  
+	rm pkg/client/go.mod
+	rm pkg/client/go.sum
+
 	@echo "Format files after generation to conform to project standard"
 	docker run --rm -v ${PWD}:/local golang:$(GO_VERSION) $(GOFMT_OPTS)
 
 generate-redfish:
 	@echo "Generating $(OPENAPI_YAML) redfish server using openapi-generator-cli"
-	docker run -u $(GENERATE_USER) --rm -v ${PWD}:/local openapitools/openapi-generator-cli:v7.0.0 generate -i /local/$(OPENAPI_REDFISH_YAML) -g go-server -o /local/pkg/redfishapi --additional-properties=sourceFolder=,outputAsLibrary=true,router=mux,serverPort=8080,enumClassPrefix=true -t /local/templates/go-server --skip-validate-spec
-	sed -i 's/package openapi/package redfishapi/g' ./pkg/redfishapi/*.go
+	docker run -u $(GENERATE_USER) --rm -v ${PWD}:/local openapitools/openapi-generator-cli:v7.0.0 generate -i /local/$(OPENAPI_REDFISH_YAML) -g go-server -o /local/pkg/redfishapi --package-name redfishapi --additional-properties=sourceFolder=,outputAsLibrary=true,router=mux,serverPort=8080,enumClassPrefix=true -t /local/api/templates/go-server --skip-validate-spec
 	@echo "Format files after generation to conform to project standard"
 	docker run --rm -v ${PWD}:/local golang:$(GO_VERSION) $(GOFMT_OPTS)
+	@echo "Apply local patch for xml response fix"
+	git apply api/patch/Apply-xml-workaround-to-fix-metadata-response.patch
 
 generate-axios:
 	@echo "Generating $(OPENAPI_YAML) axios server using openapi-generator-cli"
 	docker run -u $(GENERATE_USER) --rm -v ${PWD}:/local openapitools/openapi-generator-cli:v7.0.0 generate -i /local/$(OPENAPI_YAML) -g typescript-axios -o /local/webui/src/axios --skip-validate-spec
+
+generate: generate-openapi generate-client generate-redfish generate-axios
 
 webui-dist:
 	@echo "Generating webui distribution package"
 	cd webui
 	npm run build
 	cd ..
+
+docker-image:
+	docker build --no-cache -t cfm -f docker/Dockerfile .
 
 fmt:
 	@echo "Format check"

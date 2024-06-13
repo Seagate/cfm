@@ -1,0 +1,40 @@
+From f1d0edd987c2ff7e81f592d37589851f03b423ff Mon Sep 17 00:00:00 2001
+From: Hongjian Fan <hongjian.fan@seagate.com>
+Date: Thu, 13 Jun 2024 08:52:24 -0500
+Subject: [PATCH] Apply xml workaround to fix metadata response
+
+---
+ pkg/redfishapi/api_default.go | 17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
+
+diff --git a/pkg/redfishapi/api_default.go b/pkg/redfishapi/api_default.go
+index 8ff925c..fb70042 100644
+--- a/pkg/redfishapi/api_default.go
++++ b/pkg/redfishapi/api_default.go
+@@ -599,7 +599,22 @@ func (c *DefaultAPIController) RedfishV1MetadataGet(w http.ResponseWriter, r *ht
+ 		return
+ 	}
+ 	// If no error, encode the body and the result code
+-	EncodeJSONResponse(result.Body, &result.Code, w)
++
++	/* ATTENTION:
++	Openapi-generator doesn't support xml response in go server.
++	The following changes are required for proper xml response.
++	Do not overwrite when generating new redfish interface.
++	*/
++	w.Header().Set("Content-Type", "application/xml; charset=UTF-8")
++	if &result.Code != nil {
++		w.WriteHeader(result.Code)
++	} else {
++		w.WriteHeader(http.StatusOK)
++	}
++
++	if result.Body != nil {
++		w.Write([]byte(result.Body.(string)))
++	}
+ }
+ 
+ // RedfishV1OdataGet -
+-- 
+2.25.1
+

@@ -3,13 +3,8 @@ FROM golang:1.22
 RUN apt update
 RUN apt install -y nodejs npm
 
-# RUN git config --global http.sslverify false
-
-
-# Clone cfm repo
-# RUN git clone --depth 1 https://github.com/Seagate/cfm.git /cfm
+# Copy whole repo into the image
 COPY . /cfm
-
 
 # setup web UI and build the dist package
 WORKDIR /cfm/webui
