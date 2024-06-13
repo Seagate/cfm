@@ -1,6 +1,6 @@
 openapi: 3.0.1
 info:
-  title: Composer and Fabric Manager Redfish Service OpenAPI
+  title: Composable Fabric Manager Redfish Service OpenAPI
   description: |
     This API allows users to interact through the CFM Service with CXL Hosts and Memory Appliances.
     The main purpose of this interface is to allow the retrieval of information and the creation and

@@ -1,5 +1,5 @@
 /*
-Composer and Fabric Manager Service OpenAPI
+Composable Fabric Manager Service OpenAPI
 
 This API allows users to interact through the CFM Service with CXL Hosts and Memory Appliances. The main purpose of this interface is to allow the retrieval of information and the creation and mapping of memory from a Memory Appliance to a CXL host.
 
@@ -39,7 +39,7 @@ var (
 	queryDescape    = strings.NewReplacer("%5B", "[", "%5D", "]")
 )
 
-// APIClient manages communication with the Composer and Fabric Manager Service OpenAPI API v1.6.6
+// APIClient manages communication with the Composable Fabric Manager Service OpenAPI API v1.6.6
 // In most cases there should be only one, shared, APIClient.
 type APIClient struct {
 	cfg    *Configuration

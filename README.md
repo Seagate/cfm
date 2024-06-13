@@ -1,4 +1,4 @@
-# Composer and Fabric Manager ( CFM ) for the Memory Appliance
+# Composable Fabric Manager ( CFM ) for the Memory Appliance
 
 This is a Go language application that will run as a background service providing functionality to multiple users. The whole software suite contains a few components.  
  __cfm-service__ is the main business logic for memory composition that will provide a north-side OpenAPI interface and use Redfish on the south-side to manage Memory Appliances and CXL Hosts.

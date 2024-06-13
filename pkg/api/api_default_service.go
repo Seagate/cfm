@@ -1,7 +1,7 @@
 /*
 Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
 
-Composer and Fabric Manager Service OpenAPI
+Composable Fabric Manager Service OpenAPI
 
 This API allows users to interact through the CFM Service with CXL Hosts and Memory Appliances. The main purpose of this interface is to allow the retrieval of information and the creation and mapping of memory from a Memory Appliance to a CXL host.
 
@@ -911,7 +911,7 @@ func (cfm *CfmApiService) CfmV1Get(ctx context.Context) (openapi.ImplResponse, e
 func (cfm *CfmApiService) RootGet(ctx context.Context) (openapi.ImplResponse, error) {
 	response := openapi.StatusMessage{
 		Uri:     "/",
-		Details: fmt.Sprintf("Composer and Fabric Manager (CFM) Service API. Use 'http get /cfm' to see supported versions."),
+		Details: fmt.Sprintf("Composable Fabric Manager (CFM) Service API. Use 'http get /cfm' to see supported versions."),
 		Status: openapi.StatusMessageStatus{
 			Code:    int32(common.StatusOK),
 			Message: common.StatusOK.String(),

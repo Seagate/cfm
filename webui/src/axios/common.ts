@@ -1,7 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Composer and Fabric Manager Service OpenAPI
+ * Composable Fabric Manager Service OpenAPI
  * This API allows users to interact through the CFM Service with CXL Hosts and Memory Appliances. The main purpose of this interface is to allow the retrieval of information and the creation and mapping of memory from a Memory Appliance to a CXL host. 
  *
  * The version of the OpenAPI document: 1.6.6

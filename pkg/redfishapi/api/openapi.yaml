@@ -7,7 +7,7 @@ info:
   license:
     name: Apache-2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
-  title: Composer and Fabric Manager Redfish Service OpenAPI
+  title: Composable Fabric Manager Redfish Service OpenAPI
   version: 1.0.0
 servers:
 - url: http://localhost:8080/

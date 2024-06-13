@@ -1,7 +1,7 @@
 /*
 Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
 
-Composer and Fabric Manager Service OpenAPI
+Composable Fabric Manager Service OpenAPI
 
 This API allows users to interact through the CFM Service with CXL Hosts and Memory Appliances. The main purpose of this interface is to allow the retrieval of information and the creation and mapping of memory from a Memory Appliance to a CXL host.
 
