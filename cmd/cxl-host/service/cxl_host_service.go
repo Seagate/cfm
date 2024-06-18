@@ -28,6 +28,10 @@ func NewCxlHostApiService() redfishapi.DefaultAPIServicer {
 	return &CxlHostApiService{}
 }
 
+var enabled = true
+var resourcehealthOk = redfishapi.RESOURCEHEALTH_OK
+var resourcestateEnabled = redfishapi.RESOURCESTATE_ENABLED
+
 // RedfishV1AccountServiceAccountsGet -
 func (s *CxlHostApiService) RedfishV1AccountServiceAccountsGet(ctx context.Context) (redfishapi.ImplResponse, error) {
 	logger := klog.FromContext(ctx)
@@ -112,7 +116,7 @@ func (s *CxlHostApiService) RedfishV1AccountServiceAccountsManagerAccountIdGet(c
 }
 
 // RedfishV1AccountServiceAccountsManagerAccountIdPatch -
-func (s *CxlHostApiService) RedfishV1AccountServiceAccountsManagerAccountIdPatch(ctx context.Context, managerAccountId string, managerAccountV1100ManagerAccount redfishapi.ManagerAccountV1100ManagerAccount) (redfishapi.ImplResponse, error) {
+func (s *CxlHostApiService) RedfishV1AccountServiceAccountsManagerAccountIdPatch(ctx context.Context, managerAccountId string, managerAccountV1120ManagerAccount redfishapi.ManagerAccountV1120ManagerAccount) (redfishapi.ImplResponse, error) {
 	// TODO - update RedfishV1AccountServiceAccountsManagerAccountIdPatch with the required logic for this service method.
 	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
@@ -123,7 +127,7 @@ func (s *CxlHostApiService) RedfishV1AccountServiceAccountsManagerAccountIdPatch
 	}
 
 	// Allow the client to change the password for this user.
-	_, err := accounts.AccountsHandler().UpdateAccount(account.Username, *managerAccountV1100ManagerAccount.Password, "")
+	_, err := accounts.AccountsHandler().UpdateAccount(account.Username, *managerAccountV1120ManagerAccount.Password, "")
 	if err != nil {
 		return redfishapi.Response(http.StatusBadRequest, nil), err
 	}
@@ -133,10 +137,10 @@ func (s *CxlHostApiService) RedfishV1AccountServiceAccountsManagerAccountIdPatch
 }
 
 // RedfishV1AccountServiceAccountsPost -
-func (s *CxlHostApiService) RedfishV1AccountServiceAccountsPost(ctx context.Context, managerAccountV1100ManagerAccount redfishapi.ManagerAccountV1120ManagerAccount) (redfishapi.ImplResponse, error) {
+func (s *CxlHostApiService) RedfishV1AccountServiceAccountsPost(ctx context.Context, managerAccountV1120ManagerAccount redfishapi.ManagerAccountV1120ManagerAccount) (redfishapi.ImplResponse, error) {
 
 	// Create a new user account
-	account, err := accounts.AccountsHandler().AddAccount(managerAccountV1100ManagerAccount.UserName, *managerAccountV1100ManagerAccount.Password, managerAccountV1100ManagerAccount.RoleId)
+	account, err := accounts.AccountsHandler().AddAccount(managerAccountV1120ManagerAccount.UserName, *managerAccountV1120ManagerAccount.Password, managerAccountV1120ManagerAccount.RoleId)
 	if err != nil {
 		return redfishapi.Response(http.StatusBadRequest, nil), err
 	}
@@ -145,48 +149,10 @@ func (s *CxlHostApiService) RedfishV1AccountServiceAccountsPost(ctx context.Cont
 	return redfishapi.Response(http.StatusOK, resource), nil
 }
 
-// AccountService - The AccountService schema defines an account service.  The properties are common to, and enable management of, all user accounts.  The properties include the password requirements and control features, such as account lockout.  Properties and actions in this service specify general behavior that should be followed for typical accounts, however implementations may override these behaviors for special accounts or situations to avoid denial of service or other deadlock situations.
-type AccountService struct {
-	OdataContext                      string                  `json:"@odata.context,omitempty"`                    // The OData description of a payload.
-	OdataEtag                         string                  `json:"@odata.etag,omitempty"`                       // The current ETag of the resource.
-	OdataId                           string                  `json:"@odata.id"`                                   // The unique identifier for a resource.
-	OdataType                         string                  `json:"@odata.type"`                                 // The type of a resource.
-	AccountLockoutCounterResetAfter   int64                   `json:"AccountLockoutCounterResetAfter,omitempty"`   // The period of time, in seconds, between the last failed login attempt and the reset of the lockout threshold counter.  This value must be less than or equal to the AccountLockoutDuration value.  A reset sets the counter to `0`.
-	AccountLockoutCounterResetEnabled bool                    `json:"AccountLockoutCounterResetEnabled,omitempty"` // An indication of whether the threshold counter is reset after AccountLockoutCounterResetAfter expires.  If `true`, it is reset.  If `false`, only a successful login resets the threshold counter and if the user reaches the AccountLockoutThreshold limit, the account will be locked out indefinitely and only an administrator-issued reset clears the threshold counter.  If this property is absent, the default is `true`.
-	AccountLockoutDuration            *int64                  `json:"AccountLockoutDuration,omitempty"`            // The period of time, in seconds, that an account is locked after the number of failed login attempts reaches the account lockout threshold, within the period between the last failed login attempt and the reset of the lockout threshold counter.  If this value is `0`, no lockout will occur.  If the AccountLockoutCounterResetEnabled value is `false`, this property is ignored.
-	AccountLockoutThreshold           *int64                  `json:"AccountLockoutThreshold,omitempty"`           // The number of allowed failed login attempts before a user account is locked for a specified duration.  If `0`, the account is never locked.
-	Accounts                          redfishapi.OdataV4IdRef `json:"Accounts,omitempty"`
-	//	Actions                            AccountServiceV1130Actions                 `json:"Actions,omitempty"`
-	//	ActiveDirectory                    AccountServiceV1130ExternalAccountProvider `json:"ActiveDirectory,omitempty"`
-	//	AdditionalExternalAccountProviders OdataV4IdRef                               `json:"AdditionalExternalAccountProviders,omitempty"`
-	AuthFailureLoggingThreshold int64  `json:"AuthFailureLoggingThreshold,omitempty"` // The number of authorization failures per account that are allowed before the failed attempt is logged to the manager log.
-	Description                 string `json:"Description,omitempty"`                 // The description of this resource.  Used for commonality in the schema definitions.
-	Id                          string `json:"Id"`                                    // The unique identifier for this resource within the collection of similar resources.
-	//	LDAP                               AccountServiceV1130ExternalAccountProvider `json:"LDAP,omitempty"`
-	LocalAccountAuth  redfishapi.AccountServiceV1130LocalAccountAuth `json:"LocalAccountAuth,omitempty"`
-	MaxPasswordLength int64                                          `json:"MaxPasswordLength,omitempty"` // The maximum password length for this account service.
-	MinPasswordLength int64                                          `json:"MinPasswordLength,omitempty"` // The minimum password length for this account service.
-	Name              string                                         `json:"Name"`                        // The name of the resource or array member.
-	//	OAuth2                             AccountServiceV1130ExternalAccountProvider `json:"OAuth2,omitempty"`
-	Oem                    map[string]interface{} `json:"Oem,omitempty"`                    // The OEM extension.
-	PasswordExpirationDays *int64                 `json:"PasswordExpirationDays,omitempty"` // The number of days before account passwords in this account service will expire.
-	//	PrivilegeMap                       OdataV4IdRef                               `json:"PrivilegeMap,omitempty"`
-	RestrictedOemPrivileges  []string                                `json:"RestrictedOemPrivileges,omitempty"` // The set of restricted OEM privileges.
-	RestrictedPrivileges     []redfishapi.PrivilegesPrivilegeType    `json:"RestrictedPrivileges,omitempty"`    // The set of restricted Redfish privileges.
-	Roles                    redfishapi.OdataV4IdRef                 `json:"Roles,omitempty"`
-	ServiceEnabled           *bool                                   `json:"ServiceEnabled,omitempty"` // An indication of whether the account service is enabled.  If `true`, it is enabled.  If `false`, it is disabled and users cannot be created, deleted, or modified, and new sessions cannot be started.  However, established sessions might still continue to run.  Any service, such as the session service, that attempts to access the disabled account service fails.  However, this does not affect HTTP Basic Authentication connections.
-	Status                   redfishapi.ResourceStatus               `json:"Status,omitempty"`
-	SupportedAccountTypes    []redfishapi.ManagerAccountAccountTypes `json:"SupportedAccountTypes,omitempty"`    // The account types supported by the service.
-	SupportedOEMAccountTypes []string                                `json:"SupportedOEMAccountTypes,omitempty"` // The OEM account types supported by the service.
-	// TACACSplus                         AccountServiceV1130ExternalAccountProvider `json:"TACACSplus,omitempty"`
-}
-
 // RedfishV1AccountServiceGet -
 func (s *CxlHostApiService) RedfishV1AccountServiceGet(ctx context.Context) (redfishapi.ImplResponse, error) {
 
-	enabled := true
-
-	resource := AccountService{
+	resource := redfishapi.AccountServiceV1150AccountService{
 		OdataContext: "/redfish/v1/$metadata#AccountService.AccountService",
 		OdataId:      "/redfish/v1/AccountService",
 		OdataType:    AccountServiceVersion,
@@ -202,8 +168,8 @@ func (s *CxlHostApiService) RedfishV1AccountServiceGet(ctx context.Context) (red
 		},
 		ServiceEnabled: &enabled,
 		Status: redfishapi.ResourceStatus{
-			Health: redfishapi.RESOURCEHEALTH_OK,
-			State:  redfishapi.RESOURCESTATE_ENABLED,
+			Health: &resourcehealthOk,
+			State:  &resourcestateEnabled,
 		},
 	}
 
@@ -270,113 +236,6 @@ func (s *CxlHostApiService) RedfishV1AccountServiceRolesRoleIdGet(ctx context.Co
 	return redfishapi.Response(http.StatusOK, resource), nil
 }
 
-// ChassisType - The Chassis schema represents the physical components of a system.  This resource represents the bare minimum supported by this service.
-type ChassisType struct {
-	OdataContext string `json:"@odata.context,omitempty"` // The OData description of a payload.
-	OdataEtag    string `json:"@odata.etag,omitempty"`    // The current ETag of the resource.
-	OdataId      string `json:"@odata.id"`                // The unique identifier for a resource.
-	OdataType    string `json:"@odata.type"`              // The type of a resource.
-	// Actions ChassisV1210Actions `json:"Actions,omitempty"`
-	// Assembly OdataV4IdRef `json:"Assembly,omitempty"`
-	AssetTag *string `json:"AssetTag,omitempty"` // The user-assigned asset tag of this chassis.
-	// Certificates OdataV4IdRef `json:"Certificates,omitempty"`
-	ChassisType redfishapi.ChassisV1230ChassisType `json:"ChassisType"`
-	// Controls OdataV4IdRef `json:"Controls,omitempty"`
-	// DepthMm *float32 `json:"DepthMm,omitempty"`// The depth of the chassis.
-	Description string `json:"Description,omitempty"` // The description of this resource.  Used for commonality in the schema definitions.
-	// Drives OdataV4IdRef `json:"Drives,omitempty"`
-	// ElectricalSourceManagerURIs []*string `json:"ElectricalSourceManagerURIs,omitempty"`// The URIs of the management interfaces for the upstream electrical source connections for this chassis.
-	// ElectricalSourceNames []*string `json:"ElectricalSourceNames,omitempty"`// The names of the upstream electrical sources, such as circuits or outlets, connected to this chassis.
-	// EnvironmentMetrics OdataV4IdRef `json:"EnvironmentMetrics,omitempty"`
-	// EnvironmentalClass ChassisV1210EnvironmentalClass `json:"EnvironmentalClass,omitempty"`
-	// FabricAdapters OdataV4IdRef `json:"FabricAdapters,omitempty"`
-	// HeightMm *float32 `json:"HeightMm,omitempty"` // The height of the chassis.
-	// HotPluggable *bool `json:"HotPluggable,omitempty"`// An indication of whether this component can be inserted or removed while the equipment is in operation.
-	Id string `json:"Id"` // The unique identifier for this resource within the collection of similar resources.
-	// IndicatorLED ChassisV1210IndicatorLed `json:"IndicatorLED,omitempty"`
-	// Links ChassisV1210Links `json:"Links,omitempty"`
-	// Location ResourceLocation `json:"Location,omitempty"`
-	// LocationIndicatorActive *bool `json:"LocationIndicatorActive,omitempty"`// An indicator allowing an operator to physically locate this resource.
-	// LogServices OdataV4IdRef `json:"LogServices,omitempty"`
-	// Manufacturer *string `json:"Manufacturer,omitempty"`// The manufacturer of this chassis.
-	// MaxPowerWatts *float32 `json:"MaxPowerWatts,omitempty"`// The upper bound of the total power consumed by the chassis.
-	// Measurements []SoftwareInventoryMeasurementBlock `json:"Measurements,omitempty"`// An array of DSP0274-defined measurement blocks. (Deprecated)
-	// MediaControllers OdataV4IdRef `json:"MediaControllers,omitempty"`
-	Memory        redfishapi.OdataV4IdRef `json:"Memory,omitempty"`
-	MemoryDomains redfishapi.OdataV4IdRef `json:"MemoryDomains,omitempty"`
-	// MinPowerWatts *float32 `json:"MinPowerWatts,omitempty"`// The lower bound of the total power consumed by the chassis.
-	// Model *string `json:"Model,omitempty"`// The model number of the chassis.
-	Name string `json:"Name"` // The name of the resource or array member.
-	// NetworkAdapters OdataV4IdRef `json:"NetworkAdapters,omitempty"`
-	Oem         map[string]interface{}  `json:"Oem,omitempty"` // The OEM extension.
-	PCIeDevices redfishapi.OdataV4IdRef `json:"PCIeDevices,omitempty"`
-	PCIeSlots   redfishapi.OdataV4IdRef `json:"PCIeSlots,omitempty"`  // PCIeDevices OdataV4IdRef `json:"PCIeDevices,omitempty"`
-	PartNumber  *string                 `json:"PartNumber,omitempty"` // The part number of the chassis.
-	// PhysicalSecurity ChassisV1210PhysicalSecurity `json:"PhysicalSecurity,omitempty"`
-	// Power OdataV4IdRef `json:"Power,omitempty"`
-	// PowerState ChassisV1210PowerState `json:"PowerState,omitempty"`
-	PowerSubsystem redfishapi.OdataV4IdRef `json:"PowerSubsystem,omitempty"`
-	// PoweredByParent *bool `json:"PoweredByParent,omitempty"`// Indicates that the chassis receives power from the containing chassis.
-	// Replaceable *bool `json:"Replaceable,omitempty"`// An indication of whether this component can be independently replaced as allowed by the vendor's replacement policy.
-	// SKU *string `json:"SKU,omitempty"`// The SKU of the chassis.
-	// Sensors OdataV4IdRef `json:"Sensors,omitempty"`
-	SerialNumber *string `json:"SerialNumber,omitempty"` // The serial number of the chassis.
-	// SparePartNumber *string `json:"SparePartNumber,omitempty"`// The spare part number of the chassis.
-	Status redfishapi.ResourceStatus `json:"Status,omitempty"`
-	// Thermal OdataV4IdRef `json:"Thermal,omitempty"`
-	// ThermalDirection ChassisV1210ThermalDirection `json:"ThermalDirection,omitempty"`
-	// ThermalManagedByParent *bool `json:"ThermalManagedByParent,omitempty"` // Indicates that the chassis is thermally managed by the parent chassis.
-	// ThermalSubsystem OdataV4IdRef `json:"ThermalSubsystem,omitempty"`
-	// TrustedComponents OdataV4IdRef `json:"TrustedComponents,omitempty"`
-	UUID    string  `json:"UUID,omitempty"`
-	Version *string `json:"Version,omitempty"` // The hardware version of this chassis.
-	// WeightKg *float32 `json:"WeightKg,omitempty"` // The weight of the chassis.
-	//WidthMm *float32 `json:"WidthMm,omitempty"`	// The width of the chassis.
-}
-
-// SwitchType - The Switch schema contains properties that describe a fabric switch.
-type SwitchType struct {
-	OdataContext string `json:"@odata.context,omitempty"` // The OData description of a payload.
-	OdataEtag    string `json:"@odata.etag,omitempty"`    // The current ETag of the resource.
-	OdataId      string `json:"@odata.id"`                // The unique identifier for a resource.
-	OdataType    string `json:"@odata.type"`              // The type of a resource.
-	//Actions                 SwitchV180Actions                   `json:"Actions,omitempty"`                 //
-	AssetTag *string `json:"AssetTag,omitempty"` // The user-assigned asset tag for this switch.
-	//Certificates            OdataV4IdRef                        `json:"Certificates,omitempty"`            //
-	CurrentBandwidthGbps *float32 `json:"CurrentBandwidthGbps,omitempty"` // The current internal bandwidth of this switch.
-	Description          string   `json:"Description,omitempty"`          // The description of this resource.  Used for commonality in the schema definitions.
-	DomainID             *int64   `json:"DomainID,omitempty"`             // The domain ID for this switch.
-	Enabled              bool     `json:"Enabled,omitempty"`              // An indication of whether this switch is enabled.
-	//EnvironmentMetrics      OdataV4IdRef                        `json:"EnvironmentMetrics,omitempty"`      //
-	FirmwareVersion *string                         `json:"FirmwareVersion,omitempty"` // The firmware version of this switch.
-	Id              string                          `json:"Id"`                        // The unique identifier for this resource within the collection of similar resources.
-	IndicatorLED    redfishapi.ResourceIndicatorLed `json:"IndicatorLED,omitempty"`    //
-	IsManaged       *bool                           `json:"IsManaged,omitempty"`       // An indication of whether the switch is in a managed or unmanaged state.
-	//Links                   SwitchV180Links                     `json:"Links,omitempty"`                   //
-	//Location                ResourceLocation                    `json:"Location,omitempty"`                //
-	LocationIndicatorActive *bool `json:"LocationIndicatorActive,omitempty"` // An indicator allowing an operator to physically locate this resource.
-	//LogServices             OdataV4IdRef                        `json:"LogServices,omitempty"`             //
-	Manufacturer     *string                                        `json:"Manufacturer,omitempty"`     // The manufacturer of this switch.
-	MaxBandwidthGbps *float32                                       `json:"MaxBandwidthGbps,omitempty"` // The maximum internal bandwidth of this switch as currently configured.
-	Measurements     []redfishapi.SoftwareInventoryMeasurementBlock `json:"Measurements,omitempty"`     // An array of DSP0274-defined measurement blocks. (Deprecated)
-	//Metrics                 OdataV4IdRef                        `json:"Metrics,omitempty"`                 //
-	Model                *string                           `json:"Model,omitempty"`                  // The product model number of this switch.
-	Name                 string                            `json:"Name"`                             // The name of the resource or array member.
-	Oem                  map[string]interface{}            `json:"Oem,omitempty"`                    // The OEM extension.
-	PartNumber           *string                           `json:"PartNumber,omitempty"`             // The part number for this switch.
-	Ports                redfishapi.OdataV4IdRef           `json:"Ports,omitempty"`                  //
-	PowerState           redfishapi.ResourcePowerState     `json:"PowerState,omitempty"`             //
-	Redundancy           []redfishapi.RedundancyRedundancy `json:"Redundancy,omitempty"`             // Redundancy information for the switches.
-	RedundancyodataCount int64                             `json:"Redundancy@odata.count,omitempty"` // The number of items in a collection.
-	SKU                  *string                           `json:"SKU,omitempty"`                    // The SKU for this switch.
-	SerialNumber         *string                           `json:"SerialNumber,omitempty"`           // The serial number for this switch.
-	Status               redfishapi.ResourceStatus         `json:"Status,omitempty"`                 //
-	SupportedProtocols   []redfishapi.ProtocolProtocol     `json:"SupportedProtocols,omitempty"`     // The protocols this switch supports.
-	SwitchType           redfishapi.ProtocolProtocol       `json:"SwitchType,omitempty"`             //
-	TotalSwitchWidth     *int64                            `json:"TotalSwitchWidth,omitempty"`       // The total number of lanes, phys, or other physical transport links that this switch contains.
-	UUID                 string                            `json:"UUID,omitempty"`                   //
-}
-
 // RedfishV1ChassisChassisIdGet -
 func (s *CxlHostApiService) RedfishV1ChassisChassisIdGet(ctx context.Context, chassisId string) (redfishapi.ImplResponse, error) {
 
@@ -388,47 +247,11 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdGet(ctx context.Context, ch
 	uuid := GetChassisUUID()
 	version := GetChassisVersion()
 
-	chassis := ChassisType{
-
-		//	Actions ChassisV1210Actions `json:"Actions,omitempty"`
-		//	Assembly OdataV4IdRef `json:"Assembly,omitempty"`
-		//	AssetTag *string `json:"AssetTag,omitempty"`
-		//	Certificates OdataV4IdRef `json:"Certificates,omitempty"`
-		//	ChassisType ChassisV1210ChassisType `json:"ChassisType"`
-		//	Controls OdataV4IdRef `json:"Controls,omitempty"`
-		//	Description string `json:"Description,omitempty"`
-		//	Drives OdataV4IdRef `json:"Drives,omitempty"`
-		//	EnvironmentMetrics OdataV4IdRef `json:"EnvironmentMetrics,omitempty"`
-		//	FabricAdapters OdataV4IdRef `json:"FabricAdapters,omitempty"`
-		//	Id string `json:"Id"`
-		//	Links ChassisV1210Links `json:"Links,omitempty"`
-		//	Location ResourceLocation `json:"Location,omitempty"`
-		//	LogServices OdataV4IdRef `json:"LogServices,omitempty"`
-		//	MediaControllers OdataV4IdRef `json:"MediaControllers,omitempty"`
-		//	Memory OdataV4IdRef `json:"Memory,omitempty"`
-		//	MemoryDomains OdataV4IdRef `json:"MemoryDomains,omitempty"`
-		//	Name string `json:"Name"`
-		//	NetworkAdapters OdataV4IdRef `json:"NetworkAdapters,omitempty"`
-		//	Oem map[string]interface{} `json:"Oem,omitempty"`
-		//	PCIeDevices OdataV4IdRef `json:"PCIeDevices,omitempty"`
-		//	PCIeSlots OdataV4IdRef `json:"PCIeSlots,omitempty"`
-		//	PhysicalSecurity ChassisV1210PhysicalSecurity `json:"PhysicalSecurity,omitempty"`
-		//	Power OdataV4IdRef `json:"Power,omitempty"`
-		//	PowerSubsystem OdataV4IdRef `json:"PowerSubsystem,omitempty"`
-		//	Sensors OdataV4IdRef `json:"Sensors,omitempty"`
-		//	SerialNumber *string `json:"SerialNumber,omitempty"`
-		//	Status ResourceStatus `json:"Status,omitempty"`
-		//	Thermal OdataV4IdRef `json:"Thermal,omitempty"`
-		//	ThermalSubsystem OdataV4IdRef `json:"ThermalSubsystem,omitempty"`
-		//	TrustedComponents OdataV4IdRef `json:"TrustedComponents,omitempty"`
-		//	UUID string `json:"UUID,omitempty"`
-		//	Version *string `json:"Version,omitempty"`
-
+	chassis := redfishapi.ChassisV1250Chassis{
 		OdataContext: "/redfish/v1/$metadata#Chassis.Chassis",
 		OdataId:      "/redfish/v1/Chassis/" + GetChassisName(),
 		OdataType:    ChassisVersion,
 		AssetTag:     &tag,
-		ChassisType:  redfishapi.CHASSISV1230CHASSISTYPE_RACK_MOUNT,
 		Description:  "CXL Server Chassis",
 		Id:           GetChassisTag(),
 		Memory: redfishapi.OdataV4IdRef{
@@ -447,8 +270,8 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdGet(ctx context.Context, ch
 		// },
 		SerialNumber: &uuid,
 		Status: redfishapi.ResourceStatus{
-			Health: redfishapi.RESOURCEHEALTH_OK,
-			State:  redfishapi.RESOURCESTATE_ENABLED,
+			Health: &resourcehealthOk,
+			State:  &resourcestateEnabled,
 		},
 		UUID:    uuid,
 		Version: &version,
@@ -487,82 +310,6 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdMemoryGet(ctx context.Conte
 	return redfishapi.Response(http.StatusOK, memory), nil
 }
 
-// MemoryType - The Memory schema represents a memory device, such as a DIMM, and its configuration.
-type MemoryType struct {
-	OdataContext string `json:"@odata.context,omitempty"` // The OData description of a payload.
-	OdataEtag    string `json:"@odata.etag,omitempty"`    // The current ETag of the resource.
-	OdataId      string `json:"@odata.id"`                // The unique identifier for a resource.
-	OdataType    string `json:"@odata.type"`              // The type of a resource.
-	// Actions                                 MemoryV1171Actions                  `json:"Actions,omitempty"`                                 //
-	AllocationAlignmentMiB *int64  `json:"AllocationAlignmentMiB,omitempty"` // The boundary that memory regions are allocated on, measured in mebibytes (MiB).
-	AllocationIncrementMiB *int64  `json:"AllocationIncrementMiB,omitempty"` // The size of the smallest unit of allocation for a memory region in mebibytes (MiB).
-	AllowedSpeedsMHz       []int64 `json:"AllowedSpeedsMHz,omitempty"`       // Speeds supported by this memory device.
-	// Assembly                                OdataV4IdRef                        `json:"Assembly,omitempty"`                                //
-	BaseModuleType redfishapi.MemoryV1171BaseModuleType `json:"BaseModuleType,omitempty"` //
-	BusWidthBits   *int64                               `json:"BusWidthBits,omitempty"`   // The bus width, in bits.
-	CacheSizeMiB   *int64                               `json:"CacheSizeMiB,omitempty"`   // Total size of the cache portion memory in MiB.
-	CapacityMiB    *int64                               `json:"CapacityMiB,omitempty"`    // Memory capacity in mebibytes (MiB).
-	// Certificates                            OdataV4IdRef                        `json:"Certificates,omitempty"`                            //
-	ConfigurationLocked *bool   `json:"ConfigurationLocked,omitempty"` // An indication of whether the configuration of this memory device is locked and cannot be altered.
-	DataWidthBits       *int64  `json:"DataWidthBits,omitempty"`       // Data width in bits.
-	Description         string  `json:"Description,omitempty"`         // The description of this resource.  Used for commonality in the schema definitions.
-	DeviceID            *string `json:"DeviceID,omitempty"`            // Device ID. (Deprectaed)
-	DeviceLocator       *string `json:"DeviceLocator,omitempty"`       // Location of the memory device in the platform. (Deprecated)
-	Enabled             bool    `json:"Enabled,omitempty"`             // An indication of whether this memory is enabled.
-	// EnvironmentMetrics                      OdataV4IdRef                        `json:"EnvironmentMetrics,omitempty"`                      //
-	ErrorCorrection      redfishapi.MemoryV1171ErrorCorrection `json:"ErrorCorrection,omitempty"`      //
-	FirmwareApiVersion   *string                               `json:"FirmwareApiVersion,omitempty"`   // Version of API supported by the firmware.
-	FirmwareRevision     *string                               `json:"FirmwareRevision,omitempty"`     // Revision of firmware on the memory controller.
-	FunctionClasses      []string                              `json:"FunctionClasses,omitempty"`      // Function classes by the memory device. (Deprecated)
-	Id                   string                                `json:"Id"`                             // The unique identifier for this resource within the collection of similar resources.
-	IsRankSpareEnabled   *bool                                 `json:"IsRankSpareEnabled,omitempty"`   // An indication of whether rank spare is enabled for this memory device.
-	IsSpareDeviceEnabled *bool                                 `json:"IsSpareDeviceEnabled,omitempty"` // An indication of whether a spare device is enabled for this memory device.
-	// Links                                   MemoryV1171Links                    `json:"Links,omitempty"`                                   //
-	// Location                                ResourceLocation                    `json:"Location,omitempty"`                                //
-	LocationIndicatorActive *bool `json:"LocationIndicatorActive,omitempty"` // An indicator allowing an operator to physically locate this resource.
-	// Log                                     OdataV4IdRef                        `json:"Log,omitempty"`                                     //
-	LogicalSizeMiB   *int64                                         `json:"LogicalSizeMiB,omitempty"`   // Total size of the logical memory in MiB.
-	Manufacturer     *string                                        `json:"Manufacturer,omitempty"`     // The memory device manufacturer.
-	MaxTDPMilliWatts []int64                                        `json:"MaxTDPMilliWatts,omitempty"` // Set of maximum power budgets supported by the memory device in milliwatts.
-	Measurements     []redfishapi.SoftwareInventoryMeasurementBlock `json:"Measurements,omitempty"`     // An array of DSP0274-defined measurement blocks. (Deprecated)
-	MemoryDeviceType redfishapi.MemoryV1171MemoryDeviceType         `json:"MemoryDeviceType,omitempty"` //
-	// MemoryLocation                          MemoryV1171MemoryLocation           `json:"MemoryLocation,omitempty"`                          //
-	MemoryMedia                             []redfishapi.MemoryV1171MemoryMedia `json:"MemoryMedia,omitempty"`                             // Media of this memory device.
-	MemorySubsystemControllerManufacturerID *string                             `json:"MemorySubsystemControllerManufacturerID,omitempty"` // The manufacturer ID of the memory subsystem controller of this memory device.
-	MemorySubsystemControllerProductID      *string                             `json:"MemorySubsystemControllerProductID,omitempty"`      // The product ID of the memory subsystem controller of this memory device.
-	MemoryType                              redfishapi.MemoryV1171MemoryType    `json:"MemoryType,omitempty"`                              //
-	// Metrics                                 OdataV4IdRef                        `json:"Metrics,omitempty"`                                 //
-	Model                *string                `json:"Model,omitempty"`                // The product model number of this device.
-	ModuleManufacturerID *string                `json:"ModuleManufacturerID,omitempty"` // The manufacturer ID of this memory device.
-	ModuleProductID      *string                `json:"ModuleProductID,omitempty"`      // The product ID of this memory device.
-	Name                 string                 `json:"Name"`                           // The name of the resource or array member.
-	NonVolatileSizeMiB   *int64                 `json:"NonVolatileSizeMiB,omitempty"`   // Total size of the non-volatile portion memory in MiB.
-	Oem                  map[string]interface{} `json:"Oem,omitempty"`                  // The OEM extension.
-	// OperatingMemoryModes                    []MemoryV1171OperatingMemoryModes   `json:"OperatingMemoryModes,omitempty"`                    // Memory modes supported by the memory device.
-	OperatingSpeedMhz *int64 `json:"OperatingSpeedMhz,omitempty"` // Operating speed of the memory device in MHz or MT/s as appropriate.
-	// OperatingSpeedRangeMHz       ControlControlRangeExcerpt `json:"OperatingSpeedRangeMHz,omitempty"`       //
-	PartNumber                   *string `json:"PartNumber,omitempty"`                   // The product part number of this device.
-	PersistentRegionNumberLimit  *int64  `json:"PersistentRegionNumberLimit,omitempty"`  // Total number of persistent regions this memory device can support.
-	PersistentRegionSizeLimitMiB *int64  `json:"PersistentRegionSizeLimitMiB,omitempty"` // Total size of persistent regions in mebibytes (MiB).
-	PersistentRegionSizeMaxMiB   *int64  `json:"PersistentRegionSizeMaxMiB,omitempty"`   // Maximum size of a single persistent region in mebibytes (MiB).
-	// PowerManagementPolicy                   MemoryV1171PowerManagementPolicy    `json:"PowerManagementPolicy,omitempty"`                   //
-	RankCount *int64                            `json:"RankCount,omitempty"` // Number of ranks available in the memory device.
-	Regions   []redfishapi.MemoryV1171RegionSet `json:"Regions,omitempty"`   // Memory regions information within the memory device.
-	// SecurityCapabilities                    MemoryV1171SecurityCapabilities     `json:"SecurityCapabilities,omitempty"`                    //
-	SecurityState              redfishapi.MemoryV1171SecurityStates `json:"SecurityState,omitempty"`              //
-	SerialNumber               *string                              `json:"SerialNumber,omitempty"`               // The product serial number of this device.
-	SpareDeviceCount           *int64                               `json:"SpareDeviceCount,omitempty"`           // Number of unused spare devices available in the memory device.
-	SparePartNumber            *string                              `json:"SparePartNumber,omitempty"`            // The spare part number of the memory.
-	Status                     redfishapi.ResourceStatus            `json:"Status,omitempty"`                     //
-	SubsystemDeviceID          *string                              `json:"SubsystemDeviceID,omitempty"`          // Subsystem device ID. (Deprecated)
-	SubsystemVendorID          *string                              `json:"SubsystemVendorID,omitempty"`          // SubSystem vendor ID. (Deprecated)
-	VendorID                   *string                              `json:"VendorID,omitempty"`                   // Vendor ID. (Deprecated)
-	VolatileRegionNumberLimit  *int64                               `json:"VolatileRegionNumberLimit,omitempty"`  // Total number of volatile regions this memory device can support.
-	VolatileRegionSizeLimitMiB *int64                               `json:"VolatileRegionSizeLimitMiB,omitempty"` // Total size of volatile regions in mebibytes (MiB).
-	VolatileRegionSizeMaxMiB   *int64                               `json:"VolatileRegionSizeMaxMiB,omitempty"`   // Maximum size of a single volatile region in mebibytes (MiB).
-	VolatileSizeMiB            *int64                               `json:"VolatileSizeMiB,omitempty"`            // Total size of the volatile portion memory in MiB.
-}
-
 // RedfishV1ChassisChassisIdMemoryMemoryIdGet -
 func (s *CxlHostApiService) RedfishV1ChassisChassisIdMemoryMemoryIdGet(ctx context.Context, chassisId string, memoryId string) (redfishapi.ImplResponse, error) {
 	if chassisId != GetChassisName() {
@@ -588,7 +335,7 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdMemoryMemoryIdGet(ctx conte
 		total = total / (1024 * 1024)
 	}
 
-	memory := MemoryType{
+	memory := redfishapi.MemoryV1190Memory{
 		OdataContext: "/redfish/v1/$metadata#Memory.Memory",
 		OdataId:      "/redfish/v1/Chassis/" + chassisId + "/Memory/" + memoryId,
 		OdataType:    MemoryVersion,
@@ -597,8 +344,8 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdMemoryMemoryIdGet(ctx conte
 		Enabled:      true,
 		Name:         memoryId,
 		Status: redfishapi.ResourceStatus{
-			Health: redfishapi.RESOURCEHEALTH_OK,
-			State:  redfishapi.RESOURCESTATE_ENABLED,
+			Health: &resourcehealthOk,
+			State:  &resourcestateEnabled,
 		},
 	}
 
@@ -635,31 +382,24 @@ func (s *CxlHostApiService) RedfishV1FabricsFabricIdGet(ctx context.Context, fab
 
 	zones := int64(ZonesMax)
 
-	fabric := redfishapi.FabricV130Fabric{
+	fabric := redfishapi.FabricV131Fabric{
 		OdataContext: "/redfish/v1/$metadata#Fabric.Fabric",
 		OdataId:      "/redfish/v1/Fabrics/" + fabricId,
 		OdataType:    FabricVersion,
-		//Actions FabricV130Actions `json:"Actions,omitempty"`
-		//AddressPools OdataV4IdRef `json:"AddressPools,omitempty"`
-		//Connections OdataV4IdRef `json:"Connections,omitempty"`
-		Description: fabricId + " Fabric",
-		//EndpointGroups OdataV4IdRef `json:"EndpointGroups,omitempty"`
-		//Endpoints OdataV4IdRef `json:"Endpoints,omitempty"`
-		FabricType: redfishapi.PROTOCOLPROTOCOL_CXL,
-		Id:         fabricId,
-		//Links FabricV130Links `json:"Links,omitempty"`
-		MaxZones: &zones,
-		Name:     fabricId + " Fabric",
-		Oem:      nil,
+		Description:  fabricId + " Fabric",
+		FabricType:   redfishapi.PROTOCOLPROTOCOL_CXL,
+		Id:           fabricId,
+		MaxZones:     &zones,
+		Name:         fabricId + " Fabric",
+		Oem:          nil,
 		Status: redfishapi.ResourceStatus{
-			Health: redfishapi.RESOURCEHEALTH_OK,
-			State:  redfishapi.RESOURCESTATE_ENABLED,
+			Health: &resourcehealthOk,
+			State:  &resourcestateEnabled,
 		},
 		Switches: redfishapi.OdataV4IdRef{
 			OdataId: "/redfish/v1/Fabrics/" + fabricId + "/Switches",
 		},
 		UUID: GetFabricUUID(fabricId),
-		//Zones OdataV4IdRef `json:"Zones,omitempty"`
 	}
 
 	return redfishapi.Response(http.StatusOK, fabric), nil
@@ -701,7 +441,7 @@ func (s *CxlHostApiService) RedfishV1FabricsFabricIdSwitchesSwitchIdGet(ctx cont
 
 	serial := GetSwitchUUID()
 
-	resource := SwitchType{
+	resource := redfishapi.SwitchV192Switch{
 		OdataContext:         "/redfish/v1/$metadata#Switch.Switch",
 		OdataId:              "/redfish/v1/Fabrics/" + fabricId + "/Switches/" + switchId,
 		OdataType:            SwitchVersion,
@@ -716,8 +456,8 @@ func (s *CxlHostApiService) RedfishV1FabricsFabricIdSwitchesSwitchIdGet(ctx cont
 		RedundancyodataCount: 1,
 		SerialNumber:         &serial,
 		Status: redfishapi.ResourceStatus{
-			Health: redfishapi.RESOURCEHEALTH_OK,
-			State:  redfishapi.RESOURCESTATE_ENABLED,
+			Health: &resourcehealthOk,
+			State:  &resourcestateEnabled,
 		},
 		SupportedProtocols: []redfishapi.ProtocolProtocol{redfishapi.PROTOCOLPROTOCOL_CXL},
 		SwitchType:         redfishapi.PROTOCOLPROTOCOL_CXL,
@@ -756,51 +496,6 @@ func (s *CxlHostApiService) RedfishV1FabricsFabricIdSwitchesSwitchIdPortsGet(ctx
 	return redfishapi.Response(http.StatusOK, collection), nil
 }
 
-// PortType - The Port schema contains properties that describe a port of a switch, controller, chassis, or any other device that could be connected to another entity.
-type PortType struct {
-	OdataContext string `json:"@odata.context,omitempty"` // The OData description of a payload.
-	OdataEtag    string `json:"@odata.etag,omitempty"`    // The current ETag of the resource.
-	OdataId      string `json:"@odata.id"`                // The unique identifier for a resource.
-	OdataType    string `json:"@odata.type"`              // The type of a resource.
-	//Actions                 PortV190Actions                `json:"Actions,omitempty"`                 //
-	ActiveWidth             int64     `json:"ActiveWidth,omitempty"`             // The number of active lanes for this interface.
-	CapableProtocolVersions []*string `json:"CapableProtocolVersions,omitempty"` // The protocol versions capable of being sent over this port.
-	CurrentProtocolVersion  *string   `json:"CurrentProtocolVersion,omitempty"`  // The protocol version being sent over this port.
-	CurrentSpeedGbps        *float32  `json:"CurrentSpeedGbps,omitempty"`        // The current speed of this port.
-	Description             string    `json:"Description,omitempty"`             // The description of this resource.  Used for commonality in the schema definitions.
-	Enabled                 bool      `json:"Enabled,omitempty"`                 // An indication of whether this port is enabled.
-	//EnvironmentMetrics      OdataV4IdRef                   `json:"EnvironmentMetrics,omitempty"`      //
-	//Ethernet                PortV190EthernetProperties     `json:"Ethernet,omitempty"`                //
-	//FibreChannel            PortV190FibreChannelProperties `json:"FibreChannel,omitempty"`            //
-	FunctionMaxBandwidth []redfishapi.PortV190FunctionMaxBandwidth `json:"FunctionMaxBandwidth,omitempty"` // An array of maximum bandwidth allocation percentages for the functions associated with this port.
-	FunctionMinBandwidth []redfishapi.PortV190FunctionMinBandwidth `json:"FunctionMinBandwidth,omitempty"` // An array of minimum bandwidth allocation percentages for the functions associated with this port.
-	//GenZ                    PortV190GenZ                   `json:"GenZ,omitempty"`                    //
-	Id string `json:"Id"` // The unique identifier for this resource within the collection of similar resources.
-	//InfiniBand              PortV190InfiniBandProperties   `json:"InfiniBand,omitempty"`              //
-	InterfaceEnabled        *bool                                    `json:"InterfaceEnabled,omitempty"`        // An indication of whether the interface is enabled.
-	LinkConfiguration       []redfishapi.PortV190LinkConfiguration   `json:"LinkConfiguration,omitempty"`       // The link configuration of this port.
-	LinkNetworkTechnology   redfishapi.PortV190LinkNetworkTechnology `json:"LinkNetworkTechnology,omitempty"`   //
-	LinkState               redfishapi.PortV190LinkState             `json:"LinkState,omitempty"`               //
-	LinkStatus              redfishapi.PortV190LinkStatus            `json:"LinkStatus,omitempty"`              //
-	LinkTransitionIndicator int64                                    `json:"LinkTransitionIndicator,omitempty"` // The number of link state transitions for this interface.
-	Links                   redfishapi.PortV190Links                 `json:"Links,omitempty"`                   //
-	//Location                ResourceLocation               `json:"Location,omitempty"`                //
-	LocationIndicatorActive *bool    `json:"LocationIndicatorActive,omitempty"` // An indicator allowing an operator to physically locate this resource.
-	MaxFrameSize            *int64   `json:"MaxFrameSize,omitempty"`            // The maximum frame size supported by the port.
-	MaxSpeedGbps            *float32 `json:"MaxSpeedGbps,omitempty"`            // The maximum speed of this port as currently configured.
-	//Metrics                 OdataV4IdRef                   `json:"Metrics,omitempty"`                 //
-	Name         string                        `json:"Name"`                   // The name of the resource or array member.
-	Oem          map[string]interface{}        `json:"Oem,omitempty"`          // The OEM extension.
-	PortId       *string                       `json:"PortId,omitempty"`       // The label of this port on the physical package for this port.
-	PortMedium   redfishapi.PortV190PortMedium `json:"PortMedium,omitempty"`   //
-	PortProtocol redfishapi.ProtocolProtocol   `json:"PortProtocol,omitempty"` //
-	PortType     redfishapi.PortV190PortType   `json:"PortType,omitempty"`     //
-	//SFP                     PortV190Sfp                    `json:"SFP,omitempty"`                     //
-	SignalDetected *bool                     `json:"SignalDetected,omitempty"` // An indication of whether a signal is detected on this interface.
-	Status         redfishapi.ResourceStatus `json:"Status,omitempty"`         //
-	Width          *int64                    `json:"Width,omitempty"`          // The number of lanes, phys, or other physical transport links that this port contains.
-}
-
 // RedfishV1FabricsFabricIdSwitchesSwitchIdPortsPortIdGet -
 func (s *CxlHostApiService) RedfishV1FabricsFabricIdSwitchesSwitchIdPortsPortIdGet(ctx context.Context, fabricId string, switchId string, portId string) (redfishapi.ImplResponse, error) {
 	if !IsFabricSupported(fabricId) {
@@ -818,7 +513,7 @@ func (s *CxlHostApiService) RedfishV1FabricsFabricIdSwitchesSwitchIdPortsPortIdG
 	enabled := true
 	detected := true
 
-	resource := PortType{
+	resource := redfishapi.PortV1110Port{
 		OdataContext:     "/redfish/v1/$metadata#Chassis.Port",
 		OdataId:          "/redfish/v1/Fabrics/" + fabricId + "/Switches/" + switchId + "/Ports/" + portId,
 		OdataType:        PortVersion,
@@ -826,16 +521,16 @@ func (s *CxlHostApiService) RedfishV1FabricsFabricIdSwitchesSwitchIdPortsPortIdG
 		Enabled:          true,
 		Id:               portId,
 		InterfaceEnabled: &enabled,
-		LinkState:        redfishapi.PORTV190LINKSTATE_ENABLED,
-		LinkStatus:       redfishapi.PORTV190LINKSTATUS_LINK_UP,
+		LinkState:        redfishapi.PORTV1110LINKSTATE_ENABLED,
+		LinkStatus:       redfishapi.PORTV1110LINKSTATUS_LINK_UP,
 		Name:             portId,
 		Oem:              nil,
 		PortProtocol:     redfishapi.PROTOCOLPROTOCOL_CXL,
-		PortType:         redfishapi.PORTV190PORTTYPE_BIDIRECTIONAL_PORT,
+		PortType:         redfishapi.PORTV1110PORTTYPE_BIDIRECTIONAL_PORT,
 		SignalDetected:   &detected,
 		Status: redfishapi.ResourceStatus{
-			Health: redfishapi.RESOURCEHEALTH_OK,
-			State:  redfishapi.RESOURCESTATE_ENABLED,
+			Health: &resourcehealthOk,
+			State:  &resourcestateEnabled,
 		},
 	}
 
@@ -878,37 +573,16 @@ func (s *CxlHostApiService) RedfishGet(ctx context.Context) (redfishapi.ImplResp
 	return redfishapi.Response(http.StatusOK, version), nil
 }
 
-// ServiceRoot - The ServiceRoot schema describes the root of the Redfish Service, located at the '/redfish/v1' URI.
-type ServiceRoot struct {
-	OdataContext   string                  `json:"@odata.context,omitempty"` // The OData description of a payload.
-	OdataId        string                  `json:"@odata.id"`                // The unique identifier for a resource.
-	OdataType      string                  `json:"@odata.type"`              // The type of a resource.
-	AccountService redfishapi.OdataV4IdRef `json:"AccountService,omitempty"`
-	Chassis        redfishapi.OdataV4IdRef `json:"Chassis,omitempty"`     // Chassis support
-	Description    string                  `json:"Description,omitempty"` // The description of this resource.  Used for commonality in the schema definitions.
-	//Fabrics               redfishapi.OdataV4IdRef          `json:"Fabrics,omitempty"`               // Fabrics support
-	Id                    string                           `json:"Id"`                              // The unique identifier for this resource within the collection of similar resources.
-	Links                 redfishapi.ServiceRootV1160Links `json:"Links"`                           // Links
-	Name                  string                           `json:"Name"`                            // The name of the resource or array member.
-	Oem                   map[string]interface{}           `json:"Oem,omitempty"`                   // The OEM extension.
-	Product               *string                          `json:"Product,omitempty"`               // The product associated with this Redfish Service.
-	RedfishVersion        string                           `json:"RedfishVersion,omitempty"`        // The version of the Redfish Service.
-	ServiceIdentification string                           `json:"ServiceIdentification,omitempty"` // The vendor or user-provided product and service identifier.
-	SessionService        redfishapi.OdataV4IdRef          `json:"SessionService,omitempty"`        // SessionService
-	Systems               redfishapi.OdataV4IdRef          `json:"Systems,omitempty"`               // System sufpport
-	UUID                  string                           `json:"UUID,omitempty"`                  // A UUID for this service
-	Vendor                *string                          `json:"Vendor,omitempty"`                // The vendor or manufacturer associated with this Redfish Service.
-}
-
 // RedfishV1Get -
 func (s *CxlHostApiService) RedfishV1Get(ctx context.Context) (redfishapi.ImplResponse, error) {
 	vendor := "Seagate"
 	product := "CXL Host Redfish Service"
 
 	oem := map[string]interface{}{}
-	oem["ServiceVersion"] = common.Version
+	oem["ServiceVersion"] = Version
+	uuid := GetServiceUUID()
 
-	root := ServiceRoot{
+	root := redfishapi.ServiceRootV1161ServiceRoot{
 		OdataContext:   "/redfish/v1/$metadata#ServiceRoot.ServiceRoot",
 		OdataId:        "/redfish/v1",
 		OdataType:      ServiceRootVersion,
@@ -917,7 +591,7 @@ func (s *CxlHostApiService) RedfishV1Get(ctx context.Context) (redfishapi.ImplRe
 		Description:    "CXL Host ServiceRoot",
 		// Fabrics:               redfishapi.OdataV4IdRef{OdataId: "/redfish/v1/Fabrics"},
 		Id:                    "CXL Host ServiceRoot",
-		Links:                 redfishapi.ServiceRootV1160Links{Oem: nil, Sessions: redfishapi.OdataV4IdRef{OdataId: "/redfish/v1/SessionService/Sessions"}},
+		Links:                 redfishapi.ServiceRootV1161Links{Oem: nil, Sessions: redfishapi.OdataV4IdRef{OdataId: "/redfish/v1/SessionService/Sessions"}},
 		Name:                  "CXL Host",
 		Oem:                   oem,
 		Product:               &product,
@@ -925,7 +599,7 @@ func (s *CxlHostApiService) RedfishV1Get(ctx context.Context) (redfishapi.ImplRe
 		ServiceIdentification: "",
 		SessionService:        redfishapi.OdataV4IdRef{OdataId: "/redfish/v1/SessionService"},
 		Systems:               redfishapi.OdataV4IdRef{OdataId: "/redfish/v1/Systems"},
-		UUID:                  GetServiceUUID(),
+		UUID:                  &uuid,
 		Vendor:                &vendor,
 	}
 
@@ -938,10 +612,9 @@ func (s *CxlHostApiService) RedfishV1SessionServiceGet(ctx context.Context) (red
 	enabled := true
 
 	resource := redfishapi.SessionServiceV118SessionService{
-		OdataContext: "/redfish/v1/$metadata#SessionService.SessionService",
-		OdataId:      "/redfish/v1/SessionService",
-		OdataType:    SessionServiceVersion,
-		//Actions SessionServiceV118Actions `json:"Actions,omitempty"`
+		OdataContext:   "/redfish/v1/$metadata#SessionService.SessionService",
+		OdataId:        "/redfish/v1/SessionService",
+		OdataType:      SessionServiceVersion,
 		Description:    "Session Service",
 		Id:             "Session Service",
 		Name:           "Session Service",
@@ -950,8 +623,8 @@ func (s *CxlHostApiService) RedfishV1SessionServiceGet(ctx context.Context) (red
 		SessionTimeout: int64(SessionTimeout),
 		Sessions:       redfishapi.OdataV4IdRef{OdataId: "/redfish/v1/SessionService/Sessions"},
 		Status: redfishapi.ResourceStatus{
-			Health: redfishapi.RESOURCEHEALTH_OK,
-			State:  redfishapi.RESOURCESTATE_ENABLED,
+			Health: &resourcehealthOk,
+			State:  &resourcestateEnabled,
 		},
 	}
 
@@ -984,16 +657,16 @@ func (s *CxlHostApiService) RedfishV1SessionServiceSessionsGet(ctx context.Conte
 }
 
 // FillInSessionResource: Function to fill a Redfish Session resource consistently
-func FillInSessionResource(sessionId string, session *accounts.SessionInformation, fillPassword bool) redfishapi.SessionV160Session {
+func FillInSessionResource(sessionId string, session *accounts.SessionInformation, fillPassword bool) redfishapi.SessionV171Session {
 
-	resource := redfishapi.SessionV160Session{
+	resource := redfishapi.SessionV171Session{
 		OdataId:     "/redfish/v1/SessionService/Sessions/" + sessionId,
 		OdataType:   SessionVersion,
 		Description: "User Session",
 		Id:          sessionId,
 		Name:        "User Session " + sessionId,
 		Password:    nil,
-		SessionType: redfishapi.SESSIONV160SESSIONTYPES_REDFISH,
+		SessionType: redfishapi.SESSIONV171SESSIONTYPES_REDFISH,
 	}
 
 	if session != nil {
@@ -1008,19 +681,19 @@ func FillInSessionResource(sessionId string, session *accounts.SessionInformatio
 }
 
 // RedfishV1SessionServiceSessionsPost -
-func (s *CxlHostApiService) RedfishV1SessionServiceSessionsPost(ctx context.Context, sessionV160Session redfishapi.SessionV160Session) (redfishapi.ImplResponse, error) {
+func (s *CxlHostApiService) RedfishV1SessionServiceSessionsPost(ctx context.Context, sessionV171Session redfishapi.SessionV171Session) (redfishapi.ImplResponse, error) {
 
 	// Validate that a username and password were supplied
-	if *sessionV160Session.UserName == "" {
+	if *sessionV171Session.UserName == "" {
 		return redfishapi.Response(http.StatusBadRequest, nil), errors.New("UserName is required for creating a new session")
 	}
 
-	if *sessionV160Session.Password == "" {
+	if *sessionV171Session.Password == "" {
 		return redfishapi.Response(http.StatusBadRequest, nil), errors.New("Password is required for creating a new session")
 	}
 
 	// Create the session
-	session := accounts.CreateSession(ctx, *sessionV160Session.UserName, *sessionV160Session.Password)
+	session := accounts.CreateSession(ctx, *sessionV171Session.UserName, *sessionV171Session.Password)
 	if session == nil {
 		return redfishapi.Response(http.StatusUnauthorized, nil), errors.New("Invalid user credentials")
 	}
@@ -1165,12 +838,12 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdMemoryDomainsMemoryDomainId
 		return redfishapi.Response(http.StatusNotFound, nil), fmt.Errorf("Memory chunk id (%s) does not exist", memoryChunksId)
 	}
 
-	resource := redfishapi.MemoryChunksV150MemoryChunks{
+	resource := redfishapi.MemoryChunksV161MemoryChunks{
 		OdataId:          "/redfish/v1/Chassis/" + chassisId + "/MemoryDomains/" + memoryDomainId + "/MemoryChunks/" + memoryChunksId,
 		OdataType:        MemoryChunkVersion,
 		Name:             "Memory Chunk",
 		Id:               memoryChunksId,
-		AddressRangeType: redfishapi.MEMORYCHUNKSV150ADDRESSRANGETYPE_VOLATILE,
+		AddressRangeType: redfishapi.MEMORYCHUNKSV161ADDRESSRANGETYPE_VOLATILE,
 	}
 	if memoryDomainId == "DIMMs" {
 		mem := GetNumaMemInfo(memoryChunksId)
@@ -1234,13 +907,14 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdPCIeDevicesPCIeDeviceIdCXLL
 
 	dev := GetCXLDevInfo(BDtoBDF(pCIeDeviceId))
 	gcxlid := FormatGCXLID(dev)
-	resource := redfishapi.CxlLogicalDeviceV100CxlLogicalDevice{
+	fmt := redfishapi.ResourceV1190DurableNameFormat("GCXLID")
+	resource := redfishapi.CxlLogicalDeviceV111CxlLogicalDevice{
 		OdataContext: "/redfish/v1/$metadata#CXLLogicalDevice.CXLLogicalDevice",
 		OdataId:      "/redfish/v1/Chassis/" + chassisId + "/PCIeDevices/" + pCIeDeviceId + "/CXLLogicalDevices/" + cXLLogicalDeviceId,
 		OdataType:    CXLLogicalDevice,
 		Description:  "CXL Logical Device " + string(dev.GetCxlType()),
 		Id:           cXLLogicalDeviceId,
-		Links: redfishapi.CxlLogicalDeviceV100Links{
+		Links: redfishapi.CxlLogicalDeviceV111Links{
 			MemoryChunks: []redfishapi.OdataV4IdRef{
 				{OdataId: "/redfish/v1/Chassis/" + chassisId + "/MemoryDomains/CXL/MemoryChunks/" + pCIeDeviceId},
 			},
@@ -1256,25 +930,25 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdPCIeDevicesPCIeDeviceIdCXLL
 		},
 		MemorySizeMiB:      dev.GetMemorySize() >> 20,
 		Name:               "Locally attached CXL Logical Device " + string(dev.GetCxlType()),
-		SemanticsSupported: []redfishapi.CxlLogicalDeviceV100CxlSemantic{},
+		SemanticsSupported: []redfishapi.CxlLogicalDeviceV111CxlSemantic{},
 		Status: redfishapi.ResourceStatus{
-			Health: redfishapi.RESOURCEHEALTH_OK,
-			State:  redfishapi.RESOURCESTATE_ENABLED,
+			Health: &resourcehealthOk,
+			State:  &resourcestateEnabled,
 		},
 		Identifiers: []redfishapi.ResourceIdentifier{{
 			DurableName:       &gcxlid,
-			DurableNameFormat: "GCXLID",
+			DurableNameFormat: &fmt,
 		}},
 	}
 	devCap := dev.GetCxlCap()
 	if devCap.IO_En {
-		resource.SemanticsSupported = append(resource.SemanticsSupported, redfishapi.CXLLOGICALDEVICEV100CXLSEMANTIC_CX_LIO)
+		resource.SemanticsSupported = append(resource.SemanticsSupported, redfishapi.CXLLOGICALDEVICEV111CXLSEMANTIC_CX_LIO)
 	}
 	if devCap.Cache_En {
-		resource.SemanticsSupported = append(resource.SemanticsSupported, redfishapi.CXLLOGICALDEVICEV100CXLSEMANTIC_CX_LCACHE)
+		resource.SemanticsSupported = append(resource.SemanticsSupported, redfishapi.CXLLOGICALDEVICEV111CXLSEMANTIC_CX_LCACHE)
 	}
 	if devCap.Mem_En {
-		resource.SemanticsSupported = append(resource.SemanticsSupported, redfishapi.CXLLOGICALDEVICEV100CXLSEMANTIC_CX_LMEM)
+		resource.SemanticsSupported = append(resource.SemanticsSupported, redfishapi.CXLLOGICALDEVICEV111CXLSEMANTIC_CX_LMEM)
 	}
 
 	return redfishapi.Response(http.StatusOK, resource), nil
@@ -1319,26 +993,26 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdPCIeDevicesPCIeDeviceIdGet(
 
 	dev := GetCXLDevInfo(BDtoBDF(pCIeDeviceId))
 	SN := dev.GetSerialNumber()
-	resource := redfishapi.PcieDeviceV1111PcieDevice{
+	resource := redfishapi.PcieDeviceV1130PcieDevice{
 		OdataContext: "/redfish/v1/$metadata#PCIeDevice.PCIeDevice",
 		OdataId:      "/redfish/v1/Chassis/" + chassisId + "/PCIeDevices/" + pCIeDeviceId,
 		OdataType:    PCIeDevice,
-		Actions:      redfishapi.PcieDeviceV1111Actions{},
+		Actions:      redfishapi.PcieDeviceV1130Actions{},
 		Assembly:     redfishapi.OdataV4IdRef{},
-		CXLDevice: redfishapi.PcieDeviceV1111CxlDevice{
-			DeviceType:              redfishapi.PcieDeviceV1111CxlDeviceType(dev.GetCxlType()),
-			MaxNumberLogicalDevices: new(float32),
+		CXLDevice: redfishapi.PcieDeviceV1130CxlDevice{
+			DeviceType:              redfishapi.PcieDeviceV1130CxlDeviceType(dev.GetCxlType()),
+			MaxNumberLogicalDevices: new(int64),
 		},
 		CXLLogicalDevices: redfishapi.OdataV4IdRef{
 			OdataId: "/redfish/v1/Chassis/" + chassisId + "/PCIeDevices/" + pCIeDeviceId + "/CXLLogicalDevices",
 		},
 		Description: "PCIe Device " + pCIeDeviceId,
-		DeviceType:  redfishapi.PCIEDEVICEV1111DEVICETYPE_SINGLE_FUNCTION,
+		DeviceType:  redfishapi.PCIEDEVICEV1130DEVICETYPE_SINGLE_FUNCTION,
 		EnvironmentMetrics: redfishapi.OdataV4IdRef{
 			OdataId: "/redfish/v1/Chassis/" + chassisId + "/PCIeDevices/" + pCIeDeviceId,
 		},
 		Id: pCIeDeviceId,
-		Links: redfishapi.PcieDeviceV1111Links{
+		Links: redfishapi.PcieDeviceV1130Links{
 			Chassis: []redfishapi.OdataV4IdRef{
 				{
 					OdataId: "/redfish/v1/Chassis/" + chassisId,
@@ -1353,8 +1027,8 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdPCIeDevicesPCIeDeviceIdGet(
 			OdataId: "/redfish/v1/Chassis/" + chassisId + "/PCIeDevices/" + pCIeDeviceId + "/PCIeFunctions",
 		},
 		Status: redfishapi.ResourceStatus{
-			Health: redfishapi.RESOURCEHEALTH_OK,
-			State:  redfishapi.RESOURCESTATE_ENABLED,
+			Health: &resourcehealthOk,
+			State:  &resourcestateEnabled,
 		},
 	}
 
@@ -1409,19 +1083,19 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdPCIeDevicesPCIeDeviceIdPCIe
 	functionId, _ := strconv.Atoi(pCIeFunctionId)
 	functionid := int64(functionId)
 	vendorId := fmt.Sprintf("%X", dev.GetPcieHdr().Vendor_ID)
-	resource := redfishapi.PcieFunctionV150PcieFunction{
+	resource := redfishapi.PcieFunctionV151PcieFunction{
 		OdataContext:     "/redfish/v1/$metadata#PCIeFunction.PCIeFunction",
 		OdataId:          "/redfish/v1/Chassis/" + chassisId + "/PCIeDevices/" + pCIeDeviceId + "/PCIeFunctions/" + pCIeFunctionId,
 		OdataType:        PCIeFunction,
 		Description:      "PCIe Function",
 		ClassCode:        &classCode,
-		DeviceClass:      redfishapi.PCIEFUNCTIONV150DEVICECLASS_UNCLASSIFIED_DEVICE,
+		DeviceClass:      redfishapi.PCIEFUNCTIONV151DEVICECLASS_UNCLASSIFIED_DEVICE,
 		DeviceId:         &pCIeDeviceId,
 		FunctionId:       &functionid,
-		FunctionProtocol: redfishapi.PCIEFUNCTIONV150FUNCTIONPROTOCOL_CXL,
-		FunctionType:     redfishapi.PCIEFUNCTIONV150FUNCTIONTYPE_PHYSICAL,
+		FunctionProtocol: redfishapi.PCIEFUNCTIONV151FUNCTIONPROTOCOL_CXL,
+		FunctionType:     redfishapi.PCIEFUNCTIONV151FUNCTIONTYPE_PHYSICAL,
 		Id:               pCIeDeviceId + pCIeFunctionId,
-		Links: redfishapi.PcieFunctionV150Links{
+		Links: redfishapi.PcieFunctionV151Links{
 			CXLLogicalDevice: redfishapi.OdataV4IdRef{
 				OdataId: "/redfish/v1/Chassis/" + chassisId + "/PCIeDevices/" + pCIeDeviceId + "/CXLLogicalDevices/" + pCIeFunctionId,
 			},
@@ -1438,8 +1112,8 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdPCIeDevicesPCIeDeviceIdPCIe
 		Name:       "PCIe Function",
 		RevisionId: &revisionId,
 		Status: redfishapi.ResourceStatus{
-			Health: redfishapi.RESOURCEHEALTH_OK,
-			State:  redfishapi.RESOURCESTATE_ENABLED,
+			Health: &resourcehealthOk,
+			State:  &resourcestateEnabled,
 		},
 		VendorId: &vendorId,
 	}
@@ -1562,8 +1236,8 @@ func (s *CxlHostApiService) RedfishV1OdataGet(ctx context.Context) (redfishapi.I
 }
 
 // RedfishV1SystemsComputerSystemIdActionsComputerSystemResetPost -
-func (s *CxlHostApiService) RedfishV1SystemsComputerSystemIdActionsComputerSystemResetPost(ctx context.Context, computerSystemId string, computerSystemV1201ResetRequestBody redfishapi.ComputerSystemV1201ResetRequestBody) (redfishapi.ImplResponse, error) {
-	ResetType := computerSystemV1201ResetRequestBody.ResetType
+func (s *CxlHostApiService) RedfishV1SystemsComputerSystemIdActionsComputerSystemResetPost(ctx context.Context, computerSystemId string, computerSystemV1220ResetRequestBody redfishapi.ComputerSystemV1220ResetRequestBody) (redfishapi.ImplResponse, error) {
+	ResetType := computerSystemV1220ResetRequestBody.ResetType
 	switch ResetType {
 	case redfishapi.RESOURCERESETTYPE_FORCE_OFF, redfishapi.RESOURCERESETTYPE_GRACEFUL_SHUTDOWN:
 		AsyncReboot(syscall.LINUX_REBOOT_CMD_POWER_OFF)
@@ -1582,95 +1256,18 @@ func (s *CxlHostApiService) RedfishV1SystemsComputerSystemIdActionsComputerSyste
 	return redfishapi.Response(http.StatusNoContent, nil), nil
 }
 
-type SystemType struct {
-	OdataContext string `json:"@odata.context,omitempty"`
-	// OdataEtag string `json:"@odata.etag,omitempty"`
-	OdataId   string                         `json:"@odata.id"`
-	OdataType string                         `json:"@odata.type"`
-	Actions   ComputerSystemV1201ActionsType `json:"Actions,omitempty"`
-	// AssetTag *string `json:"AssetTag,omitempty"`
-	// Bios OdataV4IdRef `json:"Bios,omitempty"`
-	// BiosVersion *string `json:"BiosVersion,omitempty"`
-	// Boot ComputerSystemV1201Boot `json:"Boot,omitempty"`
-	// BootProgress ComputerSystemV1201BootProgress `json:"BootProgress,omitempty"`
-	// Certificates OdataV4IdRef `json:"Certificates,omitempty"`
-	// Composition ComputerSystemV1201Composition `json:"Composition,omitempty"`
-	// Description string `json:"Description,omitempty"`
-	// EthernetInterfaces OdataV4IdRef `json:"EthernetInterfaces,omitempty"`
-	// FabricAdapters OdataV4IdRef `json:"FabricAdapters,omitempty"`
-	// GraphicalConsole ComputerSystemV1201HostGraphicalConsole `json:"GraphicalConsole,omitempty"`
-	// GraphicsControllers OdataV4IdRef `json:"GraphicsControllers,omitempty"`
-	// HostName *string `json:"HostName,omitempty"`
-	// HostWatchdogTimer ComputerSystemV1201WatchdogTimer `json:"HostWatchdogTimer,omitempty"`
-	// HostedServices ComputerSystemV1201HostedServices `json:"HostedServices,omitempty"`
-	// HostingRoles []ComputerSystemV1201HostingRole `json:"HostingRoles,omitempty"`
-	// Id string `json:"Id"`
-	// IdlePowerSaver ComputerSystemV1201IdlePowerSaver `json:"IdlePowerSaver,omitempty"`
-	// IndicatorLED ComputerSystemV1201IndicatorLed `json:"IndicatorLED,omitempty"`
-	// KeyManagement ComputerSystemV1201KeyManagement `json:"KeyManagement,omitempty"`
-	// LastResetTime time.Time `json:"LastResetTime,omitempty"`
-	// Links ComputerSystemV1201Links `json:"Links,omitempty"`
-	// LocationIndicatorActive *bool `json:"LocationIndicatorActive,omitempty"`
-	// LogServices OdataV4IdRef `json:"LogServices,omitempty"`
-	// Manufacturer *string `json:"Manufacturer,omitempty"`
-	// ManufacturingMode *bool `json:"ManufacturingMode,omitempty"`
-	Memory        redfishapi.OdataV4IdRef `json:"Memory,omitempty"`
-	MemoryDomains redfishapi.OdataV4IdRef `json:"MemoryDomains,omitempty"`
-	// MemorySummary ComputerSystemV1201MemorySummary `json:"MemorySummary,omitempty"`
-	// Model *string `json:"Model,omitempty"`
-	// Name string `json:"Name"`
-	// NetworkInterfaces OdataV4IdRef `json:"NetworkInterfaces,omitempty"`
-	// Oem map[string]interface{} `json:"Oem,omitempty"`
-	PCIeDevices []redfishapi.OdataV4IdRef `json:"PCIeDevices,omitempty"`
-	// PCIeDevicesodataCount int64 `json:"PCIeDevices@odata.count,omitempty"`
-	PCIeFunctions []redfishapi.OdataV4IdRef `json:"PCIeFunctions,omitempty"`
-	// PCIeFunctionsodataCount int64 `json:"PCIeFunctions@odata.count,omitempty"`
-	// PartNumber *string `json:"PartNumber,omitempty"`
-	// PowerCycleDelaySeconds *float32 `json:"PowerCycleDelaySeconds,omitempty"`
-	// PowerMode ComputerSystemV1201PowerMode `json:"PowerMode,omitempty"`
-	// PowerOffDelaySeconds *float32 `json:"PowerOffDelaySeconds,omitempty"`
-	// PowerOnDelaySeconds *float32 `json:"PowerOnDelaySeconds,omitempty"`
-	// PowerRestorePolicy ComputerSystemV1201PowerRestorePolicyTypes `json:"PowerRestorePolicy,omitempty"`
-	// PowerState ResourcePowerState `json:"PowerState,omitempty"`
-	// ProcessorSummary ComputerSystemV1201ProcessorSummary `json:"ProcessorSummary,omitempty"`
-	// Processors OdataV4IdRef `json:"Processors,omitempty"`
-	// Redundancy []RedundancyRedundancy `json:"Redundancy,omitempty"`
-	// RedundancyodataCount int64 `json:"Redundancy@odata.count,omitempty"`
-	// SKU *string `json:"SKU,omitempty"`
-	// SecureBoot OdataV4IdRef `json:"SecureBoot,omitempty"`
-	// SerialConsole ComputerSystemV1201HostSerialConsole `json:"SerialConsole,omitempty"`
-	// SerialNumber *string `json:"SerialNumber,omitempty"`
-	// SimpleStorage OdataV4IdRef `json:"SimpleStorage,omitempty"`
-	// Status ResourceStatus `json:"Status,omitempty"`
-	// Storage OdataV4IdRef `json:"Storage,omitempty"`
-	// SubModel *string `json:"SubModel,omitempty"`
-	// SystemType ComputerSystemV1201SystemType `json:"SystemType,omitempty"`
-	// USBControllers OdataV4IdRef `json:"USBControllers,omitempty"`
-	// UUID string `json:"UUID,omitempty"`
-	// VirtualMedia OdataV4IdRef `json:"VirtualMedia,omitempty"`
-	// VirtualMediaConfig ComputerSystemV1201VirtualMediaConfig `json:"VirtualMediaConfig,omitempty"`
-}
-
-type ComputerSystemV1201ActionsType struct {
-	// ComputerSystemAddResourceBlock ComputerSystemV1201AddResourceBlock `json:"#ComputerSystem.AddResourceBlock,omitempty"`
-	// ComputerSystemRemoveResourceBlock ComputerSystemV1201RemoveResourceBlock `json:"#ComputerSystem.RemoveResourceBlock,omitempty"`
-	ComputerSystemReset redfishapi.ComputerSystemV1201Reset `json:"#ComputerSystem.Reset,omitempty"`
-	// ComputerSystemSetDefaultBootOrder ComputerSystemV1201SetDefaultBootOrder `json:"#ComputerSystem.SetDefaultBootOrder,omitempty"`
-	// Oem map[string]interface{} `json:"Oem,omitempty"`
-}
-
 // RedfishV1SystemsComputerSystemIdGet -
 func (s *CxlHostApiService) RedfishV1SystemsComputerSystemIdGet(ctx context.Context, computerSystemId string) (redfishapi.ImplResponse, error) {
 	if computerSystemId != GetSystemName() {
 		return redfishapi.Response(http.StatusNotFound, nil), fmt.Errorf("System id (%s) does not exist", computerSystemId)
 	}
 
-	system := SystemType{
+	system := redfishapi.ComputerSystemV1220ComputerSystem{
 		OdataContext: "/redfish/v1/$metadata#ComputerSystem.ComputerSystem",
 		OdataId:      "/redfish/v1/Systems/" + GetSystemName(),
 		OdataType:    SystemVersion,
-		Actions: ComputerSystemV1201ActionsType{
-			ComputerSystemReset: redfishapi.ComputerSystemV1201Reset{
+		Actions: redfishapi.ComputerSystemV1220Actions{
+			ComputerSystemReset: redfishapi.ComputerSystemV1220Reset{
 				Target: "/redfish/v1/Systems/" + GetSystemName() + "/Actions/ComputerSystem.Reset",
 			},
 		},
@@ -1775,12 +1372,12 @@ func (s *CxlHostApiService) RedfishV1SystemsComputerSystemIdMemoryDomainsMemoryD
 		return redfishapi.Response(http.StatusNotFound, nil), fmt.Errorf("Memory chunk id (%s) does not exist", memoryChunksId)
 	}
 
-	resource := redfishapi.MemoryChunksV150MemoryChunks{
+	resource := redfishapi.MemoryChunksV161MemoryChunks{
 		OdataId:          "/redfish/v1/Systems/" + computerSystemId + "/MemoryDomains/" + memoryDomainId + "/MemoryChunks/" + memoryChunksId,
 		OdataType:        MemoryChunkVersion,
 		Name:             "Memory Chunk " + memoryChunksId,
 		Id:               memoryChunksId,
-		AddressRangeType: redfishapi.MEMORYCHUNKSV150ADDRESSRANGETYPE_VOLATILE,
+		AddressRangeType: redfishapi.MEMORYCHUNKSV161ADDRESSRANGETYPE_VOLATILE,
 	}
 	if memoryDomainId == "DIMMs" {
 		mem := GetNumaMemInfo(memoryChunksId)
@@ -1842,19 +1439,19 @@ func (s *CxlHostApiService) RedfishV1SystemsComputerSystemIdMemoryMemoryIdGet(ct
 	// Get memory size in bytes and convert to MiB
 	total := dev.GetMemorySize() / (1024 * 1024)
 
-	resource := redfishapi.MemoryV1171Memory{
+	resource := redfishapi.MemoryV1190Memory{
 		OdataContext: "/redfish/v1/$metadata#Memory.Memory",
 		OdataId:      "/redfish/v1/Systems/" + computerSystemId + "/Memory/" + memoryId,
 		OdataType:    MemoryVersionForSystem,
 		CapacityMiB:  &total,
 		Id:           memoryId,
 		Name:         "CXL Device memory",
-		MemoryMedia:  []redfishapi.MemoryV1171MemoryMedia{redfishapi.MEMORYV1171MEMORYMEDIA_CXL},
+		MemoryMedia:  []redfishapi.MemoryV1190MemoryMedia{redfishapi.MEMORYV1190MEMORYMEDIA_PROPRIETARY},
 		Status: redfishapi.ResourceStatus{
-			Health: redfishapi.RESOURCEHEALTH_OK,
-			State:  redfishapi.RESOURCESTATE_ENABLED,
+			Health: &resourcehealthOk,
+			State:  &resourcestateEnabled,
 		},
-		Links: redfishapi.MemoryV1171Links{
+		Links: redfishapi.MemoryV1190Links{
 			MemoryMediaSources: []redfishapi.OdataV4IdRef{
 				{OdataId: "/redfish/v1/Chassis/" + GetChassisName() + "/MemoryDomains/CXL/MemoryChunks/" + BDFtoBD(CxlDevIndexToBDF(num))},
 			},
@@ -1885,12 +1482,12 @@ func (s *CxlHostApiService) RedfishV1SystemsGet(ctx context.Context) (redfishapi
 }
 
 // RedfishV1AccountServiceAccountsManagerAccountIdPut -
-func (s *CxlHostApiService) RedfishV1AccountServiceAccountsManagerAccountIdPut(ctx context.Context, managerAccountId string, managerAccountV1100ManagerAccount redfishapi.ManagerAccountV1100ManagerAccount) (redfishapi.ImplResponse, error) {
+func (s *CxlHostApiService) RedfishV1AccountServiceAccountsManagerAccountIdPut(ctx context.Context, managerAccountId string, managerAccountV1120ManagerAccount redfishapi.ManagerAccountV1120ManagerAccount) (redfishapi.ImplResponse, error) {
 	// TODO - update RedfishV1AccountServiceAccountsManagerAccountIdPut with the required logic for this service method.
 	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	// TODO: Uncomment the next line to return response Response(200, redfishapi.ManagerAccountV1100ManagerAccount{}) or use other options such as http.Ok ...
-	// return redfishapi.Response(200, redfishapi.ManagerAccountV1100ManagerAccount{}), nil
+	// TODO: Uncomment the next line to return response Response(200, redfishapi.ManagerAccountV1120ManagerAccount{}) or use other options such as http.Ok ...
+	// return redfishapi.Response(200, redfishapi.ManagerAccountV1120ManagerAccount{}), nil
 
 	// TODO: Uncomment the next line to return response Response(202, redfishapi.TaskV171Task{}) or use other options such as http.Ok ...
 	// return redfishapi.Response(202, redfishapi.TaskV171Task{}), nil
@@ -1905,12 +1502,12 @@ func (s *CxlHostApiService) RedfishV1AccountServiceAccountsManagerAccountIdPut(c
 }
 
 // RedfishV1AccountServicePatch -
-func (s *CxlHostApiService) RedfishV1AccountServicePatch(ctx context.Context, accountServiceV1130AccountService redfishapi.AccountServiceV1130AccountService) (redfishapi.ImplResponse, error) {
+func (s *CxlHostApiService) RedfishV1AccountServicePatch(ctx context.Context, accountServiceV1150AccountService redfishapi.AccountServiceV1150AccountService) (redfishapi.ImplResponse, error) {
 	// TODO - update RedfishV1AccountServicePatch with the required logic for this service method.
 	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	// TODO: Uncomment the next line to return response Response(200, redfishapi.AccountServiceV1130AccountService{}) or use other options such as http.Ok ...
-	// return redfishapi.Response(200, redfishapi.AccountServiceV1130AccountService{}), nil
+	// TODO: Uncomment the next line to return response Response(200, redfishapi.AccountServiceV1150AccountService{}) or use other options such as http.Ok ...
+	// return redfishapi.Response(200, redfishapi.AccountServiceV1150AccountService{}), nil
 
 	// TODO: Uncomment the next line to return response Response(202, redfishapi.TaskV171Task{}) or use other options such as http.Ok ...
 	// return redfishapi.Response(202, redfishapi.TaskV171Task{}), nil
@@ -1925,12 +1522,12 @@ func (s *CxlHostApiService) RedfishV1AccountServicePatch(ctx context.Context, ac
 }
 
 // RedfishV1AccountServicePut -
-func (s *CxlHostApiService) RedfishV1AccountServicePut(ctx context.Context, accountServiceV1130AccountService redfishapi.AccountServiceV1130AccountService) (redfishapi.ImplResponse, error) {
+func (s *CxlHostApiService) RedfishV1AccountServicePut(ctx context.Context, accountServiceV1150AccountService redfishapi.AccountServiceV1150AccountService) (redfishapi.ImplResponse, error) {
 	// TODO - update RedfishV1AccountServicePut with the required logic for this service method.
 	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
-	// TODO: Uncomment the next line to return response Response(200, redfishapi.AccountServiceV1130AccountService{}) or use other options such as http.Ok ...
-	// return redfishapi.Response(200, redfishapi.AccountServiceV1130AccountService{}), nil
+	// TODO: Uncomment the next line to return response Response(200, redfishapi.AccountServiceV1150AccountService{}) or use other options such as http.Ok ...
+	// return redfishapi.Response(200, redfishapi.AccountServiceV1150AccountService{}), nil
 
 	// TODO: Uncomment the next line to return response Response(202, redfishapi.TaskV171Task{}) or use other options such as http.Ok ...
 	// return redfishapi.Response(202, redfishapi.TaskV171Task{}), nil
@@ -2062,4 +1659,116 @@ func (s *CxlHostApiService) RedfishV1SessionServicePut(ctx context.Context, sess
 	// return redfishapi.Response(0, redfishapi.RedfishError{}), nil
 
 	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1SessionServicePut method not implemented")
+}
+
+// RedfishV1FabricsFabricIdConnectionsConnectionIdDelete -
+func (s *CxlHostApiService) RedfishV1FabricsFabricIdConnectionsConnectionIdDelete(ctx context.Context, fabricId string, connectionId string) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1FabricsFabricIdConnectionsConnectionIdDelete with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, ConnectionV131Connection{}) or use other options such as http.Ok ...
+	// return redfishapi.Response(200, ConnectionV131Connection{}), nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return redfishapi.Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1FabricsFabricIdConnectionsConnectionIdDelete method not implemented")
+}
+
+// RedfishV1FabricsFabricIdConnectionsConnectionIdGet -
+func (s *CxlHostApiService) RedfishV1FabricsFabricIdConnectionsConnectionIdGet(ctx context.Context, fabricId string, connectionId string) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1FabricsFabricIdConnectionsConnectionIdGet with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, ConnectionV131Connection{}) or use other options such as http.Ok ...
+	// return redfishapi.Response(200, ConnectionV131Connection{}), nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return redfishapi.Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1FabricsFabricIdConnectionsConnectionIdGet method not implemented")
+}
+
+// RedfishV1FabricsFabricIdConnectionsGet -
+func (s *CxlHostApiService) RedfishV1FabricsFabricIdConnectionsGet(ctx context.Context, fabricId string) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1FabricsFabricIdConnectionsGet with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, ConnectionCollectionConnectionCollection{}) or use other options such as http.Ok ...
+	// return redfishapi.Response(200, ConnectionCollectionConnectionCollection{}), nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return redfishapi.Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1FabricsFabricIdConnectionsGet method not implemented")
+}
+
+// RedfishV1FabricsFabricIdConnectionsPost -
+func (s *CxlHostApiService) RedfishV1FabricsFabricIdConnectionsPost(ctx context.Context, fabricId string, connectionV131Connection redfishapi.ConnectionV131Connection) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1FabricsFabricIdConnectionsPost with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(201, ConnectionV131Connection{}) or use other options such as http.Ok ...
+	// return redfishapi.Response(201, ConnectionV131Connection{}), nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return redfishapi.Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1FabricsFabricIdConnectionsPost method not implemented")
+}
+
+// RedfishV1FabricsFabricIdEndpointsEndpointIdGet -
+func (s *CxlHostApiService) RedfishV1FabricsFabricIdEndpointsEndpointIdGet(ctx context.Context, fabricId string, endpointId string) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1FabricsFabricIdEndpointsEndpointIdGet with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, EndpointV181Endpoint{}) or use other options such as http.Ok ...
+	// return redfishapi.Response(200, EndpointV181Endpoint{}), nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return redfishapi.Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1FabricsFabricIdEndpointsEndpointIdGet method not implemented")
+}
+
+// RedfishV1FabricsFabricIdEndpointsGet -
+func (s *CxlHostApiService) RedfishV1FabricsFabricIdEndpointsGet(ctx context.Context, fabricId string) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1FabricsFabricIdEndpointsGet with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, EndpointCollectionEndpointCollection{}) or use other options such as http.Ok ...
+	// return redfishapi.Response(200, EndpointCollectionEndpointCollection{}), nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return redfishapi.Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1FabricsFabricIdEndpointsGet method not implemented")
+}
+
+// RedfishV1SystemsComputerSystemIdMemoryDomainsMemoryDomainIdMemoryChunksMemoryChunksIdDelete -
+func (s *CxlHostApiService) RedfishV1SystemsComputerSystemIdMemoryDomainsMemoryDomainIdMemoryChunksMemoryChunksIdDelete(ctx context.Context, computerSystemId string, memoryDomainId string, memoryChunksId string) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1SystemsComputerSystemIdMemoryDomainsMemoryDomainIdMemoryChunksMemoryChunksIdDelete with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, MemoryChunksV161MemoryChunks{}) or use other options such as http.Ok ...
+	// return redfishapi.Response(200, MemoryChunksV161MemoryChunks{}), nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return redfishapi.Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1SystemsComputerSystemIdMemoryDomainsMemoryDomainIdMemoryChunksMemoryChunksIdDelete method not implemented")
+}
+
+// RedfishV1SystemsComputerSystemIdMemoryDomainsMemoryDomainIdMemoryChunksPost -
+func (s *CxlHostApiService) RedfishV1SystemsComputerSystemIdMemoryDomainsMemoryDomainIdMemoryChunksPost(ctx context.Context, computerSystemId string, memoryDomainId string, memoryChunksV161MemoryChunks redfishapi.MemoryChunksV161MemoryChunks) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1SystemsComputerSystemIdMemoryDomainsMemoryDomainIdMemoryChunksPost with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(201, MemoryChunksV161MemoryChunks{}) or use other options such as http.Ok ...
+	// return redfishapi.Response(201, MemoryChunksV161MemoryChunks{}), nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return redfishapi.Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1SystemsComputerSystemIdMemoryDomainsMemoryDomainIdMemoryChunksPost method not implemented")
 }

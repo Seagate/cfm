@@ -2,6 +2,7 @@
 /cfm-service
 /cfm-cli
 /cxl-host
+/cmd/cxl-host/cxl-host
 
 # Folders
 _obj

@@ -3,17 +3,15 @@
 package main
 
 import (
+	cxl_host "cfm/cmd/cxl-host/service"
+	"cfm/pkg/accounts"
+	"cfm/pkg/redfishapi"
 	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strings"
-
-	"cfm/pkg/accounts"
-	"cfm/pkg/api"
-	"cfm/pkg/common"
-	"cfm/pkg/openapi"
 
 	"k8s.io/klog/v2"
 )
@@ -24,7 +22,7 @@ var buildTime = ""
 func main() {
 
 	// Extract settings and initialize context using command line args, env, config file, or defaults
-	settings := common.Settings{}
+	settings := cxl_host.Settings{}
 	ctx := context.Background()
 	var err error
 	err, ctx = settings.InitContext(os.Args, ctx)
@@ -43,7 +41,7 @@ func main() {
 	logger := klog.FromContext(ctx)
 
 	// cxl-host banner
-	logger.Info("[] cxl-host", "version", common.Version, "build", buildTime)
+	logger.Info("[] cxl-host", "version", cxl_host.Version, "build", buildTime)
 	args := strings.Join(os.Args[1:], " ")
 	logger.V(1).Info("cxl-host", "args", args)
 	logger.V(2).Info("cxl-host", "settings", settings)
@@ -55,9 +53,9 @@ func main() {
 	accounts.AccountsHandler().InitLogger(logger)
 	accounts.AccountsHandler().Restore()
 
-	DefaultApiService := api.NewCxlHostApiService()
-	DefaultApiController := openapi.NewDefaultAPIController(DefaultApiService)
-	OverrideAPIController := api.NewOverrideAPIController(DefaultApiService)
-	router := api.NewCxlHostRouter(ctx, OverrideAPIController, DefaultApiController)
+	DefaultApiService := cxl_host.NewCxlHostApiService()
+	DefaultApiController := redfishapi.NewDefaultAPIController(DefaultApiService)
+	OverrideAPIController := cxl_host.NewOverrideAPIController(DefaultApiService)
+	router := cxl_host.NewCxlHostRouter(ctx, OverrideAPIController, DefaultApiController)
 	log.Fatal(http.ListenAndServe(":"+settings.Port, router))
 }
