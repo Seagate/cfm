@@ -1,0 +1,28 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  release:
+    name: Update Release
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 2
+
+    - name: Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: ridedott/release-me-action@master
+      with:
+        release-branches: '["main"]'
+        disable-changelog: true
+        dry-run: true
+
+    - name: Output
+      run: echo "released version is ${{ steps.build_package.outputs.version }}, type is ${{ steps.build_package.outputs.level }}"
