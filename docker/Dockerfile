@@ -1,5 +1,7 @@
 FROM golang:1.22
 
+LABEL org.opencontainers.image.source https://github.com/seagate/cfm
+
 RUN apt update
 RUN apt install -y nodejs npm
 
