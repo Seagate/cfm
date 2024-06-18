@@ -1,0 +1,6 @@
+{
+  "settingsInheritedFrom": "Seagate/whitesource-config@main",
+  "issueSettings": {
+    "minSeverityLevel": "NONE"
+  }
+}
