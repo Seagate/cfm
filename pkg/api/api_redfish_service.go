@@ -13,6 +13,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"slices"
@@ -1749,4 +1750,475 @@ func formatRedfishErrorResp(ctx context.Context, re *common.RequestError) (redfi
 		},
 	}
 	return redfishapi.Response(re.StatusCode.HttpStatusCode(), status), nil
+}
+
+// RedfishV1AccountServiceAccountsGet -
+func (cfm *CfmApiService) RedfishV1AccountServiceAccountsGet(ctx context.Context) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1AccountServiceAccountsGet with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, ManagerAccountCollectionManagerAccountCollection{}) or use other options such as http.Ok ...
+	// return Response(200, ManagerAccountCollectionManagerAccountCollection{}), nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1AccountServiceAccountsGet method not implemented")
+}
+
+// RedfishV1AccountServiceAccountsManagerAccountIdDelete -
+func (cfm *CfmApiService) RedfishV1AccountServiceAccountsManagerAccountIdDelete(ctx context.Context, managerAccountId string) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1AccountServiceAccountsManagerAccountIdDelete with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, ManagerAccountV1120ManagerAccount{}) or use other options such as http.Ok ...
+	// return Response(200, ManagerAccountV1120ManagerAccount{}), nil
+
+	// TODO: Uncomment the next line to return response Response(202, TaskV173Task{}) or use other options such as http.Ok ...
+	// return Response(202, TaskV173Task{}), nil
+
+	// TODO: Uncomment the next line to return response Response(204, {}) or use other options such as http.Ok ...
+	// return Response(204, nil),nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1AccountServiceAccountsManagerAccountIdDelete method not implemented")
+}
+
+// RedfishV1AccountServiceAccountsManagerAccountIdGet -
+func (cfm *CfmApiService) RedfishV1AccountServiceAccountsManagerAccountIdGet(ctx context.Context, managerAccountId string) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1AccountServiceAccountsManagerAccountIdGet with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, ManagerAccountV1120ManagerAccount{}) or use other options such as http.Ok ...
+	// return Response(200, ManagerAccountV1120ManagerAccount{}), nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1AccountServiceAccountsManagerAccountIdGet method not implemented")
+}
+
+// RedfishV1AccountServiceAccountsManagerAccountIdPatch -
+func (cfm *CfmApiService) RedfishV1AccountServiceAccountsManagerAccountIdPatch(ctx context.Context, managerAccountId string, managerAccountV1120ManagerAccount redfishapi.ManagerAccountV1120ManagerAccount) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1AccountServiceAccountsManagerAccountIdPatch with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, ManagerAccountV1120ManagerAccount{}) or use other options such as http.Ok ...
+	// return Response(200, ManagerAccountV1120ManagerAccount{}), nil
+
+	// TODO: Uncomment the next line to return response Response(202, TaskV173Task{}) or use other options such as http.Ok ...
+	// return Response(202, TaskV173Task{}), nil
+
+	// TODO: Uncomment the next line to return response Response(204, {}) or use other options such as http.Ok ...
+	// return Response(204, nil),nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1AccountServiceAccountsManagerAccountIdPatch method not implemented")
+}
+
+// RedfishV1AccountServiceAccountsManagerAccountIdPut -
+func (cfm *CfmApiService) RedfishV1AccountServiceAccountsManagerAccountIdPut(ctx context.Context, managerAccountId string, managerAccountV1120ManagerAccount redfishapi.ManagerAccountV1120ManagerAccount) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1AccountServiceAccountsManagerAccountIdPut with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, ManagerAccountV1120ManagerAccount{}) or use other options such as http.Ok ...
+	// return Response(200, ManagerAccountV1120ManagerAccount{}), nil
+
+	// TODO: Uncomment the next line to return response Response(202, TaskV173Task{}) or use other options such as http.Ok ...
+	// return Response(202, TaskV173Task{}), nil
+
+	// TODO: Uncomment the next line to return response Response(204, {}) or use other options such as http.Ok ...
+	// return Response(204, nil),nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1AccountServiceAccountsManagerAccountIdPut method not implemented")
+}
+
+// RedfishV1AccountServiceAccountsPost -
+func (cfm *CfmApiService) RedfishV1AccountServiceAccountsPost(ctx context.Context, managerAccountV1120ManagerAccount redfishapi.ManagerAccountV1120ManagerAccount) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1AccountServiceAccountsPost with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(201, ManagerAccountV1120ManagerAccount{}) or use other options such as http.Ok ...
+	// return Response(201, ManagerAccountV1120ManagerAccount{}), nil
+
+	// TODO: Uncomment the next line to return response Response(202, TaskV173Task{}) or use other options such as http.Ok ...
+	// return Response(202, TaskV173Task{}), nil
+
+	// TODO: Uncomment the next line to return response Response(204, {}) or use other options such as http.Ok ...
+	// return Response(204, nil),nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1AccountServiceAccountsPost method not implemented")
+}
+
+// RedfishV1AccountServiceGet -
+func (cfm *CfmApiService) RedfishV1AccountServiceGet(ctx context.Context) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1AccountServiceGet with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, AccountServiceV1150AccountService{}) or use other options such as http.Ok ...
+	// return Response(200, AccountServiceV1150AccountService{}), nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1AccountServiceGet method not implemented")
+}
+
+// RedfishV1AccountServicePatch -
+func (cfm *CfmApiService) RedfishV1AccountServicePatch(ctx context.Context, accountServiceV1150AccountService redfishapi.AccountServiceV1150AccountService) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1AccountServicePatch with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, AccountServiceV1150AccountService{}) or use other options such as http.Ok ...
+	// return Response(200, AccountServiceV1150AccountService{}), nil
+
+	// TODO: Uncomment the next line to return response Response(202, TaskV173Task{}) or use other options such as http.Ok ...
+	// return Response(202, TaskV173Task{}), nil
+
+	// TODO: Uncomment the next line to return response Response(204, {}) or use other options such as http.Ok ...
+	// return Response(204, nil),nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1AccountServicePatch method not implemented")
+}
+
+// RedfishV1AccountServicePut -
+func (cfm *CfmApiService) RedfishV1AccountServicePut(ctx context.Context, accountServiceV1150AccountService redfishapi.AccountServiceV1150AccountService) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1AccountServicePut with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, AccountServiceV1150AccountService{}) or use other options such as http.Ok ...
+	// return Response(200, AccountServiceV1150AccountService{}), nil
+
+	// TODO: Uncomment the next line to return response Response(202, TaskV173Task{}) or use other options such as http.Ok ...
+	// return Response(202, TaskV173Task{}), nil
+
+	// TODO: Uncomment the next line to return response Response(204, {}) or use other options such as http.Ok ...
+	// return Response(204, nil),nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1AccountServicePut method not implemented")
+}
+
+// RedfishV1AccountServiceRolesGet -
+func (cfm *CfmApiService) RedfishV1AccountServiceRolesGet(ctx context.Context) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1AccountServiceRolesGet with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, RoleCollectionRoleCollection{}) or use other options such as http.Ok ...
+	// return Response(200, RoleCollectionRoleCollection{}), nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1AccountServiceRolesGet method not implemented")
+}
+
+// RedfishV1AccountServiceRolesPost -
+func (cfm *CfmApiService) RedfishV1AccountServiceRolesPost(ctx context.Context, roleV131Role redfishapi.RoleV131Role) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1AccountServiceRolesPost with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(201, RoleV131Role{}) or use other options such as http.Ok ...
+	// return Response(201, RoleV131Role{}), nil
+
+	// TODO: Uncomment the next line to return response Response(202, TaskV173Task{}) or use other options such as http.Ok ...
+	// return Response(202, TaskV173Task{}), nil
+
+	// TODO: Uncomment the next line to return response Response(204, {}) or use other options such as http.Ok ...
+	// return Response(204, nil),nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1AccountServiceRolesPost method not implemented")
+}
+
+// RedfishV1AccountServiceRolesRoleIdDelete -
+func (cfm *CfmApiService) RedfishV1AccountServiceRolesRoleIdDelete(ctx context.Context, roleId string) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1AccountServiceRolesRoleIdDelete with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, RoleV131Role{}) or use other options such as http.Ok ...
+	// return Response(200, RoleV131Role{}), nil
+
+	// TODO: Uncomment the next line to return response Response(202, TaskV173Task{}) or use other options such as http.Ok ...
+	// return Response(202, TaskV173Task{}), nil
+
+	// TODO: Uncomment the next line to return response Response(204, {}) or use other options such as http.Ok ...
+	// return Response(204, nil),nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1AccountServiceRolesRoleIdDelete method not implemented")
+}
+
+// RedfishV1AccountServiceRolesRoleIdGet -
+func (cfm *CfmApiService) RedfishV1AccountServiceRolesRoleIdGet(ctx context.Context, roleId string) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1AccountServiceRolesRoleIdGet with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, RoleV131Role{}) or use other options such as http.Ok ...
+	// return Response(200, RoleV131Role{}), nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1AccountServiceRolesRoleIdGet method not implemented")
+}
+
+// RedfishV1AccountServiceRolesRoleIdPatch -
+func (cfm *CfmApiService) RedfishV1AccountServiceRolesRoleIdPatch(ctx context.Context, roleId string, roleV131Role redfishapi.RoleV131Role) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1AccountServiceRolesRoleIdPatch with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, RoleV131Role{}) or use other options such as http.Ok ...
+	// return Response(200, RoleV131Role{}), nil
+
+	// TODO: Uncomment the next line to return response Response(202, TaskV173Task{}) or use other options such as http.Ok ...
+	// return Response(202, TaskV173Task{}), nil
+
+	// TODO: Uncomment the next line to return response Response(204, {}) or use other options such as http.Ok ...
+	// return Response(204, nil),nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1AccountServiceRolesRoleIdPatch method not implemented")
+}
+
+// RedfishV1AccountServiceRolesRoleIdPut -
+func (cfm *CfmApiService) RedfishV1AccountServiceRolesRoleIdPut(ctx context.Context, roleId string, roleV131Role redfishapi.RoleV131Role) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1AccountServiceRolesRoleIdPut with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, RoleV131Role{}) or use other options such as http.Ok ...
+	// return Response(200, RoleV131Role{}), nil
+
+	// TODO: Uncomment the next line to return response Response(202, TaskV173Task{}) or use other options such as http.Ok ...
+	// return Response(202, TaskV173Task{}), nil
+
+	// TODO: Uncomment the next line to return response Response(204, {}) or use other options such as http.Ok ...
+	// return Response(204, nil),nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1AccountServiceRolesRoleIdPut method not implemented")
+}
+
+// RedfishV1ChassisChassisIdMemoryGet -
+func (cfm *CfmApiService) RedfishV1ChassisChassisIdMemoryGet(ctx context.Context, chassisId string) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1ChassisChassisIdMemoryGet with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, MemoryCollectionMemoryCollection{}) or use other options such as http.Ok ...
+	// return Response(200, MemoryCollectionMemoryCollection{}), nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1ChassisChassisIdMemoryGet method not implemented")
+}
+
+// RedfishV1ChassisChassisIdMemoryMemoryIdGet -
+func (cfm *CfmApiService) RedfishV1ChassisChassisIdMemoryMemoryIdGet(ctx context.Context, chassisId string, memoryId string) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1ChassisChassisIdMemoryMemoryIdGet with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, MemoryV1190Memory{}) or use other options such as http.Ok ...
+	// return Response(200, MemoryV1190Memory{}), nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1ChassisChassisIdMemoryMemoryIdGet method not implemented")
+}
+
+// RedfishV1ChassisChassisIdPCIeDevicesPCIeDeviceIdPCIeFunctionsGet -
+func (cfm *CfmApiService) RedfishV1ChassisChassisIdPCIeDevicesPCIeDeviceIdPCIeFunctionsGet(ctx context.Context, chassisId string, pCIeDeviceId string) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1ChassisChassisIdPCIeDevicesPCIeDeviceIdPCIeFunctionsGet with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, PcieFunctionCollectionPcieFunctionCollection{}) or use other options such as http.Ok ...
+	// return Response(200, PcieFunctionCollectionPcieFunctionCollection{}), nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1ChassisChassisIdPCIeDevicesPCIeDeviceIdPCIeFunctionsGet method not implemented")
+}
+
+// RedfishV1ChassisChassisIdPCIeDevicesPCIeDeviceIdPCIeFunctionsPCIeFunctionIdGet -
+func (cfm *CfmApiService) RedfishV1ChassisChassisIdPCIeDevicesPCIeDeviceIdPCIeFunctionsPCIeFunctionIdGet(ctx context.Context, chassisId string, pCIeDeviceId string, pCIeFunctionId string) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1ChassisChassisIdPCIeDevicesPCIeDeviceIdPCIeFunctionsPCIeFunctionIdGet with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, PcieFunctionV151PcieFunction{}) or use other options such as http.Ok ...
+	// return Response(200, PcieFunctionV151PcieFunction{}), nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1ChassisChassisIdPCIeDevicesPCIeDeviceIdPCIeFunctionsPCIeFunctionIdGet method not implemented")
+}
+
+// RedfishV1SessionServiceGet -
+func (cfm *CfmApiService) RedfishV1SessionServiceGet(ctx context.Context) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1SessionServiceGet with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, Object{}) or use other options such as http.Ok ...
+	// return Response(200, Object{}), nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1SessionServiceGet method not implemented")
+}
+
+// RedfishV1SessionServicePatch -
+func (cfm *CfmApiService) RedfishV1SessionServicePatch(ctx context.Context, sessionServiceV118SessionService redfishapi.SessionServiceV118SessionService) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1SessionServicePatch with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, Object{}) or use other options such as http.Ok ...
+	// return Response(200, Object{}), nil
+
+	// TODO: Uncomment the next line to return response Response(202, Object{}) or use other options such as http.Ok ...
+	// return Response(202, Object{}), nil
+
+	// TODO: Uncomment the next line to return response Response(204, {}) or use other options such as http.Ok ...
+	// return Response(204, nil),nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1SessionServicePatch method not implemented")
+}
+
+// RedfishV1SessionServicePut -
+func (cfm *CfmApiService) RedfishV1SessionServicePut(ctx context.Context, sessionServiceV118SessionService redfishapi.SessionServiceV118SessionService) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1SessionServicePut with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, Object{}) or use other options such as http.Ok ...
+	// return Response(200, Object{}), nil
+
+	// TODO: Uncomment the next line to return response Response(202, Object{}) or use other options such as http.Ok ...
+	// return Response(202, Object{}), nil
+
+	// TODO: Uncomment the next line to return response Response(204, {}) or use other options such as http.Ok ...
+	// return Response(204, nil),nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1SessionServicePut method not implemented")
+}
+
+// RedfishV1SessionServiceSessionsGet -
+func (cfm *CfmApiService) RedfishV1SessionServiceSessionsGet(ctx context.Context) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1SessionServiceSessionsGet with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, Object{}) or use other options such as http.Ok ...
+	// return Response(200, Object{}), nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1SessionServiceSessionsGet method not implemented")
+}
+
+// RedfishV1SessionServiceSessionsPost -
+func (cfm *CfmApiService) RedfishV1SessionServiceSessionsPost(ctx context.Context, sessionV171Session redfishapi.SessionV171Session) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1SessionServiceSessionsPost with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(201, Object{}) or use other options such as http.Ok ...
+	// return Response(201, Object{}), nil
+
+	// TODO: Uncomment the next line to return response Response(202, Object{}) or use other options such as http.Ok ...
+	// return Response(202, Object{}), nil
+
+	// TODO: Uncomment the next line to return response Response(204, {}) or use other options such as http.Ok ...
+	// return Response(204, nil),nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1SessionServiceSessionsPost method not implemented")
+}
+
+// RedfishV1SessionServiceSessionsSessionIdDelete -
+func (cfm *CfmApiService) RedfishV1SessionServiceSessionsSessionIdDelete(ctx context.Context, sessionId string) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1SessionServiceSessionsSessionIdDelete with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, Object{}) or use other options such as http.Ok ...
+	// return Response(200, Object{}), nil
+
+	// TODO: Uncomment the next line to return response Response(202, Object{}) or use other options such as http.Ok ...
+	// return Response(202, Object{}), nil
+
+	// TODO: Uncomment the next line to return response Response(204, {}) or use other options such as http.Ok ...
+	// return Response(204, nil),nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1SessionServiceSessionsSessionIdDelete method not implemented")
+}
+
+// RedfishV1SessionServiceSessionsSessionIdGet -
+func (cfm *CfmApiService) RedfishV1SessionServiceSessionsSessionIdGet(ctx context.Context, sessionId string) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1SessionServiceSessionsSessionIdGet with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, Object{}) or use other options such as http.Ok ...
+	// return Response(200, Object{}), nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1SessionServiceSessionsSessionIdGet method not implemented")
+}
+
+// RedfishV1SystemsComputerSystemIdActionsComputerSystemResetPost -
+func (cfm *CfmApiService) RedfishV1SystemsComputerSystemIdActionsComputerSystemResetPost(ctx context.Context, computerSystemId string, computerSystemV1220ResetRequestBody redfishapi.ComputerSystemV1220ResetRequestBody) (redfishapi.ImplResponse, error) {
+	// TODO - update RedfishV1SystemsComputerSystemIdActionsComputerSystemResetPost with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(200, RedfishError{}), nil
+
+	// TODO: Uncomment the next line to return response Response(201, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(201, RedfishError{}), nil
+
+	// TODO: Uncomment the next line to return response Response(202, Object{}) or use other options such as http.Ok ...
+	// return Response(202, Object{}), nil
+
+	// TODO: Uncomment the next line to return response Response(204, {}) or use other options such as http.Ok ...
+	// return Response(204, nil),nil
+
+	// TODO: Uncomment the next line to return response Response(0, RedfishError{}) or use other options such as http.Ok ...
+	// return Response(0, RedfishError{}), nil
+
+	return redfishapi.Response(http.StatusNotImplemented, nil), errors.New("RedfishV1SystemsComputerSystemIdActionsComputerSystemResetPost method not implemented")
 }

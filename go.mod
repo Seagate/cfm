@@ -3,6 +3,7 @@ module cfm
 go 1.22.1
 
 require (
+	github.com/Seagate/cxl-lib v1.3.2
 	github.com/go-logr/logr v1.4.2
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
@@ -10,11 +11,15 @@ require (
 	github.com/namsral/flag v1.7.4-pre
 	github.com/onsi/ginkgo/v2 v2.19.0
 	github.com/onsi/gomega v1.33.1
+	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
 	github.com/rs/cors v1.11.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.19.0
 	github.com/stmcginnis/gofish v0.18.0
 	github.com/stretchr/testify v1.9.0
+	github.com/zcalusic/sysinfo v1.1.0
+	golang.org/x/crypto v0.23.0
+	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	golang.org/x/net v0.25.0
 	k8s.io/klog/v2 v2.120.1
 )
@@ -41,7 +46,6 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
-	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/text v0.15.0 // indirect
 	golang.org/x/tools v0.21.0 // indirect

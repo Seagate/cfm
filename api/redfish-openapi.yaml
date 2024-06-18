@@ -1,31 +1,62 @@
-openapi: 3.0.1
+components:
+  schemas:
+    RedfishError:
+      description: The error payload from a Redfish service.
+      properties:
+        error:
+          description: The properties that describe an error from a Redfish service.
+          properties:
+            '@Message.ExtendedInfo':
+              description: An array of messages describing one or more error messages.
+              items:
+                $ref: http://redfish.dmtf.org/schemas/v1/Message.v1_2_0.yaml#/components/schemas/Message_v1_2_0_Message
+              type: array
+              x-longDescription: This property shall be an array of message objects
+                describing one or more error messages.
+            code:
+              description: A string indicating a specific MessageId from a message
+                registry.
+              readOnly: true
+              type: string
+              x-longDescription: This property shall contain a string indicating a
+                specific MessageId from a message registry.
+            message:
+              description: A human-readable error message corresponding to the message
+                in a message registry.
+              readOnly: true
+              type: string
+              x-longDescription: This property shall contain a human-readable error
+                message corresponding to the message in a message registry.
+          required:
+          - code
+          - message
+          type: object
+          x-longDescription: The Redfish Specification-described type shall contain
+            properties that describe an error from a Redfish service.
+      required:
+      - error
+      type: object
+      x-longDescription: The Redfish Specification-described type shall contain an
+        error payload from a Redfish service.
 info:
-  title: Composable Fabric Manager Redfish Service OpenAPI
-  description: |
-    This API allows users to interact through the CFM Service with CXL Hosts and Memory Appliances.
-    The main purpose of this interface is to allow the retrieval of information and the creation and
-    mapping of memory from a Memory Appliance to a CXL host.
-  license:
-    name: Apache-2.0
-    url: https://www.apache.org/licenses/LICENSE-2.0.html
-  version: 1.0.0
-
-servers:
-- url: http://localhost:8080/
-- url: https://localhost:8080/
-
+  contact:
+    name: DMTF
+    url: https://www.dmtf.org/standards/redfish
+  description: This contains the definition of a Redfish service.
+  title: Redfish
+  version: '2023.3'
+  x-copyright: Copyright 2023 DMTF. For the full DMTF copyright policy, see http://www.dmtf.org/about/policies/copyright
+openapi: 3.0.1
 paths:
-
   /redfish:
     get:
       responses:
         '200':
-          description: The current supported version
           content:
             application/json:
               schema:
                 type: string
-
+          description: The current supported version
   /redfish/v1:
     get:
       responses:
@@ -33,13 +64,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/ServiceRoot_v1_16_1_ServiceRoot
+                $ref: http://redfish.dmtf.org/schemas/v1/ServiceRoot.v1_16_1.yaml#/components/schemas/ServiceRoot_v1_16_1_ServiceRoot
           description: The response contains a representation of the ServiceRoot resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/$metadata:
     get:
@@ -52,7 +83,415 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/AccountService:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/AccountService.v1_15_0.yaml#/components/schemas/AccountService_v1_15_0_AccountService
+          description: The response contains a representation of the AccountService
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+    patch:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: http://redfish.dmtf.org/schemas/v1/AccountService.v1_15_0.yaml#/components/schemas/AccountService_v1_15_0_AccountService
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/AccountService.v1_15_0.yaml#/components/schemas/AccountService_v1_15_0_AccountService
+          description: The response contains a representation of the AccountService
+            resource
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Task.v1_7_3.yaml#/components/schemas/Task_v1_7_3_Task
+          description: Accepted; a task has been generated
+        '204':
+          description: Success, but no response data
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+    put:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: http://redfish.dmtf.org/schemas/v1/AccountService.v1_15_0.yaml#/components/schemas/AccountService_v1_15_0_AccountService
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/AccountService.v1_15_0.yaml#/components/schemas/AccountService_v1_15_0_AccountService
+          description: The response contains a representation of the AccountService
+            resource
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Task.v1_7_3.yaml#/components/schemas/Task_v1_7_3_Task
+          description: Accepted; a task has been generated
+        '204':
+          description: Success, but no response data
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/AccountService/Accounts:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/ManagerAccountCollection.yaml#/components/schemas/ManagerAccountCollection_ManagerAccountCollection
+          description: The response contains a representation of the ManagerAccountCollection
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: http://redfish.dmtf.org/schemas/v1/ManagerAccount.v1_12_0.yaml#/components/schemas/ManagerAccount_v1_12_0_ManagerAccount
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/ManagerAccount.v1_12_0.yaml#/components/schemas/ManagerAccount_v1_12_0_ManagerAccount
+          description: A resource of type ManagerAccount has been created
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Task.v1_7_3.yaml#/components/schemas/Task_v1_7_3_Task
+          description: Accepted; a task has been generated
+        '204':
+          description: Success, but no response data
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/AccountService/Accounts/{ManagerAccountId}:
+    delete:
+      parameters:
+      - description: The value of the Id property of the ManagerAccount resource
+        in: path
+        name: ManagerAccountId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/ManagerAccount.v1_12_0.yaml#/components/schemas/ManagerAccount_v1_12_0_ManagerAccount
+          description: The response contains a representation of the ManagerAccount
+            resource
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Task.v1_7_3.yaml#/components/schemas/Task_v1_7_3_Task
+          description: Accepted; a task has been generated
+        '204':
+          description: Success, but no response data
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+    get:
+      parameters:
+      - description: The value of the Id property of the ManagerAccount resource
+        in: path
+        name: ManagerAccountId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/ManagerAccount.v1_12_0.yaml#/components/schemas/ManagerAccount_v1_12_0_ManagerAccount
+          description: The response contains a representation of the ManagerAccount
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+    patch:
+      parameters:
+      - description: The value of the Id property of the ManagerAccount resource
+        in: path
+        name: ManagerAccountId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: http://redfish.dmtf.org/schemas/v1/ManagerAccount.v1_12_0.yaml#/components/schemas/ManagerAccount_v1_12_0_ManagerAccount
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/ManagerAccount.v1_12_0.yaml#/components/schemas/ManagerAccount_v1_12_0_ManagerAccount
+          description: The response contains a representation of the ManagerAccount
+            resource
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Task.v1_7_3.yaml#/components/schemas/Task_v1_7_3_Task
+          description: Accepted; a task has been generated
+        '204':
+          description: Success, but no response data
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+    put:
+      parameters:
+      - description: The value of the Id property of the ManagerAccount resource
+        in: path
+        name: ManagerAccountId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: http://redfish.dmtf.org/schemas/v1/ManagerAccount.v1_12_0.yaml#/components/schemas/ManagerAccount_v1_12_0_ManagerAccount
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/ManagerAccount.v1_12_0.yaml#/components/schemas/ManagerAccount_v1_12_0_ManagerAccount
+          description: The response contains a representation of the ManagerAccount
+            resource
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Task.v1_7_3.yaml#/components/schemas/Task_v1_7_3_Task
+          description: Accepted; a task has been generated
+        '204':
+          description: Success, but no response data
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/AccountService/Roles:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/RoleCollection.yaml#/components/schemas/RoleCollection_RoleCollection
+          description: The response contains a representation of the RoleCollection
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: http://redfish.dmtf.org/schemas/v1/Role.v1_3_1.yaml#/components/schemas/Role_v1_3_1_Role
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Role.v1_3_1.yaml#/components/schemas/Role_v1_3_1_Role
+          description: A resource of type Role has been created
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Task.v1_7_3.yaml#/components/schemas/Task_v1_7_3_Task
+          description: Accepted; a task has been generated
+        '204':
+          description: Success, but no response data
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/AccountService/Roles/{RoleId}:
+    delete:
+      parameters:
+      - description: The value of the Id property of the Role resource
+        in: path
+        name: RoleId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Role.v1_3_1.yaml#/components/schemas/Role_v1_3_1_Role
+          description: The response contains a representation of the Role resource
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Task.v1_7_3.yaml#/components/schemas/Task_v1_7_3_Task
+          description: Accepted; a task has been generated
+        '204':
+          description: Success, but no response data
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+    get:
+      parameters:
+      - description: The value of the Id property of the Role resource
+        in: path
+        name: RoleId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Role.v1_3_1.yaml#/components/schemas/Role_v1_3_1_Role
+          description: The response contains a representation of the Role resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+    patch:
+      parameters:
+      - description: The value of the Id property of the Role resource
+        in: path
+        name: RoleId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: http://redfish.dmtf.org/schemas/v1/Role.v1_3_1.yaml#/components/schemas/Role_v1_3_1_Role
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Role.v1_3_1.yaml#/components/schemas/Role_v1_3_1_Role
+          description: The response contains a representation of the Role resource
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Task.v1_7_3.yaml#/components/schemas/Task_v1_7_3_Task
+          description: Accepted; a task has been generated
+        '204':
+          description: Success, but no response data
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+    put:
+      parameters:
+      - description: The value of the Id property of the Role resource
+        in: path
+        name: RoleId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: http://redfish.dmtf.org/schemas/v1/Role.v1_3_1.yaml#/components/schemas/Role_v1_3_1_Role
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Role.v1_3_1.yaml#/components/schemas/Role_v1_3_1_Role
+          description: The response contains a representation of the Role resource
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Task.v1_7_3.yaml#/components/schemas/Task_v1_7_3_Task
+          description: Accepted; a task has been generated
+        '204':
+          description: Success, but no response data
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Chassis:
     get:
@@ -61,14 +500,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/ChassisCollection_ChassisCollection
+                $ref: http://redfish.dmtf.org/schemas/v1/ChassisCollection.yaml#/components/schemas/ChassisCollection_ChassisCollection
           description: The response contains a representation of the ChassisCollection
             resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Chassis/{ChassisId}:
     get:
@@ -84,13 +523,64 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/Chassis_v1_25_0_Chassis
+                $ref: http://redfish.dmtf.org/schemas/v1/Chassis.v1_25_0.yaml#/components/schemas/Chassis_v1_25_0_Chassis
           description: The response contains a representation of the Chassis resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Chassis/{ChassisId}/Memory:
+    get:
+      parameters:
+      - description: The value of the Id property of the Chassis resource
+        in: path
+        name: ChassisId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/MemoryCollection.yaml#/components/schemas/MemoryCollection_MemoryCollection
+          description: The response contains a representation of the MemoryCollection
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Chassis/{ChassisId}/Memory/{MemoryId}:
+    get:
+      parameters:
+      - description: The value of the Id property of the Chassis resource
+        in: path
+        name: ChassisId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the Memory resource
+        in: path
+        name: MemoryId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Memory.v1_19_0.yaml#/components/schemas/Memory_v1_19_0_Memory
+          description: The response contains a representation of the Memory resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Chassis/{ChassisId}/MemoryDomains:
     get:
@@ -106,14 +596,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/MemoryDomainCollection_MemoryDomainCollection
+                $ref: http://redfish.dmtf.org/schemas/v1/MemoryDomainCollection.yaml#/components/schemas/MemoryDomainCollection_MemoryDomainCollection
           description: The response contains a representation of the MemoryDomainCollection
             resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Chassis/{ChassisId}/MemoryDomains/{MemoryDomainId}:
     get:
@@ -135,14 +625,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/MemoryDomain_v1_5_0_MemoryDomain
+                $ref: http://redfish.dmtf.org/schemas/v1/MemoryDomain.v1_5_0.yaml#/components/schemas/MemoryDomain_v1_5_0_MemoryDomain
           description: The response contains a representation of the MemoryDomain
             resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Chassis/{ChassisId}/MemoryDomains/{MemoryDomainId}/MemoryChunks:
     get:
@@ -164,14 +654,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/MemoryChunksCollection_MemoryChunksCollection
+                $ref: http://redfish.dmtf.org/schemas/v1/MemoryChunksCollection.yaml#/components/schemas/MemoryChunksCollection_MemoryChunksCollection
           description: The response contains a representation of the MemoryChunksCollection
             resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Chassis/{ChassisId}/MemoryDomains/{MemoryDomainId}/MemoryChunks/{MemoryChunksId}:
     get:
@@ -199,14 +689,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/MemoryChunks_v1_6_1_MemoryChunks
+                $ref: http://redfish.dmtf.org/schemas/v1/MemoryChunks.v1_6_1.yaml#/components/schemas/MemoryChunks_v1_6_1_MemoryChunks
           description: The response contains a representation of the MemoryChunks
             resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Chassis/{ChassisId}/PCIeDevices:
     get:
@@ -222,14 +712,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/PCIeDeviceCollection_PCIeDeviceCollection
+                $ref: http://redfish.dmtf.org/schemas/v1/PCIeDeviceCollection.yaml#/components/schemas/PCIeDeviceCollection_PCIeDeviceCollection
           description: The response contains a representation of the PCIeDeviceCollection
             resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Chassis/{ChassisId}/PCIeDevices/{PCIeDeviceId}:
     get:
@@ -251,13 +741,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/PCIeDevice_v1_13_0_PCIeDevice
+                $ref: http://redfish.dmtf.org/schemas/v1/PCIeDevice.v1_13_0.yaml#/components/schemas/PCIeDevice_v1_13_0_PCIeDevice
           description: The response contains a representation of the PCIeDevice resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Chassis/{ChassisId}/PCIeDevices/{PCIeDeviceId}/CXLLogicalDevices:
     get:
@@ -279,14 +769,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/CXLLogicalDeviceCollection_CXLLogicalDeviceCollection
+                $ref: http://redfish.dmtf.org/schemas/v1/CXLLogicalDeviceCollection.yaml#/components/schemas/CXLLogicalDeviceCollection_CXLLogicalDeviceCollection
           description: The response contains a representation of the CXLLogicalDeviceCollection
             resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Chassis/{ChassisId}/PCIeDevices/{PCIeDeviceId}/CXLLogicalDevices/{CXLLogicalDeviceId}:
     get:
@@ -314,14 +804,78 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/CXLLogicalDevice_v1_1_1_CXLLogicalDevice
+                $ref: http://redfish.dmtf.org/schemas/v1/CXLLogicalDevice.v1_1_1.yaml#/components/schemas/CXLLogicalDevice_v1_1_1_CXLLogicalDevice
           description: The response contains a representation of the CXLLogicalDevice
             resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Chassis/{ChassisId}/PCIeDevices/{PCIeDeviceId}/PCIeFunctions:
+    get:
+      parameters:
+      - description: The value of the Id property of the Chassis resource
+        in: path
+        name: ChassisId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the PCIeDevice resource
+        in: path
+        name: PCIeDeviceId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/PCIeFunctionCollection.yaml#/components/schemas/PCIeFunctionCollection_PCIeFunctionCollection
+          description: The response contains a representation of the PCIeFunctionCollection
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Chassis/{ChassisId}/PCIeDevices/{PCIeDeviceId}/PCIeFunctions/{PCIeFunctionId}:
+    get:
+      parameters:
+      - description: The value of the Id property of the Chassis resource
+        in: path
+        name: ChassisId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the PCIeDevice resource
+        in: path
+        name: PCIeDeviceId
+        required: true
+        schema:
+          type: string
+      - description: The value of the Id property of the PCIeFunction resource
+        in: path
+        name: PCIeFunctionId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/PCIeFunction.v1_5_1.yaml#/components/schemas/PCIeFunction_v1_5_1_PCIeFunction
+          description: The response contains a representation of the PCIeFunction
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Fabrics:
     get:
@@ -330,14 +884,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/FabricCollection_FabricCollection
+                $ref: http://redfish.dmtf.org/schemas/v1/FabricCollection.yaml#/components/schemas/FabricCollection_FabricCollection
           description: The response contains a representation of the FabricCollection
             resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Fabrics/{FabricId}:
     get:
@@ -353,13 +907,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/Fabric_v1_3_1_Fabric
+                $ref: http://redfish.dmtf.org/schemas/v1/Fabric.v1_3_1.yaml#/components/schemas/Fabric_v1_3_1_Fabric
           description: The response contains a representation of the Fabric resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Fabrics/{FabricId}/Connections:
     get:
@@ -375,14 +929,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/ConnectionCollection_ConnectionCollection
+                $ref: http://redfish.dmtf.org/schemas/v1/ConnectionCollection.yaml#/components/schemas/ConnectionCollection_ConnectionCollection
           description: The response contains a representation of the ConnectionCollection
             resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
     post:
       parameters:
@@ -396,20 +950,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: ./redfish-components.yaml#/components/schemas/Connection_v1_3_1_Connection
+              $ref: http://redfish.dmtf.org/schemas/v1/Connection.v1_3_1.yaml#/components/schemas/Connection_v1_3_1_Connection
         required: true
       responses:
         '201':
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/Connection_v1_3_1_Connection
+                $ref: http://redfish.dmtf.org/schemas/v1/Connection.v1_3_1.yaml#/components/schemas/Connection_v1_3_1_Connection
           description: A resource of type Connection has been created
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Fabrics/{FabricId}/Connections/{ConnectionId}:
     delete:
@@ -431,13 +985,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/Connection_v1_3_1_Connection
+                $ref: http://redfish.dmtf.org/schemas/v1/Connection.v1_3_1.yaml#/components/schemas/Connection_v1_3_1_Connection
           description: The response contains a representation of the Connection resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
     get:
       parameters:
@@ -458,13 +1012,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/Connection_v1_3_1_Connection
+                $ref: http://redfish.dmtf.org/schemas/v1/Connection.v1_3_1.yaml#/components/schemas/Connection_v1_3_1_Connection
           description: The response contains a representation of the Connection resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Fabrics/{FabricId}/Endpoints:
     get:
@@ -480,14 +1034,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/EndpointCollection_EndpointCollection
+                $ref: http://redfish.dmtf.org/schemas/v1/EndpointCollection.yaml#/components/schemas/EndpointCollection_EndpointCollection
           description: The response contains a representation of the EndpointCollection
             resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Fabrics/{FabricId}/Endpoints/{EndpointId}:
     get:
@@ -509,13 +1063,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/Endpoint_v1_8_1_Endpoint
+                $ref: http://redfish.dmtf.org/schemas/v1/Endpoint.v1_8_1.yaml#/components/schemas/Endpoint_v1_8_1_Endpoint
           description: The response contains a representation of the Endpoint resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Fabrics/{FabricId}/Switches:
     get:
@@ -531,14 +1085,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/SwitchCollection_SwitchCollection
+                $ref: http://redfish.dmtf.org/schemas/v1/SwitchCollection.yaml#/components/schemas/SwitchCollection_SwitchCollection
           description: The response contains a representation of the SwitchCollection
             resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Fabrics/{FabricId}/Switches/{SwitchId}:
     get:
@@ -560,13 +1114,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/Switch_v1_9_2_Switch
+                $ref: http://redfish.dmtf.org/schemas/v1/Switch.v1_9_2.yaml#/components/schemas/Switch_v1_9_2_Switch
           description: The response contains a representation of the Switch resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Fabrics/{FabricId}/Switches/{SwitchId}/Ports:
     get:
@@ -588,14 +1142,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/PortCollection_PortCollection
+                $ref: http://redfish.dmtf.org/schemas/v1/PortCollection.yaml#/components/schemas/PortCollection_PortCollection
           description: The response contains a representation of the PortCollection
             resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Fabrics/{FabricId}/Switches/{SwitchId}/Ports/{PortId}:
     get:
@@ -623,13 +1177,182 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/Port_v1_11_0_Port
+                $ref: http://redfish.dmtf.org/schemas/v1/Port.v1_11_0.yaml#/components/schemas/Port_v1_11_0_Port
           description: The response contains a representation of the Port resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/SessionService:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/SessionService.v1_1_8.yaml#/components/schemas/SessionService_v1_1_8_SessionService
+          description: The response contains a representation of the SessionService
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+    patch:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: http://redfish.dmtf.org/schemas/v1/SessionService.v1_1_8.yaml#/components/schemas/SessionService_v1_1_8_SessionService
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/SessionService.v1_1_8.yaml#/components/schemas/SessionService_v1_1_8_SessionService
+          description: The response contains a representation of the SessionService
+            resource
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Task.v1_7_3.yaml#/components/schemas/Task_v1_7_3_Task
+          description: Accepted; a task has been generated
+        '204':
+          description: Success, but no response data
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+    put:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: http://redfish.dmtf.org/schemas/v1/SessionService.v1_1_8.yaml#/components/schemas/SessionService_v1_1_8_SessionService
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/SessionService.v1_1_8.yaml#/components/schemas/SessionService_v1_1_8_SessionService
+          description: The response contains a representation of the SessionService
+            resource
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Task.v1_7_3.yaml#/components/schemas/Task_v1_7_3_Task
+          description: Accepted; a task has been generated
+        '204':
+          description: Success, but no response data
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/SessionService/Sessions:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/SessionCollection.yaml#/components/schemas/SessionCollection_SessionCollection
+          description: The response contains a representation of the SessionCollection
+            resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: http://redfish.dmtf.org/schemas/v1/Session.v1_7_1.yaml#/components/schemas/Session_v1_7_1_Session
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Session.v1_7_1.yaml#/components/schemas/Session_v1_7_1_Session
+          description: A resource of type Session has been created
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Task.v1_7_3.yaml#/components/schemas/Task_v1_7_3_Task
+          description: Accepted; a task has been generated
+        '204':
+          description: Success, but no response data
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/SessionService/Sessions/{SessionId}:
+    delete:
+      parameters:
+      - description: The value of the Id property of the Session resource
+        in: path
+        name: SessionId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                 $ref: http://redfish.dmtf.org/schemas/v1/Session.v1_7_1.yaml#/components/schemas/Session_v1_7_1_Session
+          description: The response contains a representation of the Session resource
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Task.v1_7_3.yaml#/components/schemas/Task_v1_7_3_Task
+          description: Accepted; a task has been generated
+        '204':
+          description: Success, but no response data
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+    get:
+      parameters:
+      - description: The value of the Id property of the Session resource
+        in: path
+        name: SessionId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Session.v1_7_1.yaml#/components/schemas/Session_v1_7_1_Session
+          description: The response contains a representation of the Session resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Systems:
     get:
@@ -638,14 +1361,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/ComputerSystemCollection_ComputerSystemCollection
+                $ref: http://redfish.dmtf.org/schemas/v1/ComputerSystemCollection.yaml#/components/schemas/ComputerSystemCollection_ComputerSystemCollection
           description: The response contains a representation of the ComputerSystemCollection
             resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Systems/{ComputerSystemId}:
     get:
@@ -661,14 +1384,56 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/ComputerSystem_v1_22_0_ComputerSystem
+                $ref: http://redfish.dmtf.org/schemas/v1/ComputerSystem.v1_22_0.yaml#/components/schemas/ComputerSystem_v1_22_0_ComputerSystem
           description: The response contains a representation of the ComputerSystem
             resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
+          description: Error condition
+  /redfish/v1/Systems/{ComputerSystemId}/Actions/ComputerSystem.Reset:
+    post:
+      parameters:
+      - description: The value of the Id property of the ComputerSystem resource
+        in: path
+        name: ComputerSystemId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: http://redfish.dmtf.org/schemas/v1/ComputerSystem.v1_22_0.yaml#/components/schemas/ComputerSystem_v1_22_0_ResetRequestBody
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: The response contains the results of the Reset action
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
+          description: The response contains the results of the Reset action
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: http://redfish.dmtf.org/schemas/v1/Task.v1_7_3.yaml#/components/schemas/Task_v1_7_3_Task
+          description: Accepted; a task has been generated
+        '204':
+          description: Success, but no response data
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Systems/{ComputerSystemId}/Memory:
     get:
@@ -684,14 +1449,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/MemoryCollection_MemoryCollection
+                $ref: http://redfish.dmtf.org/schemas/v1/MemoryCollection.yaml#/components/schemas/MemoryCollection_MemoryCollection
           description: The response contains a representation of the MemoryCollection
             resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Systems/{ComputerSystemId}/Memory/{MemoryId}:
     get:
@@ -713,13 +1478,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/Memory_v1_19_0_Memory
+                $ref: http://redfish.dmtf.org/schemas/v1/Memory.v1_19_0.yaml#/components/schemas/Memory_v1_19_0_Memory
           description: The response contains a representation of the Memory resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Systems/{ComputerSystemId}/MemoryDomains:
     get:
@@ -735,14 +1500,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/MemoryDomainCollection_MemoryDomainCollection
+                $ref: http://redfish.dmtf.org/schemas/v1/MemoryDomainCollection.yaml#/components/schemas/MemoryDomainCollection_MemoryDomainCollection
           description: The response contains a representation of the MemoryDomainCollection
             resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Systems/{ComputerSystemId}/MemoryDomains/{MemoryDomainId}:
     get:
@@ -764,14 +1529,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/MemoryDomain_v1_5_0_MemoryDomain
+                $ref: http://redfish.dmtf.org/schemas/v1/MemoryDomain.v1_5_0.yaml#/components/schemas/MemoryDomain_v1_5_0_MemoryDomain
           description: The response contains a representation of the MemoryDomain
             resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Systems/{ComputerSystemId}/MemoryDomains/{MemoryDomainId}/MemoryChunks:
     get:
@@ -793,14 +1558,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/MemoryChunksCollection_MemoryChunksCollection
+                $ref: http://redfish.dmtf.org/schemas/v1/MemoryChunksCollection.yaml#/components/schemas/MemoryChunksCollection_MemoryChunksCollection
           description: The response contains a representation of the MemoryChunksCollection
             resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
     post:
       parameters:
@@ -820,20 +1585,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: ./redfish-components.yaml#/components/schemas/MemoryChunks_v1_6_1_MemoryChunks
+              $ref: http://redfish.dmtf.org/schemas/v1/MemoryChunks.v1_6_1.yaml#/components/schemas/MemoryChunks_v1_6_1_MemoryChunks
         required: true
       responses:
         '201':
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/MemoryChunks_v1_6_1_MemoryChunks
+                $ref: http://redfish.dmtf.org/schemas/v1/MemoryChunks.v1_6_1.yaml#/components/schemas/MemoryChunks_v1_6_1_MemoryChunks
           description: A resource of type MemoryChunks has been created
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/Systems/{ComputerSystemId}/MemoryDomains/{MemoryDomainId}/MemoryChunks/{MemoryChunksId}:
     delete:
@@ -861,14 +1626,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/MemoryChunks_v1_6_1_MemoryChunks
+                $ref: http://redfish.dmtf.org/schemas/v1/MemoryChunks.v1_6_1.yaml#/components/schemas/MemoryChunks_v1_6_1_MemoryChunks
           description: The response contains a representation of the MemoryChunks
             resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
     get:
       parameters:
@@ -895,14 +1660,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: ./redfish-components.yaml#/components/schemas/MemoryChunks_v1_6_1_MemoryChunks
+                $ref: http://redfish.dmtf.org/schemas/v1/MemoryChunks.v1_6_1.yaml#/components/schemas/MemoryChunks_v1_6_1_MemoryChunks
           description: The response contains a representation of the MemoryChunks
             resource
         default:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
   /redfish/v1/odata:
     get:
@@ -914,7 +1679,7 @@ paths:
                 description: The OData service document from a Redfish service.
                 properties:
                   '@odata.context':
-                    $ref: ./redfish-components.yaml#/components/schemas/odata-v4_context
+                    $ref: http://redfish.dmtf.org/schemas/v1/odata-v4.yaml#/components/schemas/odata-v4_context
                   value:
                     description: The list of services provided by the Redfish service.
                     items:
@@ -947,5 +1712,5 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './redfish-components.yaml#/components/schemas/RedfishError'
+                $ref: '#/components/schemas/RedfishError'
           description: Error condition
