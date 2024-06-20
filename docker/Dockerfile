@@ -1,4 +1,4 @@
-FROM golang:1.22
+FROM golang:1.22.1
 
 LABEL org.opencontainers.image.source https://github.com/seagate/cfm
 
@@ -16,9 +16,9 @@ RUN npm run build
 # Build CFM SERVICE & CLI
 WORKDIR /cfm
 RUN rm cfmdatastore.json
-RUN ln -s /local/cfmdatastore.json cfmdatastore.json 
-RUN make local
+RUN ln -s /local/cfmdatastore.json cfmdatastore.json
+RUN make build-go
 
 
 # Start the service
-ENTRYPOINT [  "/cfm/cfm-service" ] 
+ENTRYPOINT [  "/cfm/cfm-service" ]

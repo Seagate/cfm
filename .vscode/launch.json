@@ -11,7 +11,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}/cmd/cfm-service/main.go",
-            "args": ["-config", "../../test-cfm-service.conf"]
+            "args": ["-config", "../../cfm-service.conf"]
         },
         {
             "name": "cfm-service-regression (ALL - allocate by size, NO host compose\\free)",
