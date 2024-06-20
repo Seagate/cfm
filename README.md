@@ -29,9 +29,10 @@ NOTE: If uncertain of which install option to use, the “install using the apt 
 
 # Additional Project Documentation
 
+- [README-SERVICE](docs/SERVICE.md) - README file for the **cfm-service** component
 - [README-WEBUI](webui/README.md) - README file for the **cfm-webui** component
 - [README-CLI](cli/README.md) - README file for the **cfm-cli** component
 - [SETUP](docs/SETUP.md) - Information on setting up a development environment
 - [LOG](docs/LOG.md) - Information on logging level definations
-- [REGRESSION](docs/REGRESSION.md) - TODO - Information on running **cfm-regression** test suite
 - [TEMPLATES](docs/TEMPLATES.md) - Information on the template file used in openapi-generate for generating the go service
+- [REGRESSION](docs/REGRESSION.md) - TODO - Information on running **cfm-regression** test suite
