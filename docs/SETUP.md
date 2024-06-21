@@ -23,23 +23,10 @@ docker run openapitools/openapi-generator-cli version 7.0.0
 
 Make sure Port 3000 and 8080 are not blocked by the server's firewall.
 
+## cfm-service development setup
+
+- [README-SERVICE](docs/SERVICE.md) - README file for the **cfm-service** component
+
 ## cfm-webui development setup
 
-cfm-webui is developed with Vue.js 3.
-
-- Install dependencies
-
-```bash
-sudo apt update
-sudo apt install nodejs npm
-npm --version
-```
-
-- Install project dependencies
-
-```bash
-cd webui
-npm install
-```
-
-More detail can be found at [README-WEBUI](../webui/README.md)
+- [README-WEBUI](webui/README.md) - README file for the **cfm-webui** component

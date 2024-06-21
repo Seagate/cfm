@@ -2,7 +2,7 @@
 
 ## Description
 
-This is a Go language application that will run as a command line, interactive program providing functionality to a single users. This will interact with the north-side OpenAPI interface provided by cfm-service. It is intended to free the users of needing to use curl commands to directly interact with the cfm service's OpenAPI interface.
+**cfm-cli** is a Go language interactive program providing cfm-service command line functionality to a single user. This will interact with the north-side (frontend) OpenAPI interface provided by cfm-service. It is intended to free the users of needing to use curl commands to directly interact with cfm-service's OpenAPI interface.
 
 ## Installation
 
@@ -12,37 +12,21 @@ Use the included Makefile to build a local copy of the executable.
 make build-cli
 ```
 
-## General Command Structure
-
-### Root Command
-
-```bash
-./cfm-cli
-```
-
-### Sub-Commands (level 1)
-
-```bash
-add, delete, list, compose, free, assign, unassign, resync
-```
-
-### Sub-Commands (level 2)
-
-```bash
-appliances, blades, hosts, ports, resources, memory
-```
-
-### Flags
-
-Contains command-specific information (i.e.: login, tcpip, etc)
-
 ## Usage
 
-After `make build-cli`, this may be run with `./cfm-cli ...`.
+`./cfm-cli <args> [flags]`
+
+Example:
 
 ```bash
 ./cfm-cli list appliances [flags]
 ```
+
+- Use -h for help
+  - `./cfm-cli -h`
+  - `./cfm-cli arg1 -h`
+  - `./cfm-cli arg1 arg2 -h`
+- Note: cfm-service **must** be running
 
 ## Accessing Client Libraries from cfm-service
 

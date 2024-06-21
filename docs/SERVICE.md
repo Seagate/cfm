@@ -1,4 +1,4 @@
-# Composable Fabric Manager ( CFM ) Service for Linux
+# Composable Fabric Manager ( CFM ) Service
 
 **cfm-service** is a Go language Linux service running in the background. It contains the main business logic for managing CMA memory. It provides a north-side (frontend) OpenAPI interface for client(s) and a south-side (backend) Redfish interface to manage available Composable Memory Appliances (CMAs) and CXL Hosts.
 

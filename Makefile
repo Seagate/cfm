@@ -20,7 +20,6 @@ help:
 	@echo "make build-service        - Build local $(APP_NAME) executable"
 	@echo "make build-cli            - Build local $(CLIAPP_NAME) executable"
 	@echo "make build-go             - Build local $(APP_NAME) and $(CLIAPP_NAME) executables"
-	@echo "make build-webui-dist     - Build a local webui distribution package for the cfm software suite"
 	@echo "make build-docker-cfm     - Build a local docker image for the cfm software suite"
 	@echo "make build-regression     - Build a local cfm-service-regression"
 	@echo "make run-service          - Build and run a local $(APP_NAME) executable using config file $(CONF_NAME)"
@@ -68,12 +67,6 @@ build-go: clean-go
 	go build -o $(APP_NAME) -ldflags "-X main.buildTime=`date -u '+%Y-%m-%dT%H:%M:%S'`" ./cmd/$(APP_NAME)/main.go
 	go build -o $(CLIAPP_NAME) -ldflags "-X main.buildTime=`date -u '+%Y-%m-%dT%H:%M:%S'`" ./cmd/$(CLIAPP_NAME)/main.go
 	ls -lh $(APP_NAME) $(CLIAPP_NAME)
-
-build-webui-dist:
-	@echo "Generating webui distribution package..."
-	cd webui
-	npm run build
-	cd ..
 
 build-docker-cfm:
 	@echo "Building local docker image of cfm software suite..."
