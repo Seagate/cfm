@@ -150,7 +150,19 @@
                       ></v-btn>
                     </v-toolbar>
                     <v-card-text>
-                      <h2 class="text-h6 text-green-lighten-2">Blade</h2>
+                      <h2 class="text-h6 text-green-lighten-2">
+                        Blade
+                        <v-btn icon variant="text">
+                          <v-icon
+                            @click="resyncBladeWindowButton"
+                            id="resyncBladeButton"
+                            >mdi-sync-circle</v-icon
+                          >
+                          <v-tooltip activator="parent" location="end"
+                            >Click here to resynchronize this blade</v-tooltip
+                          >
+                        </v-btn>
+                      </h2>
                       A blade is associated with one appliance and it is Redfish
                       service running on OpenBMC.
                     </v-card-text>
@@ -214,7 +226,9 @@
                         @click="dialogPortExplanation = true"
                       ></v-btn>
                     </v-toolbar>
-                    <v-card-text style="max-height: 420px; overflow-y: auto">
+                    <v-card-text
+                      style="max-height: 420px; overflow: hidden; padding: 0"
+                    >
                       <BladePorts />
                     </v-card-text>
                   </v-card>
@@ -238,7 +252,9 @@
                         @click="dialogMemoryRegionExplanation = true"
                       ></v-btn>
                     </v-toolbar>
-                    <v-card-text style="max-height: 420px; overflow-y: auto">
+                    <v-card-text
+                      style="max-height: 420px; overflow: hidden; padding: 0"
+                    >
                       <v-row>
                         <v-col cols="12" sm="3" xl="3">
                           <!-- Pass the selected appliance id and selected blade id to ComposeMemoryButton -->
@@ -277,7 +293,9 @@
                         @click="dialogResourceExplanation = true"
                       ></v-btn>
                     </v-toolbar>
-                    <v-card-text style="max-height: 420px; overflow-y: auto">
+                    <v-card-text
+                      style="max-height: 420px; overflow: hidden; padding: 0"
+                    >
                       <MemoryResources />
                     </v-card-text>
                   </v-card>
@@ -353,7 +371,7 @@
           icon="mdi-check-circle"
           size="112"
         ></v-icon>
-        <h2 class="text-h5 mb-6">You added an appliance successfully!</h2>
+        <h2 class="text-h5 mb-6">Add an appliance succeeded!</h2>
         <p class="mb-4 text-medium-emphasis text-body-2">
           New Appliance Id:
           <br />{{ newApplianceId }}
@@ -389,7 +407,7 @@
           icon="mdi-alert-circle"
           size="112"
         ></v-icon>
-        <h2 class="text-h5 mb-6">You added new appliance failed!</h2>
+        <h2 class="text-h5 mb-6">Add an appliance failed!</h2>
         <p class="mb-4 text-medium-emphasis text-body-2">
           {{ addApplianceError }}
         </p>
@@ -472,7 +490,7 @@
           icon="mdi-check-circle"
           size="112"
         ></v-icon>
-        <h2 class="text-h5 mb-6">You deleted appliance successfully!</h2>
+        <h2 class="text-h5 mb-6">Delete an appliance succeeded!</h2>
         <p class="mb-4 text-medium-emphasis text-body-2">
           Deleted Appliance Id:
           <br />{{ deletedApplianceId }}
@@ -508,7 +526,7 @@
           icon="mdi-alert-circle"
           size="112"
         ></v-icon>
-        <h2 class="text-h5 mb-6">You deleted appliance failed!</h2>
+        <h2 class="text-h5 mb-6">Delete an appliance failed!</h2>
         <p class="mb-4 text-medium-emphasis text-body-2">
           {{ deleteApplianceError }}
         </p>
@@ -656,7 +674,7 @@
           icon="mdi-check-circle"
           size="112"
         ></v-icon>
-        <h2 class="text-h5 mb-6">You added a blade successfully!</h2>
+        <h2 class="text-h5 mb-6">Add a blade succeeded!</h2>
         <p class="mb-4 text-medium-emphasis text-body-2">
           New Blade Id:
           <br />{{ newBladeId }}
@@ -692,7 +710,7 @@
           icon="mdi-alert-circle"
           size="112"
         ></v-icon>
-        <h2 class="text-h5 mb-6">You added new blade failed!</h2>
+        <h2 class="text-h5 mb-6">Add a blade failed!</h2>
         <p class="mb-4 text-medium-emphasis text-body-2">
           {{ addBladeError }}
         </p>
@@ -775,7 +793,7 @@
           icon="mdi-check-circle"
           size="112"
         ></v-icon>
-        <h2 class="text-h5 mb-6">You deleted a blade successfully!</h2>
+        <h2 class="text-h5 mb-6">Delete a blade succeeded!</h2>
         <p class="mb-4 text-medium-emphasis text-body-2">
           Deleted Blade Id:
           <br />{{ deletedBladeId }}
@@ -811,7 +829,7 @@
           icon="mdi-alert-circle"
           size="112"
         ></v-icon>
-        <h2 class="text-h5 mb-6">You deleted a blade failed!</h2>
+        <h2 class="text-h5 mb-6">Delete a blade failed!</h2>
         <p class="mb-4 text-medium-emphasis text-body-2">
           {{ deleteBladeError }}
         </p>
@@ -839,6 +857,124 @@
             <template v-slot:default>
               <div class="text-center">
                 {{ deleteBladeProgressText }}
+              </div>
+            </template>
+          </v-progress-linear>
+        </v-col>
+      </v-row>
+    </v-dialog>
+
+    <!-- The dialog of the warning before the resynchronizing a blade by the user -->
+    <v-dialog v-model="dialogResyncBlade" max-width="600px">
+      <v-card>
+        <v-alert
+          color="warning"
+          icon="$warning"
+          title="Alert"
+          variant="tonal"
+          text="Resynchronizing a blade deletes the blade and adds it back."
+        ></v-alert>
+        <v-card-text>
+          <div class="text-h6 pa-12">{{ selectedBladeId }}</div>
+        </v-card-text>
+        <v-divider></v-divider>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="yellow-darken-4"
+            variant="text"
+            id="cancelResyncBlade"
+            @click="dialogResyncBlade = false"
+            >Cancel</v-btn
+          >
+          <v-btn
+            color="yellow-darken-4"
+            variant="text"
+            id="confirmResyncBlade"
+            @click="resyncBladeConfirm(selectedApplianceId, selectedBladeId)"
+            >Resync</v-btn
+          >
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="dialogResyncBladeSuccess" max-width="600px">
+      <v-sheet
+        elevation="12"
+        max-width="600"
+        rounded="lg"
+        width="100%"
+        class="pa-4 text-center mx-auto"
+      >
+        <v-icon
+          class="mb-5"
+          color="success"
+          icon="mdi-check-circle"
+          size="112"
+        ></v-icon>
+        <h2 class="text-h5 mb-6">Resync the blade succeeded!</h2>
+        <p class="mb-4 text-medium-emphasis text-body-2">
+          The contents of blade {{ resyncBladeId }} are updated.
+        </p>
+        <v-divider class="mb-4"></v-divider>
+        <div class="text-end">
+          <v-btn
+            class="text-none"
+            color="success"
+            rounded
+            variant="flat"
+            width="90"
+            id="resyncBladeSuccess"
+            @click="dialogResyncBladeSuccess = false"
+          >
+            Done
+          </v-btn>
+        </div>
+      </v-sheet>
+    </v-dialog>
+
+    <v-dialog v-model="dialogResyncBladeFailure" max-width="600px">
+      <v-sheet
+        elevation="12"
+        max-width="600"
+        rounded="lg"
+        width="100%"
+        class="pa-4 text-center mx-auto"
+      >
+        <v-icon
+          class="mb-5"
+          color="error"
+          icon="mdi-alert-circle"
+          size="112"
+        ></v-icon>
+        <h2 class="text-h5 mb-6">Resync the blade failed!</h2>
+        <p class="mb-4 text-medium-emphasis text-body-2">
+          {{ resyncBladeError }}
+        </p>
+        <v-divider class="mb-4"></v-divider>
+        <div class="text-end">
+          <v-btn
+            class="text-none"
+            color="error"
+            rounded
+            variant="flat"
+            width="90"
+            id="resyncBladeFailure"
+            @click="dialogResyncBladeFailure = false"
+          >
+            Done
+          </v-btn>
+        </div>
+      </v-sheet>
+    </v-dialog>
+
+    <v-dialog v-model="dialogResyncBladeWait">
+      <v-row align-content="center" class="fill-height" justify="center">
+        <v-col cols="6">
+          <v-progress-linear color="#6ebe4a" height="50" indeterminate rounded>
+            <template v-slot:default>
+              <div class="text-center">
+                {{ resyncBladeProgressText }}
               </div>
             </template>
           </v-progress-linear>
@@ -887,6 +1023,7 @@ import BladePorts from "./Ports.vue";
 import BladeMemory from "./Memory.vue";
 import ComposeMemoryButton from "./ComposeMemoryButton.vue";
 import { useBladeMemoryStore } from "../Stores/BladeMemoryStore";
+import { useRouter } from "vue-router";
 
 export default {
   data() {
@@ -896,6 +1033,7 @@ export default {
       deleteApplianceProgressText: "Deleting appliance, please wait...",
       addBladeProgressText: "Adding blade, please wait...",
       deleteBladeProgressText: "Deleting blade, please wait...",
+      resyncBladeProgressText: "Resynchronizing the blade, please wait...",
 
       // The rules for the input fields when adding a new appliance/blade
       rules: {
@@ -955,6 +1093,13 @@ export default {
       dialogDeleteBladeSuccess: false,
       dialogDeleteBladeFailure: false,
       deleteBladeError: null as unknown,
+
+      resyncBladeId: null as unknown as string | undefined, // Be used on success popup
+      dialogResyncBlade: false,
+      dialogResyncBladeWait: false,
+      dialogResyncBladeSuccess: false,
+      dialogResyncBladeFailure: false,
+      resyncBladeError: null as unknown,
     };
   },
 
@@ -986,7 +1131,7 @@ export default {
       );
       this.addApplianceError = applianceStore.addApplianceError as string;
 
-      // Display success  popup once adding new appliance successfully
+      // Display success  popup once adding new appliance succeeded
       if (!this.addApplianceError) {
         this.newApplianceId = newAppliance?.id + "";
 
@@ -1065,7 +1210,7 @@ export default {
 
       this.addBladeError = bladeStore.addBladeError;
 
-      // Display success  popup once adding new blade successfully
+      // Display success  popup once adding new blade succeeded
       if (!this.addBladeError) {
         this.newBladeId = newBlade!.id;
 
@@ -1145,6 +1290,59 @@ export default {
         this.dialogDeleteBladeFailure = true;
       }
     },
+
+    /* Open the resync blade popup */
+    resyncBladeWindowButton() {
+      this.dialogResyncBlade = true;
+    },
+
+    async resyncBladeConfirm(applianceId: string, bladeId: string) {
+      this.dialogResyncBlade = false;
+      this.dialogResyncBladeWait = true;
+
+      const bladeStore = useBladeStore();
+      await bladeStore.resyncBlade(applianceId, bladeId);
+
+      this.resyncBladeId = bladeId;
+
+      this.resyncBladeError = bladeStore.resyncBladeError;
+
+      // Display the blade once resync blade succeeded
+      if (!this.resyncBladeError) {
+        // Manually trigger the update actions
+        await this.updateBladeContent(bladeId);
+        this.dialogResyncBladeWait = false;
+        this.dialogResyncBladeSuccess = true;
+      } else {
+        this.dialogResyncBladeWait = false;
+        this.dialogResyncBladeFailure = true;
+      }
+    },
+
+    // Method to manually update the content for the resync blade
+    async updateBladeContent(bladeId: string) {
+      const bladeStore = useBladeStore();
+      const bladeResourceStore = useBladeResourceStore();
+      const bladePortStore = useBladePortStore();
+      const bladeMemoryStore = useBladeMemoryStore();
+      const applianceStore = useApplianceStore();
+
+      await Promise.all([
+        bladeStore.fetchBladeById(applianceStore.selectedApplianceId, bladeId),
+        bladeResourceStore.fetchMemoryResources(
+          applianceStore.selectedApplianceId,
+          bladeId
+        ),
+        bladePortStore.fetchBladePorts(
+          applianceStore.selectedApplianceId,
+          bladeId
+        ),
+        bladeMemoryStore.fetchBladeMemory(
+          applianceStore.selectedApplianceId,
+          bladeId
+        ),
+      ]);
+    },
   },
 
   setup() {
@@ -1157,13 +1355,51 @@ export default {
     const bladePortStore = useBladePortStore();
     const bladeMemoryStore = useBladeMemoryStore();
 
+    const router = useRouter();
+
+    // Method to update the URL
+    const updateUrlWithBladeId = (applianceId: string, bladeId: string) => {
+      // Construct the URL based on whether a blade ID is provided
+      const newPath = `/appliances/${applianceId}/blades/${bladeId}`;
+      router.push(newPath);
+    };
+
+    const updateUrlWithoutBladeId = (applianceId: string) => {
+      // Construct the URL based on whether a blade ID is provided
+      const newPath = `/appliances/${applianceId}`;
+      router.push(newPath);
+    };
+
     // Fetch appliances when component is mounted
     onMounted(async () => {
       loading.value = true;
       await applianceStore.fetchAppliances();
       if (applianceStore.appliances.length > 0) {
-        const firstApplianceId = applianceStore.appliances[0].id;
-        applianceStore.selectAppliance(firstApplianceId);
+        let selectedAppliance:
+          | {
+              id: string;
+              ipAddress?: string;
+              port?: number;
+              status?: string;
+              blades?: { uri: string };
+              totalMemoryAvailableMiB?: number;
+              totalMemoryAllocatedMiB?: number;
+            }
+          | undefined;
+
+        // Check if applianceId exists in the URL
+        const applianceIdInUrl = router.currentRoute.value.params.appliance_id;
+        if (applianceIdInUrl) {
+          // Find the appliance with the applianceId from the URL
+          selectedAppliance = applianceStore.appliances.find(
+            (appliance) => appliance.id === applianceIdInUrl
+          );
+        }
+        // If no applianceId in the URL or no appliance found with the applianceId, default to the first appliance
+        if (!selectedAppliance) {
+          selectedAppliance = applianceStore.appliances[0];
+        }
+        applianceStore.selectAppliance(selectedAppliance.id);
       }
       loading.value = false;
     });
@@ -1176,15 +1412,44 @@ export default {
           loading.value = true;
           await bladeStore.fetchBlades(newVal);
           if (bladeStore.blades.length > 0) {
-            // Set the first blade for the associated appliance as the default selected blade
-            const defaultBlade = bladeStore.blades[0];
+            let selectedBlade:
+              | {
+                  id: string;
+                  ipAddress: string;
+                  port: number;
+                  status?: string;
+                  ports?: { uri: string };
+                  resources?: { uri: string };
+                  memory?: { uri: string };
+                  totalMemoryAvailableMiB?: number;
+                  totalMemoryAllocatedMiB?: number;
+                }
+              | undefined;
+
+            // Check if bladeId exists in the URL
+            const bladeIdInUrl = router.currentRoute.value.params.blade_id;
+            if (bladeIdInUrl) {
+              // Find the blade with the bladeId from the URL
+              selectedBlade = bladeStore.blades.find(
+                (blade) => blade.id === bladeIdInUrl
+              );
+            }
+            // If no bladeId in the URL or no blade found with the bladeId, default to the first blade
+            if (!selectedBlade) {
+              selectedBlade = bladeStore.blades[0];
+            }
             bladeStore.selectBlade(
-              defaultBlade.id,
-              defaultBlade.ipAddress,
-              defaultBlade.port,
-              Number(defaultBlade.totalMemoryAvailableMiB),
-              Number(defaultBlade.totalMemoryAllocatedMiB)
+              selectedBlade.id,
+              selectedBlade.ipAddress,
+              selectedBlade.port,
+              Number(selectedBlade.totalMemoryAvailableMiB),
+              Number(selectedBlade.totalMemoryAllocatedMiB)
             );
+            // Update the URL with the first blade's ID
+            updateUrlWithBladeId(newVal, selectedBlade.id);
+          } else {
+            // If there are no blades, update the URL with only the appliance ID
+            updateUrlWithoutBladeId(newVal);
           }
           loading.value = false;
         }
@@ -1213,6 +1478,8 @@ export default {
               newBladeId
             ),
           ]);
+          // Update the URL with the new blade ID
+          updateUrlWithBladeId(applianceStore.selectedApplianceId, newBladeId);
           loading.value = false;
         }
       },

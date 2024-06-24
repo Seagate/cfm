@@ -1,7 +1,7 @@
 <template>
   <v-container
     class="chart-container"
-    style="position: relative; display: flex; align-items: center"
+    style="position: relative; display: flex; align-items: center; padding: 0"
   >
     <canvas ref="memoryCanvas"></canvas>
   </v-container>

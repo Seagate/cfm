@@ -106,20 +106,24 @@
       >
         <v-icon
           class="mb-5"
-          color="success"
+          :color="partialSuccess ? 'warning' : 'success'"
           icon="mdi-check-circle"
           size="112"
         ></v-icon>
-        <h2 class="text-h5 mb-6">You composed memory successfully!</h2>
+        <h2 class="text-h5 mb-6">
+          Compose memory {{ partialSuccess ? "partially" : "" }} succeeded!
+        </h2>
         <p class="mb-4 text-medium-emphasis text-body-2">
           New Memory ID:
-          <br />{{ newMemoryId }} <br />{{ memorySizeNotEqual }}
+          <br />{{ newMemoryId }} <br />{{ memorySizeNotEqual }} <br />{{
+            partialSuccess
+          }}
         </p>
         <v-divider class="mb-4"></v-divider>
         <div class="text-end">
           <v-btn
             class="text-none"
-            color="success"
+            :color="partialSuccess ? 'warning' : 'success'"
             rounded
             variant="flat"
             width="90"
@@ -146,7 +150,7 @@
           icon="mdi-alert-circle"
           size="112"
         ></v-icon>
-        <h2 class="text-h5 mb-6">You composed memory failed!</h2>
+        <h2 class="text-h5 mb-6">Compose memory failed!</h2>
         <p class="mb-4 text-medium-emphasis text-body-2">
           Error Message:
           <br />
@@ -265,6 +269,7 @@ export default {
       qoSs: [Qos.NUMBER_1, Qos.NUMBER_2, Qos.NUMBER_4, Qos.NUMBER_8],
       showQoS: Qos.NUMBER_1,
       showPort: "",
+      partialSuccess: "",
 
       newMemoryId: "", // Be used on success popup
       memorySizeNotEqual: "",
@@ -341,8 +346,17 @@ export default {
 
       this.composeMemoryError = bladeMemoryStore.composeMemoryError;
 
-      // Display the success popup and update resources, ports and memory information if compose memory successfully
+      // Display the success popup and update resources, ports and memory information if compose memory succeeded
       if (!this.composeMemoryError) {
+        this.partialSuccess = "";
+
+        if (
+          !newMemoryRegion?.memoryAppliancePort &&
+          this.newMemoryCredentials.port
+        ) {
+          this.partialSuccess =
+            "Note: Memory allocation succeeded but memory port assignment failed.";
+        }
         // Get the size of the new memory chunk to update the blade memory,
         // The final allocated memory size may be changed by the compose memory algorithm, so it may not be the same with the input one
         this.newMemorySize = newMemoryRegion?.sizeMiB;
@@ -359,7 +373,7 @@ export default {
           this.bladeId
         );
 
-        // Update the blade memory if compose memory successfully
+        // Update the blade memory if compose memory succeeded
         const bladeStore = useBladeStore();
         let newAvailableMemory: number | undefined = undefined;
         let newAllocatedMmeory: number | undefined = undefined;

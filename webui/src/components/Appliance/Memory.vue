@@ -1,6 +1,11 @@
 <template>
-  <v-container>
-    <v-data-table :headers="headers" :items="selectedBladeMemory">
+  <v-container style="padding: 0">
+    <v-data-table
+      :headers="headers"
+      fixed-header
+      height="240"
+      :items="selectedBladeMemory"
+    >
       <template v-slot:[`item.actions`]="{ item }">
         <v-icon size="small" @click="assignOrUnassign(item)">
           mdi-pencil
@@ -130,9 +135,7 @@
           icon="mdi-check-circle"
           size="112"
         ></v-icon>
-        <h2 class="text-h5 mb-6">
-          You {{ this.operation }}ed memory successfully!
-        </h2>
+        <h2 class="text-h5 mb-6">{{ this.operation }} memory succeeded!</h2>
         <p class="mb-4 text-medium-emphasis text-body-2">
           Memory ID:
           <br />{{ this.selectedMemoryRegion.id }}
@@ -168,7 +171,7 @@
           icon="mdi-alert-circle"
           size="112"
         ></v-icon>
-        <h2 class="text-h5 mb-6">You {{ this.operation }}ed memory failed!</h2>
+        <h2 class="text-h5 mb-6">{{ this.operation }} memory failed!</h2>
         <p class="mb-4 text-medium-emphasis text-body-2">
           {{ this.assignUnassignMemoryError }}
         </p>
@@ -252,7 +255,7 @@
           icon="mdi-check-circle"
           size="112"
         ></v-icon>
-        <h2 class="text-h5 mb-6">You freed memory successfully!</h2>
+        <h2 class="text-h5 mb-6">Free memory succeeded!</h2>
         <p class="mb-4 text-medium-emphasis text-body-2">
           Memory ID:
           <br />{{ this.selectedMemoryRegion.id }}
@@ -288,7 +291,7 @@
           icon="mdi-alert-circle"
           size="112"
         ></v-icon>
-        <h2 class="text-h5 mb-6">You freed memory failed!</h2>
+        <h2 class="text-h5 mb-6">Free memory failed!</h2>
         <p class="mb-4 text-medium-emphasis text-body-2">
           Error: {{ this.freeMemoryError }}
         </p>
@@ -422,7 +425,7 @@ export default {
         this.assignUnassignMemoryError =
           bladeMemoryStore.assignOrUnassignMemoryError;
 
-        // Update resources, ports and memory table and show the success popup if assign/unassign memory successfully
+        // Update resources, ports and memory table and show the success popup if assign/unassign memory succeeded
         if (this.assignOrUnassignResponse) {
           const bladeResourceStore = useBladeResourceStore();
           const bladePortStore = useBladePortStore();
@@ -468,7 +471,7 @@ export default {
         this.freeMemoryError = bladeMemoryStore.freeMemoryError;
       }
 
-      // Update memory allocation chart, resources, memory, ports table and show the success popup if free memory successfully
+      // Update memory allocation chart, resources, memory, ports table and show the success popup if free memory succeeded
       if (!this.freeMemoryError) {
         const bladeResourceStore = useBladeResourceStore();
         const bladePortStore = useBladePortStore();

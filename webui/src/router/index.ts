@@ -9,11 +9,30 @@ const routes = [
   },
   {
     path: '/appliances',
-    name: 'Appliances',
+    name: 'HomeAppliances',
     component: () => import(/* webpackChunkName: "appliances" */ '@/views/Appliances.vue'),
   },
   {
+    path: '/appliances/:appliance_id',
+    name: 'Appliances',
+    component: () => import(/* webpackChunkName: "appliances" */ '@/views/Appliances.vue'),
+    children: [
+      {
+        // Optional blade_id parameter
+        path: 'blades/:blade_id?',
+        name: 'ApplianceWithBlade',
+        component: () => import(/* webpackChunkName: "appliance" */ '@/views/Appliances.vue'),
+        props: true
+      }
+    ]
+  },
+  {
     path: '/hosts',
+    name: 'HomeHosts',
+    component: () => import(/* webpackChunkName: "cxl-hosts" */ '@/views/CXL-Hosts.vue'),
+  },
+  {
+    path: '/hosts/:host_id',
     name: 'CXL-Hosts',
     component: () => import(/* webpackChunkName: "cxl-hosts" */ '@/views/CXL-Hosts.vue'),
   },
