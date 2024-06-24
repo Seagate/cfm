@@ -314,34 +314,34 @@ func NewServiceRequestListExternalDevices(cmd *cobra.Command) *ServiceRequestLis
 // Output functions
 
 // Output for add and delete of appliance
-func OutputResultsAddDeleteAppliance(a *service.Appliance, action string) {
+func OutputResultsApplianceAction(a *service.Appliance, action string) {
 	if a == nil {
-		fmt.Printf("\nAppliance %s Status: FAILED\n\n", strings.ToUpper(action))
+		fmt.Printf("\nAppliance %s FAILED\n\n", strings.ToUpper(action))
 		return
 	}
 
-	fmt.Printf("\nAppliance %s\n", strings.ToUpper(action))
+	fmt.Printf("\nAppliance %s Succeeded\n", strings.ToUpper(action))
 	fmt.Printf("Appliance ID: %s\n\n", a.GetId())
 }
 
-// Output for add and delete of appliance blade
-func OutputResultsAddDeleteBlade(b *service.Blade, action string) {
+// Generic output for a simple blade action
+func OutputResultsBladeAction(b *service.Blade, action string) {
 	if b == nil {
-		fmt.Printf("\nBlade %s Status: FAILED\n\n", strings.ToUpper(action))
+		fmt.Printf("\nBlade %s FAILED\n\n", strings.ToUpper(action))
 		return
 	}
 
-	fmt.Printf("\nBlade %s\n", strings.ToUpper(action))
+	fmt.Printf("\nBlade %s Succeeded\n", strings.ToUpper(action))
 	fmt.Printf("Blade ID: %s\n\n", b.GetId())
 }
 
 // Output for add and delete of host
-func OutputResultsAddDeleteHost(h *service.Host, action string) {
+func OutputResultsHostAction(h *service.Host, action string) {
 	if h == nil {
-		fmt.Printf("\nHost %s Status: FAILED\n\n", strings.ToUpper(action))
+		fmt.Printf("\nHost %s FAILED\n\n", strings.ToUpper(action))
 		return
 	}
 
-	fmt.Printf("\nHost %s\n", strings.ToUpper(action))
+	fmt.Printf("\nHost %s Succeeded\n", strings.ToUpper(action))
 	fmt.Printf("Host ID: %s\n\n", h.GetId())
 }

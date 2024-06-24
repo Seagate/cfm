@@ -130,3 +130,29 @@ func (r *ServiceRequestListHosts) OutputResults(h *[]*service.Host) {
 
 	fmt.Printf("\n")
 }
+
+type ServiceRequestResyncHost struct {
+	ServiceTcp *TcpInfo
+	HostId     *Id
+}
+
+func NewServiceRequestResyncHost(cmd *cobra.Command) *ServiceRequestResyncHost {
+	return &ServiceRequestResyncHost{
+		ServiceTcp: NewTcpInfo(cmd, flags.SERVICE),
+		HostId:     NewId(cmd, flags.HOST),
+	}
+}
+
+func (r *ServiceRequestResyncHost) Execute() (*service.Host, error) {
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ServiceTcp", fmt.Sprintf("%+v", *r.ServiceTcp))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "HostId", fmt.Sprintf("%+v", *r.HostId))
+
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort())
+
+	host, err := serviceWrap.ResyncHostById(serviceClient, r.HostId.GetId())
+	if err != nil {
+		return nil, fmt.Errorf("failure: resync host: %s", err)
+	}
+
+	return host, err
+}

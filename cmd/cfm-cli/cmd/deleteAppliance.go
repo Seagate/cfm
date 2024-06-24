@@ -32,7 +32,7 @@ var deleteApplianceCmd = &cobra.Command{
 			cobra.CheckErr(err)
 		}
 
-		serviceRequests.OutputResultsAddDeleteAppliance(deletedAppliance, "deleted")
+		serviceRequests.OutputResultsApplianceAction(deletedAppliance, "delete")
 	},
 }
 

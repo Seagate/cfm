@@ -33,7 +33,7 @@ var addApplianceCmd = &cobra.Command{
 			cobra.CheckErr(err)
 		}
 
-		serviceRequests.OutputResultsAddDeleteAppliance(addedAppliance, "added")
+		serviceRequests.OutputResultsApplianceAction(addedAppliance, "add")
 	},
 }
 

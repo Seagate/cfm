@@ -76,3 +76,17 @@ func GetAllAppliances(client *service.APIClient) (*[]*service.Appliance, error) 
 
 	return &appliances, nil
 }
+
+func ResyncApplianceById(client *service.APIClient, applianceId string) (*service.Appliance, error) {
+	request := client.DefaultAPI.AppliancesResyncById(context.Background(), applianceId)
+	appliance, response, err := request.Execute()
+	if err != nil {
+		msg := fmt.Sprintf("%T: Execute FAILURE", appliance)
+		klog.ErrorS(err, msg, "response", response)
+		return nil, fmt.Errorf("failure: resync appliance by id failure")
+	}
+
+	klog.V(3).InfoS("BladesResyncById success", "applianceId", appliance.GetId())
+
+	return appliance, nil
+}

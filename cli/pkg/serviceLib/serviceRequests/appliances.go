@@ -130,3 +130,29 @@ func (r *ServiceRequestListAppliances) OutputResults(a *[]*service.Appliance) {
 
 	fmt.Printf("\n")
 }
+
+type ServiceRequestResyncAppliance struct {
+	ServiceTcp  *TcpInfo
+	ApplianceId *Id
+}
+
+func NewServiceRequestResyncAppliance(cmd *cobra.Command) *ServiceRequestResyncAppliance {
+	return &ServiceRequestResyncAppliance{
+		ServiceTcp:  NewTcpInfo(cmd, flags.SERVICE),
+		ApplianceId: NewId(cmd, flags.APPLIANCE),
+	}
+}
+
+func (r *ServiceRequestResyncAppliance) Execute() (*service.Appliance, error) {
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ServiceTcp", fmt.Sprintf("%+v", *r.ServiceTcp))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ApplianceId", fmt.Sprintf("%+v", *r.ApplianceId))
+
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort())
+
+	appliance, err := serviceWrap.ResyncApplianceById(serviceClient, r.ApplianceId.GetId())
+	if err != nil {
+		return nil, fmt.Errorf("failure: resync appliance: %s", err)
+	}
+
+	return appliance, err
+}
