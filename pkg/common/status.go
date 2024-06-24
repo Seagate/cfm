@@ -25,8 +25,10 @@ type StatusCodeType int
 // can be used programmatically by clients to differentiate various errors returned.
 // More error code will be added
 const (
-	StatusOK             StatusCodeType = iota
-	StatusCreatedSuccess                //201
+	StatusOK                            StatusCodeType = iota
+	StatusCreatedSuccess                               //201
+	StatusComposePartialSuccess                        //206
+	StatusApplianceResyncPartialSuccess                //206
 
 	StatusAppliancesExceedMaximum //422
 	StatusBladesExceedMaximum     //422
@@ -56,6 +58,7 @@ const (
 	StatusGetPortDetailsFailure             //409
 	StatusGetMemoryDevicesFailure           //409
 	StatusGetMemoryDevicesDetailsFailure    //409
+	StatusApplianceResyncFailure            //409
 
 	StatusApplianceNameDoesNotExist     //404: StatusNotFound
 	StatusBladeIdDoesNotExist           //404
@@ -70,7 +73,7 @@ const (
 	StatusApplianceGetResourceFailure      //500
 	StatusApplianceGetEndpointsFailure     //500
 	StatusApplianceGetOneEndpointFailure   //500
-	StatusApplianceUnassginMemoryFailure   // 500
+	StatusApplianceUnassginMemoryFailure   //500
 	StatusApplianceUnallocateMemoryFailure //500
 
 	StatusHostIdDoesNotExist //404
@@ -96,6 +99,10 @@ func (e StatusCodeType) String() string {
 		return "Success"
 	case StatusCreatedSuccess:
 		return "Created Successfully"
+	case StatusComposePartialSuccess:
+		return "Compose Partial Success"
+	case StatusApplianceResyncPartialSuccess:
+		return "Appliance Resync Partial Success"
 	case StatusComposeMemoryFailure:
 		return "Compose Memory Failed"
 	case StatusComposeMemoryByResourceFailure:
@@ -156,6 +163,8 @@ func (e StatusCodeType) String() string {
 		return "Get Memory Devices Failure"
 	case StatusGetMemoryDevicesDetailsFailure:
 		return "Get Memory Devices Details Failure"
+	case StatusApplianceResyncFailure:
+		return "Appliance Resync Failure"
 	case StatusResourceNotEnough:
 		return "Resource Not Enough"
 	case StatusSessionDoesNotExist:
@@ -205,6 +214,9 @@ func (e StatusCodeType) HttpStatusCode() int {
 		return http.StatusOK // 200
 	case StatusCreatedSuccess:
 		return http.StatusCreated // 201
+	case StatusComposePartialSuccess,
+		StatusApplianceResyncPartialSuccess:
+		return http.StatusPartialContent // 206
 	case StatusInvalidBackend,
 		StatusApplianceComposeMemoryRequestBad,
 		StatusApplianceIdMismatch,
@@ -240,7 +252,8 @@ func (e StatusCodeType) HttpStatusCode() int {
 		StatusHostGetPortsFailure,
 		StatusGetPortDetailsFailure,
 		StatusGetMemoryDevicesFailure,
-		StatusGetMemoryDevicesDetailsFailure:
+		StatusGetMemoryDevicesDetailsFailure,
+		StatusApplianceResyncFailure:
 		return http.StatusConflict // 409
 	case StatusBackendInterfaceFailure,
 		StatusApplianceCreateSessionFailure,

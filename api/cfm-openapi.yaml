@@ -8,7 +8,7 @@ info:
   license:
     name: Apache-2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
-  version: 1.6.6
+  version: 1.6.8
 
 servers:
 - url: http://localhost:8080/
@@ -97,6 +97,42 @@ paths:
 
   # Single Memory Appliance
   /cfm/v1/appliances/{applianceId}:
+    patch:
+      description: For any subsequent requests, force the appliance to re-synchronize all its' cfm-service data, for every blade, with the real hardware.
+      operationId: appliancesResyncById
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/appliance'
+        "206":
+          description: Partial Content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/appliance"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
     get:
       description: Retrieve information for a single memory appliance. {applianceId} has to match the id of the appliance.
       operationId: appliancesGetById
@@ -205,6 +241,37 @@ paths:
 
   # Single Memory Blade
   /cfm/v1/appliances/{applianceId}/blades/{bladeId}:
+    patch:
+      description: For any subsequent requests, force the blade to re-synchronize all its' cfm-service data with the real hardware.
+      operationId: bladesResyncById
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      - $ref: "#/components/parameters/bladeId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/blade'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
     get:
       description: Retrieve information for a single memory blade. {bladeId} has to match the id of the blade.
       operationId: bladesGetById
@@ -434,6 +501,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/memoryRegion"
+        "206":
+          description: Partial Content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/memoryRegion"
         "400":
           description: Bad request
           content:
@@ -473,6 +546,12 @@ paths:
       responses:
         "201":
           description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/memoryRegion"
+        "206":
+          description: Partial Content
           content:
             application/json:
               schema:
@@ -645,6 +724,36 @@ paths:
                 $ref: "#/components/schemas/statusMessage"
   # Single CXL Host
   /cfm/v1/hosts/{hostId}:
+    patch:
+      description: For any subsequent requests, force the host to re-synchronize all its' cfm-service data with the real hardware.
+      operationId: hostsResyncById
+      parameters:
+      - $ref: "#/components/parameters/hostId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/host'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
     get:
       summary: Get information for a single CXL Host.
       operationId: hostsGetById

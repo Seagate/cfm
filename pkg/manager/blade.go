@@ -34,6 +34,7 @@ type Blade struct {
 
 	// Backend access data
 	backendOps backend.BackendOperations
+	creds      *openapi.Credentials // Used during resync
 }
 
 type RequestNewBlade struct {
@@ -42,6 +43,7 @@ type RequestNewBlade struct {
 	Port        uint16
 	ApplianceId string
 	BackendOps  backend.BackendOperations
+	Creds       *openapi.Credentials
 }
 
 func NewBlade(ctx context.Context, r *RequestNewBlade) (*Blade, error) {
@@ -57,6 +59,7 @@ func NewBlade(ctx context.Context, r *RequestNewBlade) (*Blade, error) {
 		Resources:   make(map[string]*BladeResource),
 		Memory:      make(map[string]*BladeMemory),
 		backendOps:  r.BackendOps,
+		creds:       r.Creds,
 	}
 
 	err := b.init(ctx)
@@ -182,9 +185,16 @@ func (b *Blade) ComposeMemory(ctx context.Context, r *RequestComposeMemory) (*op
 
 	memoryRegion, err := b.ComposeMemoryByResource(ctx, r.PortId, resourceIds)
 	if err != nil {
-		newErr := fmt.Errorf("compose memory by resource failure during compose memory: %w", err)
-		logger.Error(newErr, "failure: compose memory")
-		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
+		if memoryRegion != nil {
+			newErr := fmt.Errorf("compose memory by resource allocation success but port assignment failure: %w", err)
+			logger.Error(newErr, "partial success: compose memory")
+			logger.V(2).Info("partial success: compose memory: ", "memoryId", memoryRegion.Id, "SizeMiB", memoryRegion.SizeMiB, "bladeId", memoryRegion.MemoryBladeId, "applianceId", memoryRegion.MemoryApplianceId)
+			return memoryRegion, &common.RequestError{StatusCode: common.StatusComposePartialSuccess, Err: newErr}
+		} else {
+			newErr := fmt.Errorf("compose memory by resource failure during compose memory: %w", err)
+			logger.Error(newErr, "failure: compose memory")
+			return nil, &common.RequestError{StatusCode: common.StatusComposeMemoryFailure, Err: newErr}
+		}
 	}
 
 	logger.V(2).Info("success: compose memory", "memoryId", memoryRegion.Id, "portId", memoryRegion.MemoryAppliancePort, "SizeMiB", memoryRegion.SizeMiB, "bladeId", memoryRegion.MemoryBladeId, "applianceId", memoryRegion.MemoryApplianceId)
@@ -228,7 +238,7 @@ func (b *Blade) ComposeMemoryByResource(ctx context.Context, portId string, reso
 	if err != nil {
 		newErr := fmt.Errorf("get details failure for memory [%s] during compose by resource: appliance [%s] blade [%s] resourceIds [%s]: %w", responseAlloc.MemoryId, b.ApplianceId, b.Id, resourceIds, err)
 		logger.Error(newErr, "failure: compose memory by resource")
-		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
+		return nil, &common.RequestError{StatusCode: common.StatusComposeMemoryByResourceFailure, Err: newErr}
 	}
 
 	//Invalidate all related object cache's
@@ -253,7 +263,7 @@ func (b *Blade) ComposeMemoryByResource(ctx context.Context, portId string, reso
 	if errAssign != nil {
 		newErr := fmt.Errorf("assign memory failure during compose memory by resource: requestAssign [%v]: %w", requestAssign, errAssign)
 		logger.Error(newErr, "failure: compose memory by resource")
-		return nil, &common.RequestError{StatusCode: errAssign.(*common.RequestError).StatusCode, Err: newErr}
+		return &memoryRegion, &common.RequestError{StatusCode: common.StatusComposePartialSuccess, Err: newErr}
 	}
 
 	// Save assigned port
@@ -559,6 +569,20 @@ func (b *Blade) GetResourceTotals(ctx context.Context) (*ResponseResourceTotals,
 	return &response, nil
 }
 
+func (b *Blade) InvalidateCache() {
+	for _, m := range b.Memory {
+		m.InvalidateCache()
+	}
+
+	for _, p := range b.Ports {
+		p.InvalidateCache()
+	}
+
+	for _, r := range b.Resources {
+		r.InvalidateCache()
+	}
+}
+
 /////////////////////////////////////
 //////// Private Functions //////////
 /////////////////////////////////////
@@ -737,10 +761,32 @@ func (b *Blade) findResourcesByQoS(sizeMib int32, qos openapi.Qos) []string {
 		return candidates[i].unusedResourcesConsecutive >= candidates[j].unusedResourcesConsecutive
 	})
 
-	if candidates[targetQos-1].resourceIds != nil { // if "candidates" filled through index targetQos-1, then valid ids have been found
-		for i := 0; i < int(targetQos); i++ {
+	// QoS defines the # of memory resource "channels" the requested memory must span (ie - the bandwidth)
+	// The "candidate" array contains available memory resources, for a given QoS, for each channel.
+	// (Note that sometimes a channel can have NO options)
+	// So, if you have a QoS=2 and 4 memory resources channels, there are 2 possible QoS "groups' available in the candidate array to evaluate here.
+	qosGroupIndexStepSize := targetQos
+	for qosGroupStartIndex := int32(0); qosGroupStartIndex < b.NumResourceChannels; qosGroupStartIndex = qosGroupStartIndex + qosGroupIndexStepSize {
+		start := qosGroupStartIndex
+		end := start + qosGroupIndexStepSize
+
+		noResourcesAvailable := false
+		for i := start; i < end; i++ {
+			if len(candidates[i].resourceIds) == 0 {
+				noResourcesAvailable = true
+				break
+			}
+		}
+
+		if noResourcesAvailable {
+			continue
+		}
+
+		for i := start; i < end; i++ {
 			resourceIds = append(resourceIds, candidates[i].resourceIds[:]...)
 		}
+
+		break
 	}
 
 	return resourceIds

@@ -7,8 +7,8 @@ info:
   license:
     name: Apache-2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
-  title: Composable Fabric Manager Service OpenAPI
-  version: 1.6.6
+  title: Composer and Fabric Manager Service OpenAPI
+  version: 1.6.8
 servers:
 - url: http://localhost:8080/
 - url: https://localhost:8080/
@@ -157,6 +157,50 @@ paths:
               schema:
                 $ref: '#/components/schemas/statusMessage'
           description: Internal Server Error
+    patch:
+      description: "For any subsequent requests, force the appliance to re-synchronize\
+        \ all its' cfm-service data, for every blade, with the real hardware."
+      operationId: appliancesResyncById
+      parameters:
+      - description: A unique identifier for a Memory Appliance
+        explode: false
+        in: path
+        name: applianceId
+        required: true
+        schema:
+          $ref: '#/components/schemas/id'
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/appliance'
+          description: OK
+        "206":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/appliance'
+          description: Partial Content
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+          description: Bad Request
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+          description: Not Found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+          description: Internal Server Error
   /cfm/v1/appliances/{applianceId}/blades:
     get:
       description: Retrieve a collection of all managed blades under a memory appliance.
@@ -266,6 +310,52 @@ paths:
       description: "Retrieve information for a single memory blade. {bladeId} has\
         \ to match the id of the blade."
       operationId: bladesGetById
+      parameters:
+      - description: A unique identifier for a Memory Appliance
+        explode: false
+        in: path
+        name: applianceId
+        required: true
+        schema:
+          $ref: '#/components/schemas/id'
+        style: simple
+      - description: A unique identifier for a Memory Blade
+        explode: false
+        in: path
+        name: bladeId
+        required: true
+        schema:
+          $ref: '#/components/schemas/id'
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/blade'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+          description: Bad Request
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+          description: Not Found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+          description: Internal Server Error
+    patch:
+      description: "For any subsequent requests, force the blade to re-synchronize\
+        \ all its' cfm-service data with the real hardware."
+      operationId: bladesResyncById
       parameters:
       - description: A unique identifier for a Memory Appliance
         explode: false
@@ -573,6 +663,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/memoryRegion'
           description: Created
+        "206":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/memoryRegion'
+          description: Partial Content
         "400":
           content:
             application/json:
@@ -631,6 +727,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/memoryRegion'
           description: Created
+        "206":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/memoryRegion'
+          description: Partial Content
         "400":
           content:
             application/json:
@@ -927,6 +1029,44 @@ paths:
                 $ref: '#/components/schemas/statusMessage'
           description: Internal Server Error
       summary: Get information for a single CXL Host.
+    patch:
+      description: "For any subsequent requests, force the host to re-synchronize\
+        \ all its' cfm-service data with the real hardware."
+      operationId: hostsResyncById
+      parameters:
+      - description: A unique identifier for a CXL Host
+        explode: false
+        in: path
+        name: hostId
+        required: true
+        schema:
+          $ref: '#/components/schemas/id'
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/host'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+          description: Bad Request
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+          description: Not Found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+          description: Internal Server Error
   /cfm/v1/hosts/{hostId}/ports:
     get:
       description: Retrieve a collection of CXL host ports.

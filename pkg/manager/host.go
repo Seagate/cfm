@@ -27,6 +27,7 @@ type Host struct {
 
 	// Backend access data
 	backendOps backend.BackendOperations
+	creds      *openapi.Credentials // Used during resync
 }
 
 var HostMemoryDomain = map[string]openapi.MemoryType{
@@ -39,6 +40,7 @@ type RequestNewHost struct {
 	Ip         string
 	Port       uint16
 	BackendOps backend.BackendOperations
+	Creds      *openapi.Credentials
 }
 
 func NewHost(ctx context.Context, r *RequestNewHost) (*Host, error) {
@@ -53,6 +55,7 @@ func NewHost(ctx context.Context, r *RequestNewHost) (*Host, error) {
 		MemoryDevices: make(map[string]*HostMemoryDevice),
 		Memory:        make(map[string]*HostMemory),
 		backendOps:    r.BackendOps,
+		creds:         r.Creds,
 	}
 
 	err := h.init(ctx)
@@ -391,12 +394,26 @@ func (h *Host) GetPortsBackend(ctx context.Context) ([]string, error) {
 	return response.PortIds, nil
 }
 
-func (b *Host) GetNetIp() string {
-	return b.Socket.IpAddress
+func (h *Host) GetNetIp() string {
+	return h.Socket.IpAddress
 }
 
-func (b *Host) GetNetPort() uint16 {
-	return b.Socket.Port
+func (h *Host) GetNetPort() uint16 {
+	return h.Socket.Port
+}
+
+func (h *Host) InvalidateCache() {
+	for _, m := range h.Memory {
+		m.InvalidateCache()
+	}
+
+	for _, p := range h.Ports {
+		p.InvalidateCache()
+	}
+
+	for _, d := range h.MemoryDevices {
+		d.InvalidateCache()
+	}
 }
 
 type ResponseHostMemoryTotals struct {

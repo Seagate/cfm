@@ -3,17 +3,19 @@
 package backend
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
-	"github.com/levigross/grequests"
 	"k8s.io/klog/v2"
 )
 
@@ -32,29 +34,31 @@ var HTTPOperation = struct {
 	PUT    HTTPOperationType
 	DELETE HTTPOperationType
 }{
-	POST:   "post",
-	GET:    "get",
-	PUT:    "put",
-	DELETE: "delete",
+	POST:   "POST",
+	GET:    "GET",
+	PUT:    "PUT",
+	DELETE: "DELETE",
 }
 
 type RedfishPath string
 
-// This struct holds the GRequests Session and related info
+// This struct holds the Session and related info
 type Session struct {
-	session           *grequests.Session
 	redfishPaths      map[RedfishPath]string
 	applianceResource *MemoryApplianceResources
 	memoryChunkPath   map[string]string
-	ip                string
-	port              uint16
-	username          string
-	password          string
-	protocol          string
-	token             string
 	RedfishSessionId  string
 	SessionId         string
 	uuid              string
+	client            *http.Client
+
+	ip       string // IP address of the client
+	port     uint16 // port address of the client
+	username string // user name of the client
+	password string // password of the client
+	protocol string // http or https
+	insecure bool   // ignore secure flag in https
+	xToken   string // Authentication token
 }
 
 // Map of UUID to Session object
@@ -65,27 +69,25 @@ func init() {
 	activeSessions = make(map[string]*Session)
 }
 
-// This struct holds the GRequests Response and error
+// This struct holds the Response and error
 type Response struct {
-	response     *grequests.Response
+	StatusCode   int
+	header       http.Header
 	err          error
-	jsonResponse map[string]interface{}
+	jsonRespBody map[string]interface{}
 }
 
 // Member function of Response that extracts a value from JSON
 func (resp *Response) valueFromJSON(key string) (interface{}, error) {
 	var jsonError error
-	if len(resp.jsonResponse) == 0 {
-		jsonError = resp.response.JSON(&resp.jsonResponse)
-	}
 	var value interface{}
 	var exists bool
 	if jsonError != nil {
-		return value, fmt.Errorf("Error reading JSON, error: %v", jsonError)
+		return value, fmt.Errorf("error reading JSON, error: %v", jsonError)
 	}
-	value, exists = resp.jsonResponse[key]
+	value, exists = resp.jsonRespBody[key]
 	if !exists {
-		return value, fmt.Errorf("Key (%s) does not exist in JSON", key)
+		return value, fmt.Errorf("key (%s) does not exist in JSON", key)
 	}
 	return value, nil
 }
@@ -270,53 +272,62 @@ func (session *Session) queryWithJSON(operation HTTPOperationType, path string, 
 	var response Response
 	url := fmt.Sprintf("%s://%s:%d%s", session.protocol, session.ip, session.port, path)
 
-	var requestOptions grequests.RequestOptions
+	jsonByteData, err := json.Marshal(jsonData)
+	if err != nil {
+		fmt.Println("HTTP: Error creating request")
+		response.err = fmt.Errorf("http error: input json marshal fail")
+		return response
+	}
 
-	// authentication
-	if session.token != "" {
-		requestOptions = grequests.RequestOptions{
-			Headers: map[string]string{
-				"Accept":       "*/*",
-				"X-Auth-Token": session.token,
-			},
+	request, err := http.NewRequest(string(operation), url, bytes.NewBuffer(jsonByteData))
+	if err != nil {
+		fmt.Println("HTTP: Error creating request")
+		response.err = fmt.Errorf("http error: Error creating request")
+		return response
+	}
+	if session.xToken != "" {
+		request.Header.Set("X-Auth-Token", session.xToken)
+	}
+	request.Header.Set("Content-Type", "application/json; charset=UTF-8")
+
+	if session.client == nil {
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: session.insecure},
 		}
-	} else {
-		requestOptions = grequests.RequestOptions{
-			Headers: map[string]string{
-				"Accept": "*/*",
-			},
-		}
+
+		session.client = &http.Client{Transport: tr, Timeout: 10 * time.Second}
+	}
+	httpresponse, err := session.client.Do(request)
+	if err != nil {
+		fmt.Println("HTTP: Error sending request", url)
+		response.err = fmt.Errorf("http error: Error sending request")
+		return response
+	}
+	defer httpresponse.Body.Close()
+
+	response.StatusCode = httpresponse.StatusCode
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		response.err = fmt.Errorf(http.StatusText(response.StatusCode))
+	}
+	response.header = httpresponse.Header
+
+	err = json.NewDecoder(httpresponse.Body).Decode(&response.jsonRespBody)
+	if err != nil && httpresponse.ContentLength != 0 {
+		fmt.Println("HTTP: Error decode json response")
+		response.err = fmt.Errorf("http error: Error decode json response")
+		return response
 	}
 
-	// request body
-	if jsonData != nil {
-		requestOptions.JSON = jsonData
-	}
-
-	// send the request
-	switch operation {
-	case HTTPOperation.POST:
-		response.response, response.err = session.session.Post(url, &requestOptions)
-	case HTTPOperation.GET:
-		response.response, response.err = session.session.Get(url, &requestOptions)
-	case HTTPOperation.PUT:
-		response.response, response.err = session.session.Put(url, &requestOptions)
-	case HTTPOperation.DELETE:
-		response.response, response.err = session.session.Delete(url, &requestOptions)
-	}
-
-	if response.err == nil && response.response != nil && !response.response.Ok {
-		response.err = fmt.Errorf(http.StatusText(response.response.StatusCode))
-
-		// check for error due to session timeout ( service would return error code 401)
-		if session.token != "" && response.response.StatusCode == http.StatusUnauthorized {
-			// Re-authenticate
-			fmt.Print("Redfish session might have timed out. Re-authenticate. Warning! infinite loop might occur if the issue is from the redfish server.\n")
-			err := session.auth()
-			if err == nil {
-				path = session.buildPath(SessionServiceKey, session.RedfishSessionId)
-				response = session.queryWithJSON(operation, path, jsonData)
-			}
+	// check for error due to session timeout ( service would return error code 401)
+	if session.xToken != "" && response.StatusCode == http.StatusUnauthorized {
+		// Re-authenticate
+		fmt.Print("Redfish session might have timed out. Re-authenticate. Warning! infinite loop might occur if the issue is from the redfish server.\n")
+		session.client = nil
+		session.xToken = ""
+		err := session.auth()
+		if err == nil {
+			path = session.buildPath(SessionServiceKey, session.RedfishSessionId)
+			response = session.queryWithJSON(operation, path, jsonData)
 		}
 	}
 
@@ -461,7 +472,7 @@ func (session *Session) auth() error {
 	response := session.queryWithJSON(HTTPOperation.POST, redfish_serviceroot+"SessionService/Sessions", authData)
 
 	if response.err == nil {
-		session.token = response.response.Header.Get("X-Auth-Token")
+		session.xToken = response.header.Get("X-Auth-Token")
 		session.RedfishSessionId, response.err = response.stringFromJSON("Id")
 	}
 	return response.err
@@ -474,15 +485,16 @@ func (service *httpfishService) CreateSession(ctx context.Context, settings *Con
 	logger.V(4).Info("create session", "request", req)
 
 	var session = Session{
-		session:         grequests.NewSession(&grequests.RequestOptions{InsecureSkipVerify: req.Insecure}),
 		redfishPaths:    make(map[RedfishPath]string),
 		memoryChunkPath: make(map[string]string),
-		ip:              req.Ip,
-		port:            uint16(req.Port),
-		username:        req.Username,
-		password:        req.Password,
-		protocol:        req.Protocol,
 		uuid:            "",
+
+		ip:       req.Ip,
+		port:     uint16(req.Port),
+		username: req.Username,
+		password: req.Password,
+		protocol: req.Protocol,
+		insecure: req.Insecure,
 	}
 
 	err := session.auth()
@@ -502,7 +514,7 @@ func (service *httpfishService) CreateSession(ctx context.Context, settings *Con
 			return &CreateSessionResponse{SessionId: session.SessionId, Status: "Failure", ServiceError: err}, err
 		}
 	}
-	logger.V(4).Info("Session Created", "X-Auth-Token", session.token, "RedfishSessionId", session.RedfishSessionId)
+	logger.V(4).Info("Session Created", "X-Auth-Token", session.xToken, "RedfishSessionId", session.RedfishSessionId)
 
 	// walk redfish path and store the path in session struct
 	session.pathInit()
@@ -531,7 +543,7 @@ func (service *httpfishService) DeleteSession(ctx context.Context, settings *Con
 	response := session.query(HTTPOperation.DELETE, session.buildPath(SessionServiceKey, session.RedfishSessionId))
 
 	// CloseIdleConnections closes the idle connections that a session client may make use of
-	session.session.CloseIdleConnections()
+	// session.CloseIdleConnections()
 	delete(activeSessions, session.SessionId)
 
 	// Let user know of delete backend failure.
@@ -763,7 +775,7 @@ func (service *httpfishService) AllocateMemory(ctx context.Context, settings *Co
 	}
 
 	//extract the memorychunk Id
-	uriOfMemorychunkId := response.response.Header.Values("Location")
+	uriOfMemorychunkId := response.header.Values("Location")
 	memoryId := getIdFromOdataId(uriOfMemorychunkId[0])
 	session.memoryChunkPath[memoryId] = uriOfMemorychunkId[0]
 
@@ -830,7 +842,7 @@ func (service *httpfishService) AllocateMemoryByResource(ctx context.Context, se
 	}
 
 	//extract the memorychunk Id
-	uriOfMemorychunkId := response.response.Header.Values("Location")
+	uriOfMemorychunkId := response.header.Values("Location")
 	memoryId := getIdFromOdataId(uriOfMemorychunkId[0])
 	session.memoryChunkPath[memoryId] = uriOfMemorychunkId[0]
 

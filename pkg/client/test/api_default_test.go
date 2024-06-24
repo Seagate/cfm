@@ -1,5 +1,5 @@
 /*
-Composable Fabric Manager Service OpenAPI
+Composer and Fabric Manager Service OpenAPI
 
 Testing DefaultAPIService
 
@@ -10,7 +10,7 @@ Testing DefaultAPIService
 package client
 
 import (
-	openapiclient "cfm/pkg/client"
+	openapiclient "seagit.okla.seagate.com/storm-mgmt/cfm-service/pkg/client"
 
 	"context"
 	"testing"
