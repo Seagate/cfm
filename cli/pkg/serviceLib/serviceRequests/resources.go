@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"strings"
 
+	service "cfm/pkg/client"
+
 	"github.com/facette/natsort"
 	"github.com/spf13/cobra"
 	"k8s.io/klog/v2"
@@ -123,7 +125,7 @@ func (r *ServiceRequestListResources) OutputResults(s *serviceWrap.ResourceBlock
 			continue
 		}
 
-		resourceMap := make(map[string]*client.MemoryResourceBlock, num)
+		resourceMap := make(map[string]*service.MemoryResourceBlock, num)
 		var resourceIds []string
 		for _, resBlk := range *resources {
 			id := resBlk.GetId()

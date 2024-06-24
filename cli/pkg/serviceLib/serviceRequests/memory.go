@@ -125,7 +125,7 @@ func (r *ServiceRequestListMemoryRegions) OutputSummaryListMemory(s *serviceWrap
 			continue
 		}
 
-		memoryMap := make(map[string]*client.MemoryRegion, num)
+		memoryMap := make(map[string]*service.MemoryRegion, num)
 		var memoryIds []string
 		for _, memoryRegion := range *memoryRegions {
 			id := memoryRegion.GetId()
@@ -379,7 +379,7 @@ func (r *ServiceRequestListHostMemoryRegions) OutputSummaryListMemory(s *service
 			continue
 		}
 
-		memoryMap := make(map[string]*client.MemoryRegion, num)
+		memoryMap := make(map[string]*service.MemoryRegion, num)
 		var memoryIds []string
 		for _, memoryRegion := range *memoryRegions {
 			id := memoryRegion.GetId()
