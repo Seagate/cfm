@@ -10,7 +10,7 @@ Testing DefaultAPIService
 package client
 
 import (
-	openapiclient "seagit.okla.seagate.com/storm-mgmt/cfm-service/pkg/client"
+	openapiclient "cfm/pkg/client"
 
 	"context"
 	"testing"
