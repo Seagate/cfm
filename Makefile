@@ -4,7 +4,6 @@
 APP_NAME := cfm-service
 CLIAPP_NAME := cfm-cli
 CONF_NAME := cfm-service.conf
-TEST_CONF_NAME := test-cfm-service.conf
 OPENAPI_YAML := api/cfm-openapi.yaml
 OPENAPI_REDFISH_YAML := api/redfish-openapi.yaml
 GO_VERSION := 1.22.1
@@ -15,44 +14,83 @@ GENERATE_USER := $(shell id -u ${USER}):$(shell id -g ${USER})
 help:
 	@echo ""
 	@echo "-----------------------------------------------------------------------------------"
-	@echo "make clean            - Remove all executables"
-	@echo "make local            - Build all executables"
-	@echo "make run              - Build a local $(APP_NAME) executable and run it using config file $(CONF_NAME)"
-	@echo "make run-defaults     - Build a local $(APP_NAME) executable and run it using its' internal config defaults"
-	@echo "make validate         - validate the openapi specification using openapi-generator-cli"
-	@echo "make generate         - Generate supporting code for the whole suite using openapi-generator-cli"
-	@echo "make generate-openapi - Generate go server code for the openapi specification using openapi-generator-cli"
-	@echo "make generate-client  - Generate go client code for the openapi specification using openapi-generator-cli"
-	@echo "make generate-redfish - Generate go server code for the redfish specification using openapi-generator-cli"
-	@echo "make generate-axios   - Generate axios server code for the openapi specification using openapi-generator-cli"
-	@echo "make webui-dist       - Build the webui distribution package for cfm-service"
-	@echo "make docker-iamge     - Build the docker image for cfm-service"
-	@echo "make fmt              - Run gofmt"
-	@echo "make test-go          - Run all Go tests"
-	@echo "make vet-go           - Run go vet"
-	@echo "make test-go-backend  - Run Go unit tests on the backend go code"
-	@echo "make regression       - Build cfm-service-regression"
-	@echo "make run-regression   - Run cfm-service-regression"
+	@echo "make clean-service        - Remove local $(APP_NAME) executable"
+	@echo "make clean-cli            - Remove local $(CLIAPP_NAME) executable"
+	@echo "make clean-go             - Remove all Go executables"
+	@echo "make build-service        - Build local $(APP_NAME) executable"
+	@echo "make build-cli            - Build local $(CLIAPP_NAME) executable"
+	@echo "make build-go             - Build local $(APP_NAME) and $(CLIAPP_NAME) executables"
+	@echo "make build-docker-cfm     - Build a local docker image for the cfm software suite"
+	@echo "make build-regression     - Build a local cfm-service-regression"
+	@echo "make run-service          - Build and run a local $(APP_NAME) executable using config file $(CONF_NAME)"
+	@echo "make run-service-defaults - Build and run a local $(APP_NAME) executable using its' internal config defaults"
+	@echo "make run-regression       - Build and run a local cfm-service-regression executable"
+	@echo "make validate             - Validate the openapi specification using openapi-generator-cli"
+	@echo "make generate             - Generate supporting code for the whole suite using openapi-generator-cli"
+	@echo "make generate-openapi     - Generate go server code for the openapi specification using openapi-generator-cli"
+	@echo "make generate-client      - Generate go client code for the openapi specification using openapi-generator-cli"
+	@echo "make generate-redfish     - Generate go server code for the redfish specification using openapi-generator-cli"
+	@echo "make generate-axios       - Generate axios server code for the openapi specification using openapi-generator-cli"
+	@echo "make fmt-go               - Run gofmt"
+	@echo "make test-go              - Run all Go tests"
+	@echo "make vet-go               - Run go vet"
+	@echo "make test-go-backend      - Run Go unit tests on the backend go code"
 	@echo ""
 
-clean:
+clean-service:
+	@echo "Clean up cfm-service..."
+	go clean
+	rm -f $(APP_NAME) cfm-service-regression
+
+clean-cli:
+	@echo "Clean up cfm-cli..."
+	go clean
+	rm -f $(CLIAPP_NAME)
+
+clean-go:
 	@echo "Clean up..."
 	go clean
 	rm -f $(APP_NAME) $(CLIAPP_NAME) cfm-service-regression
 
-local: clean
-	@echo "Build local executable..."
+build-service: clean-service
+	@echo "Building cfm-service executable..."
+	go build -o $(APP_NAME) -ldflags "-X main.buildTime=`date -u '+%Y-%m-%dT%H:%M:%S'`" ./cmd/$(APP_NAME)/main.go
+	ls -lh $(APP_NAME)
+
+build-cli: clean-cli
+	@echo "Building cfm-cli executable..."
+	go build -o $(CLIAPP_NAME) -ldflags "-X main.buildTime=`date -u '+%Y-%m-%dT%H:%M:%S'`" ./cmd/$(CLIAPP_NAME)/main.go
+	ls -lh $(CLIAPP_NAME)
+
+build-go: clean-go
+	@echo "Building cfm Go executables..."
 	go build -o $(APP_NAME) -ldflags "-X main.buildTime=`date -u '+%Y-%m-%dT%H:%M:%S'`" ./cmd/$(APP_NAME)/main.go
 	go build -o $(CLIAPP_NAME) -ldflags "-X main.buildTime=`date -u '+%Y-%m-%dT%H:%M:%S'`" ./cmd/$(CLIAPP_NAME)/main.go
 	ls -lh $(APP_NAME) $(CLIAPP_NAME)
 
-run: local
-	@echo "Running $(APP_NAME) using config file $(CONF_NAME)"
+build-docker-cfm:
+	@echo "Building local docker image of cfm software suite..."
+	docker build --no-cache -t cfm -f docker/Dockerfile .
+
+build-regression:
+	@echo "Building local cfm-service-regression..."
+	go build -o cfm-service-regression cmd/cfm-service-regression/main.go
+
+install-webui-dist: build-webui-dist
+	@echo "Installing webui distro into $(APP_NAME)..."
+	mkdir -p ./services/webui/dist
+	cp ./webui/dist ./services/webui/dist
+
+run-service: build-service
+	@echo "Running $(APP_NAME) using config file $(CONF_NAME) (Ctrl-C to stop)"
 	./$(APP_NAME) -config $(CONF_NAME)
 
-run-defaults: local
-	@echo "Running $(APP_NAME) using config defaults"
+run-service-defaults: build-service
+	@echo "Running $(APP_NAME) using config defaults (Ctrl-C to stop)"
 	./$(APP_NAME)
+
+run-regression: build-regression
+	./cfm-service-regression -debug 4 --ginkgo.v --ginkgo.fail-fast
 
 validate:
 	@echo "Validating $(OPENAPI_YAML) using openapi-generator-cli"
@@ -68,7 +106,7 @@ generate-openapi:
 generate-client:
 	@echo "Generating $(OPENAPI_YAML) go client using openapi-generator-cli"
 	docker run -u $(GENERATE_USER) --rm -v ${PWD}:/local openapitools/openapi-generator-cli:v7.0.0 generate -i /local/$(OPENAPI_YAML) -g go -o /local/pkg/client -p isGoSubmodule=true,withGoMod=false --package-name client --ignore-file-override /local/api/ignore/.openapi-generator-ignore-client -t /local/api/templates/go
-	# workaround for withGoMod=false not functioning with openapi-generator  
+	# workaround for withGoMod=false not functioning with openapi-generator
 	rm pkg/client/go.mod
 	rm pkg/client/go.sum
 
@@ -89,22 +127,9 @@ generate-axios:
 
 generate: generate-openapi generate-client generate-redfish generate-axios
 
-webui-dist:
-	@echo "Generating webui distribution package"
-	cd webui
-	npm run build
-	cd ..
-
-docker-image:
-	docker build --no-cache -t cfm -f docker/Dockerfile .
-
-fmt:
-	@echo "Format check"
+fmt-go:
+	@echo "Format check(Go)"
 	docker run --rm -v ${PWD}:/local golang:$(GO_VERSION) $(GOFMT_OPTS)
-
-test: local
-	@echo "Testing $(APP_NAME) using config file $(TEST_CONF_NAME)"
-	./$(APP_NAME) -config $(TEST_CONF_NAME)
 
 test-go: | vet-go
 	@echo "Running all Go tests"
@@ -117,10 +142,3 @@ vet-go:
 test-go-backend:
 	@echo "Running Go tests on pkg/backend"
 	go test -v ./pkg/backend
-
-regression:
-	@echo "Build local cfm-service-regression..."
-	go build -o cfm-service-regression cmd/cfm-service-regression/main.go
-
-run-regression:
-	./cfm-service-regression -debug 4 --ginkgo.v --ginkgo.fail-fast
