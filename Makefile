@@ -1,5 +1,5 @@
 # Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
-.PHONY: help clean local run run-defaults validate generate generate-openapi generate-client generate-redfish generate-axios webui-dist docker-image fmt test-go vet-go test-go-backend regression run-regression
+.PHONY: help clean local run run-defaults validate generate generate-openapi generate-client generate-redfish generate-axios webui-dist docker-image fmt test-go vet-go test-go-backend
 
 APP_NAME := cfm-service
 CLIAPP_NAME := cfm-cli
@@ -31,14 +31,12 @@ help:
 	@echo "make test-go          - Run all Go tests"
 	@echo "make vet-go           - Run go vet"
 	@echo "make test-go-backend  - Run Go unit tests on the backend go code"
-	@echo "make regression       - Build cfm-service-regression"
-	@echo "make run-regression   - Run cfm-service-regression"
 	@echo ""
 
 clean:
 	@echo "Clean up..."
 	go clean
-	rm -f $(APP_NAME) $(CLIAPP_NAME) cfm-service-regression
+	rm -f $(APP_NAME) $(CLIAPP_NAME)
 
 local: clean
 	@echo "Build local executable..."
@@ -117,10 +115,3 @@ vet-go:
 test-go-backend:
 	@echo "Running Go tests on pkg/backend"
 	go test -v ./pkg/backend
-
-regression:
-	@echo "Build local cfm-service-regression..."
-	go build -o cfm-service-regression cmd/cfm-service-regression/main.go
-
-run-regression:
-	./cfm-service-regression -debug 4 --ginkgo.v --ginkgo.fail-fast

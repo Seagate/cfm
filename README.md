@@ -12,7 +12,6 @@ __cfm-webui__ is a single-page application presenting a web UI using Vue.js 3. T
 - [DOCKER](docs/DOCKER.md) - Information on running __cfm-service__ and components in Docker containers
 - [SETUP](docs/SETUP.md) - Information on setting up a development environment
 - [LOG](docs/LOG.md) - Information on logging level definations
-- [REGRESSION](docs/REGRESSION.md) - TODO - Information on running __cfm-regression__ test suite- [TEMPLATES](docs/TEMPLATES.md) - Information on the template file used in openapi-generaot for generating the go service
 
 ## OpenAPI Documentation
 
