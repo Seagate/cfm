@@ -18,7 +18,7 @@ const (
 	DefaultVerbosity    = "0"        // Default log level
 	DefaultMaxEndpoints = 100        // Default maximum endpoints
 	DefaultPort         = "8080"     // Default cfm-service port
-	DefaultWebuiIp      = ""         // Default IP address for cfm-service's webui service.  This DISABLES the webui service.
+	DefaultWebui        = false      // Default state for cfm-service's webui service.  This DISABLES the webui service.
 	DefaultWebuiPort    = "3000"     // Default port for cfm-service's webui service
 )
 
@@ -30,7 +30,7 @@ type Settings struct {
 	Backend      string // The backend interface to use, possible values are:  httpfish
 	MaxEndpoints int    // The maximum number of endpoints
 	Port         string // The port that this service listens on
-	WebuiIp      string // The IP address where cfm-service serves up its' webui service
+	Webui        bool   // The switch where cfm-service serves up its' webui service
 	WebuiPort    string // The port where cfm-service serves up its' webui service
 }
 
@@ -63,7 +63,7 @@ func (s *Settings) InitContext(args []string, ctx context.Context) (context.Cont
 		backend      = flags.String("backend", DefaultBackend, backendNote)
 		maxEndpoints = flags.Int("maxEndpoints", DefaultMaxEndpoints, "The maximum number of endpoints this application handles")
 		port         = flags.String("port", DefaultPort, "CFM service IP Address port")
-		webuiIp      = flags.String("webuiIp", DefaultWebuiIp, "IP Address for cfm-service's webui service")
+		webui        = flags.Bool("webui", DefaultWebui, "Enable cfm-service's webui service")
 		webuiPort    = flags.String("webuiPort", DefaultWebuiPort, "Port for cfm-service's webui service")
 	)
 
@@ -79,7 +79,7 @@ func (s *Settings) InitContext(args []string, ctx context.Context) (context.Cont
 	s.Backend = *backend
 	s.MaxEndpoints = *maxEndpoints
 	s.Port = *port
-	s.WebuiIp = *webuiIp
+	s.Webui = *webui
 	s.WebuiPort = *webuiPort
 
 	klog.V(4).InfoS("SetContextString", "KeyVerbosity", s.Verbosity, "KeyBackend", s.Backend)

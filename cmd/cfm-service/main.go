@@ -78,13 +78,14 @@ func main() {
 	handler := c.Handler(router)
 
 	// Attempt to start cfm-service's webui service on a separate thread
-	webuiDistPath, err := services.FindWebUIDistPath(ctx)
-	if err != nil {
-		logger.Error(err, ", [WEBUI] unable to locate cfm-service's webui service distro")
-	} else {
-		wg.Add(1)
-		socket := fmt.Sprintf("%s:%s", settings.WebuiIp, settings.WebuiPort)
-		go services.StartWebUIService(ctx, &socket, webuiDistPath)
+	if settings.Webui {
+		webuiDistPath, err := services.FindWebUIDistPath(ctx)
+		if err != nil {
+			logger.Error(err, ", [WEBUI] unable to locate cfm-service's webui service distro")
+		} else {
+			wg.Add(1)
+			go services.StartWebUIService(ctx, &settings.WebuiPort, &settings.Port, webuiDistPath)
+		}
 	}
 
 	// Start the main service

@@ -16,7 +16,7 @@ The `cfm-service` application supports a number of configuration parameters that
 | bool   | -version true\|false     | VERSION=true\|false     | version true\|false     |
 | string | -verbosity `<level>`     | VERBOSITY=`<level>`     | verbosity `<level>`     |
 | int    | -Port `<servicePort>`    | PORT=`<servicePort>`    | Port `<servicePort>`    |
-| string | -webuiIp `<serverIP>`    | WEBUIIP=`<serverIP>`    | webuiIp `<serverIP>`    |
+| bool   | -webui true\|false       | WEBUI=true\|false       | webui true\|false       |
 | int    | -webuiPort `<webuiPort>` | WEBUIPORT=`<webuiPort>` | webuiPort `<webuiPort>` |
 
 Order of precedence:
@@ -31,7 +31,7 @@ Order of precedence:
 For development, follow this steps to easily start testing your code changes:
 
 - Edit `cfm-service.conf` as needed
-  - NOTE: If `webuiIp` is not provided, the webui service within cfm-service will **not** start
+  - NOTE: If `webui` is not set to true, the webui service within cfm-service will **not** start
 - Run `make build-service` to build cfm-service
 
 ### Example 1
@@ -43,7 +43,7 @@ For development, follow this steps to easily start testing your code changes:
 ### Example 2
 
 ```bash
-./cfm-service -config cfm-service.conf -webuiIp xxx.xxx.xxx.xxx
+./cfm-service -config cfm-service.conf -webui
 ```
 
 ## OpenAPI Documentation
