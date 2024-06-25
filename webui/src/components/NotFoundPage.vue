@@ -1,3 +1,4 @@
+<!-- Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates -->
 <template>
   <div class="not-found">
     <h1>🙁404 Not Found</h1>

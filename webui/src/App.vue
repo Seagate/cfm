@@ -1,3 +1,4 @@
+<!-- Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates -->
 <template>
   <v-layout class="rounded rounded-md">
     <v-app-bar app density="compact">
