@@ -9,8 +9,11 @@
     class="d-flex align-center justify-center"
   >
     &copy; {{ new Date().getFullYear() }} Seagate | CFM Service Version:
-    {{ serviceVersion }} | CFM Web UI Version:
-    {{ uiVersion }}
+    <span :style="{ color: serviceVersion ? 'inherit' : 'red', margin: '8px' }">
+      {{ serviceVersion || "Not Found" }}
+    </span>
+    | CFM Web UI Version:
+    <span :style="{ margin: '8px' }"> {{ uiVersion }} </span>
   </v-card>
 </template>
 
