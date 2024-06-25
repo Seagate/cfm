@@ -17,7 +17,7 @@ const (
 	DefaultBackend   = "httpfish" // Default backend interface
 	DefaultVerbosity = "0"        // Default log level
 	DefaultPort      = "8080"     // Default cfm-service port
-	DefaultWebui     = false      // Default state for cfm-service's webui service.  This DISABLES the webui service.
+	DefaultWebui     = ""         // Default IP address for cfm-service's webui service.  This DISABLES the webui service.
 	DefaultWebuiPort = "3000"     // Default port for cfm-service's webui service
 )
 
