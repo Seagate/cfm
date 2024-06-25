@@ -1,3 +1,4 @@
+// Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
 import { defineStore } from 'pinia'
 import { MemoryRegion, DefaultApi } from "@/axios/api";
 import { BASE_PATH } from "@/axios/base";

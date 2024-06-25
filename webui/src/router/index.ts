@@ -1,3 +1,4 @@
+// Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
 // Composables
 import { createRouter, createWebHistory } from 'vue-router'
 
