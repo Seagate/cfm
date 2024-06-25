@@ -59,7 +59,7 @@ Show your appreciation to those who have contributed to the project.
 ## License
 
 Apache 2.0
-Copyright (c) 2022 Seagate Technology LLC and/or its Affiliates
+Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
 
 ## Project status - TODO
 
