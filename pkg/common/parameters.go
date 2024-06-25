@@ -14,24 +14,22 @@ const (
 	NumUuidCharsForId = 4 // Number of chars to strip from an interally generated uuid (starting from the right) for use in the internally generated ID's for appliance, blade and host
 )
 const (
-	DefaultBackend      = "httpfish" // Default backend interface
-	DefaultVerbosity    = "0"        // Default log level
-	DefaultMaxEndpoints = 100        // Default maximum endpoints
-	DefaultPort         = "8080"     // Default cfm-service port
-	DefaultWebui        = false      // Default state for cfm-service's webui service.  This DISABLES the webui service.
-	DefaultWebuiPort    = "3000"     // Default port for cfm-service's webui service
+	DefaultBackend   = "httpfish" // Default backend interface
+	DefaultVerbosity = "0"        // Default log level
+	DefaultPort      = "8080"     // Default cfm-service port
+	DefaultWebui     = false      // Default mode for cfm-service's webui service.  This DISABLES the webui service.
+	DefaultWebuiPort = "3000"     // Default port for cfm-service's webui service
 )
 
 var ValidBackends = []string{"httpfish"}
 
 type Settings struct {
-	Version      bool   // Print the version of this application and exit if true
-	Verbosity    string // The log level verbosity, where 0 is no longing and 4 is very verbose
-	Backend      string // The backend interface to use, possible values are:  httpfish
-	MaxEndpoints int    // The maximum number of endpoints
-	Port         string // The port that this service listens on
-	Webui        bool   // The switch where cfm-service serves up its' webui service
-	WebuiPort    string // The port where cfm-service serves up its' webui service
+	Version   bool   // Print the version of this application and exit if true
+	Verbosity string // The log level verbosity, where 0 is no longing and 4 is very verbose
+	Backend   string // The backend interface to use, possible values are:  httpfish
+	Port      string // The port that this service listens on
+	Webui     bool   // The switch where cfm-service serves up its' webui service
+	WebuiPort string // The port where cfm-service serves up its' webui service
 }
 
 const (
@@ -58,13 +56,12 @@ func (s *Settings) InitContext(args []string, ctx context.Context) (context.Cont
 	backendNote := fmt.Sprintf("Backend interface choice, options: %v", ValidBackends)
 
 	var (
-		version      = flags.Bool("version", false, "Display version and exit")
-		verbosity    = flags.String("verbosity", DefaultVerbosity, "Log level verbosity")
-		backend      = flags.String("backend", DefaultBackend, backendNote)
-		maxEndpoints = flags.Int("maxEndpoints", DefaultMaxEndpoints, "The maximum number of endpoints this application handles")
-		port         = flags.String("port", DefaultPort, "CFM service IP Address port")
-		webui        = flags.Bool("webui", DefaultWebui, "Enable cfm-service's webui service")
-		webuiPort    = flags.String("webuiPort", DefaultWebuiPort, "Port for cfm-service's webui service")
+		version   = flags.Bool("version", false, "Display version and exit")
+		verbosity = flags.String("verbosity", DefaultVerbosity, "Log level verbosity")
+		backend   = flags.String("backend", DefaultBackend, backendNote)
+		port      = flags.String("port", DefaultPort, "CFM service IP Address port")
+		webui     = flags.Bool("webui", DefaultWebui, "Enable cfm-service's webui service")
+		webuiPort = flags.String("webuiPort", DefaultWebuiPort, "Port for cfm-service's webui service")
 	)
 
 	// Parse 1) command line arguments, 2) env variables, 3) config file settings, and 4) defaults (in this order)
@@ -77,7 +74,6 @@ func (s *Settings) InitContext(args []string, ctx context.Context) (context.Cont
 	s.Version = *version
 	s.Verbosity = *verbosity
 	s.Backend = *backend
-	s.MaxEndpoints = *maxEndpoints
 	s.Port = *port
 	s.Webui = *webui
 	s.WebuiPort = *webuiPort

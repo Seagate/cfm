@@ -1,5 +1,5 @@
 # Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
-.PHONY: help clean local run run-defaults validate generate generate-openapi generate-client generate-redfish generate-axios webui-dist docker-image fmt test-go vet-go test-go-backend regression run-regression
+.PHONY: help clean local run run-defaults validate generate generate-openapi generate-client generate-redfish generate-axios webui-dist docker-image fmt test-go vet-go test-go-backend
 
 APP_NAME := cfm-service
 CLIAPP_NAME := cfm-cli
@@ -21,10 +21,8 @@ help:
 	@echo "make build-cli            - Build local $(CLIAPP_NAME) executable"
 	@echo "make build-go             - Build local $(APP_NAME) and $(CLIAPP_NAME) executables"
 	@echo "make build-docker-cfm     - Build a local docker image for the cfm software suite"
-	@echo "make build-regression     - Build a local cfm-service-regression"
 	@echo "make run-service          - Build and run a local $(APP_NAME) executable using config file $(CONF_NAME)"
 	@echo "make run-service-defaults - Build and run a local $(APP_NAME) executable using its' internal config defaults"
-	@echo "make run-regression       - Build and run a local cfm-service-regression executable"
 	@echo "make validate             - Validate the openapi specification using openapi-generator-cli"
 	@echo "make generate             - Generate supporting code for the whole suite using openapi-generator-cli"
 	@echo "make generate-openapi     - Generate go server code for the openapi specification using openapi-generator-cli"
@@ -40,7 +38,7 @@ help:
 clean-service:
 	@echo "Clean up cfm-service..."
 	go clean
-	rm -f $(APP_NAME) cfm-service-regression
+	rm -f $(APP_NAME)
 
 clean-cli:
 	@echo "Clean up cfm-cli..."
@@ -50,7 +48,7 @@ clean-cli:
 clean-go:
 	@echo "Clean up..."
 	go clean
-	rm -f $(APP_NAME) $(CLIAPP_NAME) cfm-service-regression
+	rm -f $(APP_NAME) $(CLIAPP_NAME)
 
 build-service: clean-service
 	@echo "Building cfm-service executable..."
@@ -72,10 +70,6 @@ build-docker-cfm:
 	@echo "Building local docker image of cfm software suite..."
 	docker build --no-cache -t cfm -f docker/Dockerfile .
 
-build-regression:
-	@echo "Building local cfm-service-regression..."
-	go build -o cfm-service-regression cmd/cfm-service-regression/main.go
-
 install-webui-dist: build-webui-dist
 	@echo "Installing webui distro into $(APP_NAME)..."
 	mkdir -p ./services/webui/dist
@@ -88,9 +82,6 @@ run-service: build-service
 run-service-defaults: build-service
 	@echo "Running $(APP_NAME) using config defaults (Ctrl-C to stop)"
 	./$(APP_NAME)
-
-run-regression: build-regression
-	./cfm-service-regression -debug 4 --ginkgo.v --ginkgo.fail-fast
 
 validate:
 	@echo "Validating $(OPENAPI_YAML) using openapi-generator-cli"

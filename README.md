@@ -35,4 +35,3 @@ NOTE: If uncertain of which install option to use, the “install using the apt 
 - [SETUP](docs/SETUP.md) - Information on setting up a development environment
 - [LOG](docs/LOG.md) - Information on logging level definations
 - [TEMPLATES](docs/TEMPLATES.md) - Information on the template file used in openapi-generate for generating the go service
-- [REGRESSION](docs/REGRESSION.md) - TODO - Information on running **cfm-regression** test suite
