@@ -33,7 +33,7 @@ var addBladeCmd = &cobra.Command{
 			cobra.CheckErr(err)
 		}
 
-		serviceRequests.OutputResultsAddDeleteBlade(addedBlade, "added")
+		serviceRequests.OutputResultsBladeAction(addedBlade, "add")
 	},
 }
 

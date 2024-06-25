@@ -14,6 +14,7 @@ export const useBladeStore = defineStore('blade', {
         selectedBladeTotalMemoryAllocatedMiB: null as unknown as number | undefined,
         addBladeError: null as unknown,
         deleteBladeError: null as unknown,
+        resyncBladeError: null as unknown,
     }),
     actions: {
         async fetchBlades(applianceId: string) {
@@ -44,6 +45,40 @@ export const useBladeStore = defineStore('blade', {
                 console.error("Error fetching blades:", error);
             }
         },
+
+        async fetchBladeById(applianceId: string, bladeId: string) {
+            try {
+                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
+                const detailsResponseOfBlade = await defaultApi.bladesGetById(
+                    applianceId,
+                    bladeId
+                );
+
+                const blade = detailsResponseOfBlade.data;
+
+                // Update the memory for the memory chart because the chart is decided by the blade store not the blade memory store
+                this.updateSelectedBladeMemory(blade.totalMemoryAvailableMiB, blade.totalMemoryAllocatedMiB)
+
+                return blade;
+            } catch (error) {
+                console.error("Error fetching blade by id:", error);
+            }
+        },
+
+        async resyncBlade(applianceId: string, bladeId: string) {
+            this.resyncBladeError = "";
+            try {
+                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
+                const response = await defaultApi.bladesResyncById(applianceId, bladeId);
+
+                const resyncedBlade = response.data;
+                return resyncedBlade;
+            } catch (error) {
+                this.resyncBladeError = error;
+                console.error("Error:", error);
+            }
+        },
+
 
         async addNewBlade(applianceId: string, newBladeCredentials: Credentials) {
             this.addBladeError = "";

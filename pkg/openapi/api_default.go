@@ -69,6 +69,11 @@ func (c *DefaultAPIController) Routes() Routes {
 			"/cfm/v1/appliances",
 			c.AppliancesPost,
 		},
+		"AppliancesResyncById": Route{
+			strings.ToUpper("Patch"),
+			"/cfm/v1/appliances/{applianceId}",
+			c.AppliancesResyncById,
+		},
 		"BladesAssignMemoryById": Route{
 			strings.ToUpper("Patch"),
 			"/cfm/v1/appliances/{applianceId}/blades/{bladeId}/memory/{memoryId}",
@@ -138,6 +143,11 @@ func (c *DefaultAPIController) Routes() Routes {
 			strings.ToUpper("Post"),
 			"/cfm/v1/appliances/{applianceId}/blades",
 			c.BladesPost,
+		},
+		"BladesResyncById": Route{
+			strings.ToUpper("Patch"),
+			"/cfm/v1/appliances/{applianceId}/blades/{bladeId}",
+			c.BladesResyncById,
 		},
 		"CfmGet": Route{
 			strings.ToUpper("Get"),
@@ -209,6 +219,11 @@ func (c *DefaultAPIController) Routes() Routes {
 			"/cfm/v1/hosts",
 			c.HostsPost,
 		},
+		"HostsResyncById": Route{
+			strings.ToUpper("Patch"),
+			"/cfm/v1/hosts/{hostId}",
+			c.HostsResyncById,
+		},
 		"RootGet": Route{
 			strings.ToUpper("Get"),
 			"/",
@@ -275,6 +290,20 @@ func (c *DefaultAPIController) AppliancesPost(w http.ResponseWriter, r *http.Req
 		return
 	}
 	result, err := c.service.AppliancesPost(r.Context(), credentialsParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+}
+
+// AppliancesResyncById -
+func (c *DefaultAPIController) AppliancesResyncById(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	applianceIdParam := params["applianceId"]
+	result, err := c.service.AppliancesResyncById(r.Context(), applianceIdParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)
@@ -557,6 +586,21 @@ func (c *DefaultAPIController) BladesPost(w http.ResponseWriter, r *http.Request
 	EncodeJSONResponse(result.Body, &result.Code, w)
 }
 
+// BladesResyncById -
+func (c *DefaultAPIController) BladesResyncById(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	applianceIdParam := params["applianceId"]
+	bladeIdParam := params["bladeId"]
+	result, err := c.service.BladesResyncById(r.Context(), applianceIdParam, bladeIdParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+}
+
 // CfmGet -
 func (c *DefaultAPIController) CfmGet(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.CfmGet(r.Context())
@@ -770,6 +814,20 @@ func (c *DefaultAPIController) HostsPost(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	result, err := c.service.HostsPost(r.Context(), credentialsParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	EncodeJSONResponse(result.Body, &result.Code, w)
+}
+
+// HostsResyncById -
+func (c *DefaultAPIController) HostsResyncById(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	hostIdParam := params["hostId"]
+	result, err := c.service.HostsResyncById(r.Context(), hostIdParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

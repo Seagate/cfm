@@ -11,6 +11,9 @@ import (
 	"fmt"
 	"strings"
 
+	service "cfm/pkg/client"
+
+	"github.com/facette/natsort"
 	"github.com/spf13/cobra"
 	"k8s.io/klog/v2"
 )
@@ -116,12 +119,24 @@ func (r *ServiceRequestListResources) OutputResults(s *serviceWrap.ResourceBlock
 	}
 
 	for key, resources := range s.ApplToBladeToResourceBlockMap {
-		if len(*resources) == 0 {
+		num := len(*resources)
+		if num == 0 {
 			fmt.Printf("%-25s %-15s No Resources Found!\n\n", key.ApplianceId, key.BladeId)
 			continue
 		}
 
-		for i, resBlk := range *resources {
+		resourceMap := make(map[string]*service.MemoryResourceBlock, num)
+		var resourceIds []string
+		for _, resBlk := range *resources {
+			id := resBlk.GetId()
+			resourceIds = append(resourceIds, id)
+			resourceMap[id] = resBlk
+		}
+
+		natsort.Sort(resourceIds)
+
+		for i, id := range resourceIds {
+			resBlk := resourceMap[id]
 			status := resBlk.GetCompositionStatus()
 			state := status.GetCompositionState()
 

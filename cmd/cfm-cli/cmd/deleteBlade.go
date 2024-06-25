@@ -32,7 +32,7 @@ var deleteBladeCmd = &cobra.Command{
 			cobra.CheckErr(err)
 		}
 
-		serviceRequests.OutputResultsAddDeleteBlade(deletedBlade, "deleted")
+		serviceRequests.OutputResultsBladeAction(deletedBlade, "delete")
 	},
 }
 

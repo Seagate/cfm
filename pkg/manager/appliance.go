@@ -125,6 +125,7 @@ func (a *Appliance) AddBlade(ctx context.Context, c *openapi.Credentials) (*Blad
 		Ip:          c.IpAddress,
 		Port:        uint16(c.Port),
 		BackendOps:  ops,
+		Creds:       c,
 	}
 
 	blade, err := NewBlade(ctx, &r)
@@ -189,6 +190,11 @@ func (a *Appliance) DeleteBladeById(ctx context.Context, bladeId string) (*Blade
 	if err != nil || response == nil {
 		newErr := fmt.Errorf("failed to delete blade [%s] backend [%s] session [%s]: %w", blade.Id, ops.GetBackendInfo(ctx).BackendName, blade.Socket.String(), err)
 		logger.Error(newErr, "failure: delete blade by id")
+
+		// Currently, backend ALWAYS deletes the blade session from the backend map.  For now, need to delete blade from appliance map as well.
+		logger.V(2).Info("force blade deletion after backend session failure", "bladeId", blade.Id, "applianceId", a.Id)
+		delete(a.Blades, blade.Id)
+
 		return nil, &common.RequestError{StatusCode: common.StatusApplianceDeleteSessionFailure, Err: newErr}
 	}
 
@@ -268,4 +274,32 @@ func (a *Appliance) GetResourceTotals(ctx context.Context) (*ResponseResourceTot
 	logger.V(2).Info("success: get resource totals", "applianceId", a.Id)
 
 	return &response, nil
+}
+
+func (a *Appliance) InvalidateCache() {
+	for _, b := range a.Blades {
+		b.InvalidateCache()
+	}
+}
+
+func (a *Appliance) ResyncBladeById(ctx context.Context, bladeId string) (*Blade, error) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info(">>>>>> ResyncBladeById: ", "bladeId", bladeId, "applianceId", a.Id)
+
+	blade, err := a.DeleteBladeById(ctx, bladeId)
+	if err != nil {
+		newErr := fmt.Errorf("failed to resync blade(delete): appliance [%s] blade [%s]: %w", a.Id, bladeId, err)
+		logger.Error(newErr, "failure: resync blade: ignoring")
+	}
+
+	blade, err = a.AddBlade(ctx, blade.creds)
+	if err != nil {
+		newErr := fmt.Errorf("failed to resync blade(add): appliance [%s] blade [%s]: %w", a.Id, bladeId, err)
+		logger.Error(newErr, "failure: resync blade")
+		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
+	}
+
+	logger.V(2).Info("success: resync blade", "bladeId", bladeId, "applianceId", a.Id)
+
+	return blade, nil
 }

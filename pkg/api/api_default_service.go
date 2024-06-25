@@ -151,6 +151,44 @@ func (cfm *CfmApiService) AppliancesPost(ctx context.Context, credentials openap
 	return openapi.Response(http.StatusCreated, a), nil
 }
 
+// AppliancesResync -
+func (cfm *CfmApiService) AppliancesResyncById(ctx context.Context, applianceId string) (openapi.ImplResponse, error) {
+	appliance, failedBladeIds, err := manager.ResyncApplianceById(ctx, applianceId)
+
+	for _, id := range *failedBladeIds {
+		// Update DataStore.
+		datastore.DStore().GetDataStore().DeleteBlade(id, applianceId)
+		datastore.DStore().Store()
+	}
+
+	if err != nil {
+		if appliance != nil {
+			return openapi.Response(http.StatusPartialContent, appliance), nil
+		} else {
+			return formatErrorResp(ctx, err.(*common.RequestError))
+		}
+	}
+
+	totals, err := appliance.GetResourceTotals(ctx)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	a := openapi.Appliance{
+		Id:        appliance.Id,
+		IpAddress: "", // Unused
+		Port:      0,  // Unused
+		Status:    "", // Unused
+		Blades: openapi.MemberItem{
+			Uri: manager.GetCfmUriBlades(appliance.Id),
+		},
+		TotalMemoryAvailableMiB: totals.TotalMemoryAvailableMiB,
+		TotalMemoryAllocatedMiB: totals.TotalMemoryAllocatedMiB,
+	}
+
+	return openapi.Response(http.StatusOK, a), nil
+}
+
 // BladesAssignMemoryById - Assign\Unassign the specified memory region (iedntified via memoryId) to\from the specified portId.  Assign\Unassigned is set in request's Operation parameter.
 func (cfm *CfmApiService) BladesAssignMemoryById(ctx context.Context, applianceId string, bladeId string, memoryId string, assignMemoryRequest openapi.AssignMemoryRequest) (openapi.ImplResponse, error) {
 	appliance, err := manager.GetApplianceById(ctx, applianceId)
@@ -197,7 +235,11 @@ func (cfm *CfmApiService) BladesComposeMemory(ctx context.Context, applianceId s
 
 	memory, err := blade.ComposeMemory(ctx, &r)
 	if err != nil {
-		return formatErrorResp(ctx, err.(*common.RequestError))
+		if memory != nil {
+			return openapi.Response(http.StatusPartialContent, memory), nil
+		} else {
+			return formatErrorResp(ctx, err.(*common.RequestError))
+		}
 	}
 
 	return openapi.Response(http.StatusCreated, memory), nil
@@ -217,7 +259,11 @@ func (cfm *CfmApiService) BladesComposeMemoryByResource(ctx context.Context, app
 
 	memory, err := blade.ComposeMemoryByResource(ctx, composeMemoryByResourceRequest.Port, composeMemoryByResourceRequest.MemoryResources)
 	if err != nil {
-		return formatErrorResp(ctx, err.(*common.RequestError))
+		if memory != nil {
+			return openapi.Response(http.StatusPartialContent, memory), nil
+		} else {
+			return formatErrorResp(ctx, err.(*common.RequestError))
+		}
 	}
 
 	return openapi.Response(http.StatusCreated, memory), nil
@@ -561,6 +607,48 @@ func (cfm *CfmApiService) BladesPost(ctx context.Context, applianceId string, cr
 	return openapi.Response(http.StatusCreated, b), nil
 }
 
+// BladesResync -
+func (cfm *CfmApiService) BladesResyncById(ctx context.Context, applianceId string, bladeId string) (openapi.ImplResponse, error) {
+	appliance, err := manager.GetApplianceById(ctx, applianceId)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	blade, err := appliance.ResyncBladeById(ctx, bladeId)
+	if err != nil {
+		// Update DataStore.
+		datastore.DStore().GetDataStore().DeleteBlade(blade.Id, applianceId)
+		datastore.DStore().Store()
+
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	totals, err := blade.GetResourceTotals(ctx)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	b := openapi.Blade{
+		Id:        blade.Id,
+		IpAddress: blade.GetNetIp(),
+		Port:      int32(blade.GetNetPort()),
+		Status:    "", // Unused
+		Ports: openapi.MemberItem{
+			Uri: manager.GetCfmUriBladePorts(appliance.Id, blade.Id),
+		},
+		Resources: openapi.MemberItem{
+			Uri: manager.GetCfmUriBladeResources(appliance.Id, blade.Id),
+		},
+		Memory: openapi.MemberItem{
+			Uri: manager.GetCfmUriBladeMemory(appliance.Id, blade.Id),
+		},
+		TotalMemoryAvailableMiB: totals.TotalMemoryAvailableMiB,
+		TotalMemoryAllocatedMiB: totals.TotalMemoryAllocatedMiB,
+	}
+
+	return openapi.Response(http.StatusOK, b), nil
+}
+
 // HostGetMemory -
 func (cfm *CfmApiService) HostGetMemory(ctx context.Context, hostId string) (openapi.ImplResponse, error) {
 	host, err := manager.GetHostById(ctx, hostId)
@@ -858,6 +946,38 @@ func (cfm *CfmApiService) HostsPost(ctx context.Context, credentials openapi.Cre
 	}
 
 	return openapi.Response(http.StatusCreated, h), nil
+}
+
+// HostsResync -
+func (cfm *CfmApiService) HostsResyncById(ctx context.Context, hostId string) (openapi.ImplResponse, error) {
+	host, err := manager.ResyncHostById(ctx, hostId)
+	if err != nil {
+		// Update DataStore.
+		datastore.DStore().GetDataStore().DeleteHost(host.Id)
+		datastore.DStore().Store()
+
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	h := openapi.Host{
+		Id:        host.Id,
+		IpAddress: host.GetNetIp(),
+		Port:      int32(host.GetNetPort()),
+		Status:    "", // Unused
+		Ports: openapi.MemberItem{
+			Uri: manager.GetCfmUriHostPorts(host.Id),
+		},
+		Memory: openapi.MemberItem{
+			Uri: manager.GetCfmUriHostMemory(host.Id),
+		},
+		MemoryDevices: openapi.MemberItem{
+			Uri: manager.GetCfmUriHostMemoryDevices(host.Id),
+		},
+		LocalMemoryMiB:  -1, // Not implemented
+		RemoteMemoryMiB: -1, // Not implemented
+	}
+
+	return openapi.Response(http.StatusOK, h), nil
 }
 
 func formatErrorResp(ctx context.Context, re *common.RequestError) (openapi.ImplResponse, error) {

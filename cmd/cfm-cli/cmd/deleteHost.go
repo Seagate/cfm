@@ -32,7 +32,7 @@ var deleteHostCmd = &cobra.Command{
 			cobra.CheckErr(err)
 		}
 
-		serviceRequests.OutputResultsAddDeleteHost(deletedHost, "deleted")
+		serviceRequests.OutputResultsHostAction(deletedHost, "delete")
 	},
 }
 

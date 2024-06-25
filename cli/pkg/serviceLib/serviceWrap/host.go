@@ -76,3 +76,17 @@ func GetAllHosts(client *service.APIClient) (*[]*service.Host, error) {
 
 	return &hosts, nil
 }
+
+func ResyncHostById(client *service.APIClient, hostId string) (*service.Host, error) {
+	request := client.DefaultAPI.HostsResyncById(context.Background(), hostId)
+	host, response, err := request.Execute()
+	if err != nil {
+		msg := fmt.Sprintf("%T: Execute FAILURE", host)
+		klog.ErrorS(err, msg, "response", response)
+		return nil, fmt.Errorf("failure: resync host by id failure")
+	}
+
+	klog.V(3).InfoS("BladesResyncById success", "hostID", host.GetId())
+
+	return host, nil
+}

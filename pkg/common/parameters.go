@@ -22,12 +22,12 @@ const (
 	DefaultWebuiPort    = "3000"     // Default port for cfm-service's webui service
 )
 
-var ValidBackends = []string{"gofish", "httpfish"}
+var ValidBackends = []string{"httpfish"}
 
 type Settings struct {
 	Version      bool   // Print the version of this application and exit if true
 	Verbosity    string // The log level verbosity, where 0 is no longing and 4 is very verbose
-	Backend      string // The backend interface to use, possible values are: gofish, httpfish
+	Backend      string // The backend interface to use, possible values are:  httpfish
 	MaxEndpoints int    // The maximum number of endpoints
 	Port         string // The port that this service listens on
 	WebuiIp      string // The IP address where cfm-service serves up its' webui service

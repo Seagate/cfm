@@ -33,11 +33,6 @@ type commonService struct {
 	session interface{}
 }
 
-type gofishService struct {
-	service commonService
-	be      BackendOperations
-}
-
 type httpfishService struct {
 	service commonService
 	be      BackendOperations
@@ -45,7 +40,6 @@ type httpfishService struct {
 
 // Supported interfaces
 const (
-	GofishServiceName   string = "gofish"
 	HttpfishServiceName string = "httpfish"
 )
 
@@ -53,9 +47,7 @@ const (
 func NewBackendInterface(service string, parameters map[string]string) (BackendOperations, error) {
 	localService, err := buildCommonService(parameters)
 	if err == nil {
-		if service == GofishServiceName {
-			return &gofishService{service: localService}, nil
-		} else if service == HttpfishServiceName {
+		if service == HttpfishServiceName {
 			return &httpfishService{service: localService}, nil
 		}
 		return nil, errors.New("Invalid service: " + service)

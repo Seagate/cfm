@@ -13,6 +13,7 @@ import (
 
 	service "cfm/pkg/client"
 
+	"github.com/facette/natsort"
 	"github.com/spf13/cobra"
 	"k8s.io/klog/v2"
 )
@@ -118,12 +119,24 @@ func (r *ServiceRequestListMemoryRegions) OutputSummaryListMemory(s *serviceWrap
 	}
 
 	for key, memoryRegions := range s.ApplToBladeToMemoryRegionsMap {
-		if len(*memoryRegions) == 0 {
+		num := len(*memoryRegions)
+		if num == 0 {
 			fmt.Printf("%-25s %-15s No MemoryRegions Found!\n\n", key.ApplianceId, key.BladeId)
 			continue
 		}
 
-		for i, memoryRegion := range *memoryRegions {
+		memoryMap := make(map[string]*service.MemoryRegion, num)
+		var memoryIds []string
+		for _, memoryRegion := range *memoryRegions {
+			id := memoryRegion.GetId()
+			memoryIds = append(memoryIds, id)
+			memoryMap[id] = memoryRegion
+		}
+
+		natsort.Sort(memoryIds)
+
+		for i, id := range memoryIds {
+			memoryRegion := memoryMap[id]
 			if i == 0 {
 				applianceId = key.ApplianceId
 				bladeId = key.BladeId
@@ -360,12 +373,24 @@ func (r *ServiceRequestListHostMemoryRegions) OutputSummaryListMemory(s *service
 	}
 
 	for hostId, memoryRegions := range s.MemoryRegions {
-		if len(*memoryRegions) == 0 {
+		num := len(*memoryRegions)
+		if num == 0 {
 			fmt.Printf("%-15s No MemoryRegions Found!\n\n", hostId)
 			continue
 		}
 
-		for i, memoryRegion := range *memoryRegions {
+		memoryMap := make(map[string]*service.MemoryRegion, num)
+		var memoryIds []string
+		for _, memoryRegion := range *memoryRegions {
+			id := memoryRegion.GetId()
+			memoryIds = append(memoryIds, id)
+			memoryMap[id] = memoryRegion
+		}
+
+		natsort.Sort(memoryIds)
+
+		for i, id := range memoryIds {
+			memoryRegion := memoryMap[id]
 			if i == 0 {
 				outputHostId = hostId
 			} else {

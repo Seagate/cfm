@@ -190,3 +190,17 @@ func GetAllBlades_AllAppls(client *service.APIClient) (*ApplianceBladeSummary, e
 
 	return summary, nil
 }
+
+func ResyncBladeById(client *service.APIClient, applId, bladeId string) (*service.Blade, error) {
+	request := client.DefaultAPI.BladesResyncById(context.Background(), applId, bladeId)
+	blade, response, err := request.Execute()
+	if err != nil {
+		msg := fmt.Sprintf("%T: Execute FAILURE", blade)
+		klog.ErrorS(err, msg, "response", response)
+		return nil, fmt.Errorf("failure: resync blade by id failure")
+	}
+
+	klog.V(3).InfoS("BladesResyncById success", "ApplianceID", applId, "BladeID", blade.GetId())
+
+	return blade, nil
+}

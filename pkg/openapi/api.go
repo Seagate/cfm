@@ -21,6 +21,7 @@ type DefaultAPIRouter interface {
 	AppliancesGet(http.ResponseWriter, *http.Request)
 	AppliancesGetById(http.ResponseWriter, *http.Request)
 	AppliancesPost(http.ResponseWriter, *http.Request)
+	AppliancesResyncById(http.ResponseWriter, *http.Request)
 	BladesAssignMemoryById(http.ResponseWriter, *http.Request)
 	BladesComposeMemory(http.ResponseWriter, *http.Request)
 	BladesComposeMemoryByResource(http.ResponseWriter, *http.Request)
@@ -35,6 +36,7 @@ type DefaultAPIRouter interface {
 	BladesGetResourceById(http.ResponseWriter, *http.Request)
 	BladesGetResources(http.ResponseWriter, *http.Request)
 	BladesPost(http.ResponseWriter, *http.Request)
+	BladesResyncById(http.ResponseWriter, *http.Request)
 	CfmGet(http.ResponseWriter, *http.Request)
 	CfmV1Get(http.ResponseWriter, *http.Request)
 	HostGetMemory(http.ResponseWriter, *http.Request)
@@ -49,6 +51,7 @@ type DefaultAPIRouter interface {
 	HostsGetPortById(http.ResponseWriter, *http.Request)
 	HostsGetPorts(http.ResponseWriter, *http.Request)
 	HostsPost(http.ResponseWriter, *http.Request)
+	HostsResyncById(http.ResponseWriter, *http.Request)
 	RootGet(http.ResponseWriter, *http.Request)
 }
 
@@ -61,6 +64,7 @@ type DefaultAPIServicer interface {
 	AppliancesGet(context.Context) (ImplResponse, error)
 	AppliancesGetById(context.Context, string) (ImplResponse, error)
 	AppliancesPost(context.Context, Credentials) (ImplResponse, error)
+	AppliancesResyncById(context.Context, string) (ImplResponse, error)
 	BladesAssignMemoryById(context.Context, string, string, string, AssignMemoryRequest) (ImplResponse, error)
 	BladesComposeMemory(context.Context, string, string, ComposeMemoryRequest) (ImplResponse, error)
 	BladesComposeMemoryByResource(context.Context, string, string, ComposeMemoryByResourceRequest) (ImplResponse, error)
@@ -75,6 +79,7 @@ type DefaultAPIServicer interface {
 	BladesGetResourceById(context.Context, string, string, string) (ImplResponse, error)
 	BladesGetResources(context.Context, string, string) (ImplResponse, error)
 	BladesPost(context.Context, string, Credentials) (ImplResponse, error)
+	BladesResyncById(context.Context, string, string) (ImplResponse, error)
 	CfmGet(context.Context) (ImplResponse, error)
 	CfmV1Get(context.Context) (ImplResponse, error)
 	HostGetMemory(context.Context, string) (ImplResponse, error)
@@ -89,5 +94,6 @@ type DefaultAPIServicer interface {
 	HostsGetPortById(context.Context, string, string) (ImplResponse, error)
 	HostsGetPorts(context.Context, string) (ImplResponse, error)
 	HostsPost(context.Context, Credentials) (ImplResponse, error)
+	HostsResyncById(context.Context, string) (ImplResponse, error)
 	RootGet(context.Context) (ImplResponse, error)
 }

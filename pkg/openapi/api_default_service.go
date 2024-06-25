@@ -93,6 +93,29 @@ func (s *DefaultAPIService) AppliancesPost(ctx context.Context, credentials Cred
 	return Response(http.StatusNotImplemented, nil), errors.New("AppliancesPost method not implemented")
 }
 
+// AppliancesResyncById -
+func (s *DefaultAPIService) AppliancesResyncById(ctx context.Context, applianceId string) (ImplResponse, error) {
+	// TODO - update AppliancesResyncById with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, Appliance{}) or use other options such as http.Ok ...
+	// return Response(200, Appliance{}), nil
+
+	// TODO: Uncomment the next line to return response Response(206, Appliance{}) or use other options such as http.Ok ...
+	// return Response(206, Appliance{}), nil
+
+	// TODO: Uncomment the next line to return response Response(400, StatusMessage{}) or use other options such as http.Ok ...
+	// return Response(400, StatusMessage{}), nil
+
+	// TODO: Uncomment the next line to return response Response(404, StatusMessage{}) or use other options such as http.Ok ...
+	// return Response(404, StatusMessage{}), nil
+
+	// TODO: Uncomment the next line to return response Response(500, StatusMessage{}) or use other options such as http.Ok ...
+	// return Response(500, StatusMessage{}), nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("AppliancesResyncById method not implemented")
+}
+
 // BladesAssignMemoryById -
 func (s *DefaultAPIService) BladesAssignMemoryById(ctx context.Context, applianceId string, bladeId string, memoryId string, assignMemoryRequest AssignMemoryRequest) (ImplResponse, error) {
 	// TODO - update BladesAssignMemoryById with the required logic for this service method.
@@ -118,6 +141,9 @@ func (s *DefaultAPIService) BladesComposeMemory(ctx context.Context, applianceId
 	// TODO: Uncomment the next line to return response Response(201, MemoryRegion{}) or use other options such as http.Ok ...
 	// return Response(201, MemoryRegion{}), nil
 
+	// TODO: Uncomment the next line to return response Response(206, MemoryRegion{}) or use other options such as http.Ok ...
+	// return Response(206, MemoryRegion{}), nil
+
 	// TODO: Uncomment the next line to return response Response(400, StatusMessage{}) or use other options such as http.Ok ...
 	// return Response(400, StatusMessage{}), nil
 
@@ -140,6 +166,9 @@ func (s *DefaultAPIService) BladesComposeMemoryByResource(ctx context.Context, a
 
 	// TODO: Uncomment the next line to return response Response(201, MemoryRegion{}) or use other options such as http.Ok ...
 	// return Response(201, MemoryRegion{}), nil
+
+	// TODO: Uncomment the next line to return response Response(206, MemoryRegion{}) or use other options such as http.Ok ...
+	// return Response(206, MemoryRegion{}), nil
 
 	// TODO: Uncomment the next line to return response Response(400, StatusMessage{}) or use other options such as http.Ok ...
 	// return Response(400, StatusMessage{}), nil
@@ -350,6 +379,26 @@ func (s *DefaultAPIService) BladesPost(ctx context.Context, applianceId string, 
 	// return Response(500, StatusMessage{}), nil
 
 	return Response(http.StatusNotImplemented, nil), errors.New("BladesPost method not implemented")
+}
+
+// BladesResyncById -
+func (s *DefaultAPIService) BladesResyncById(ctx context.Context, applianceId string, bladeId string) (ImplResponse, error) {
+	// TODO - update BladesResyncById with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, Blade{}) or use other options such as http.Ok ...
+	// return Response(200, Blade{}), nil
+
+	// TODO: Uncomment the next line to return response Response(400, StatusMessage{}) or use other options such as http.Ok ...
+	// return Response(400, StatusMessage{}), nil
+
+	// TODO: Uncomment the next line to return response Response(404, StatusMessage{}) or use other options such as http.Ok ...
+	// return Response(404, StatusMessage{}), nil
+
+	// TODO: Uncomment the next line to return response Response(500, StatusMessage{}) or use other options such as http.Ok ...
+	// return Response(500, StatusMessage{}), nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("BladesResyncById method not implemented")
 }
 
 // CfmGet -
@@ -591,6 +640,26 @@ func (s *DefaultAPIService) HostsPost(ctx context.Context, credentials Credentia
 	// return Response(500, StatusMessage{}), nil
 
 	return Response(http.StatusNotImplemented, nil), errors.New("HostsPost method not implemented")
+}
+
+// HostsResyncById -
+func (s *DefaultAPIService) HostsResyncById(ctx context.Context, hostId string) (ImplResponse, error) {
+	// TODO - update HostsResyncById with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, Host{}) or use other options such as http.Ok ...
+	// return Response(200, Host{}), nil
+
+	// TODO: Uncomment the next line to return response Response(400, StatusMessage{}) or use other options such as http.Ok ...
+	// return Response(400, StatusMessage{}), nil
+
+	// TODO: Uncomment the next line to return response Response(404, StatusMessage{}) or use other options such as http.Ok ...
+	// return Response(404, StatusMessage{}), nil
+
+	// TODO: Uncomment the next line to return response Response(500, StatusMessage{}) or use other options such as http.Ok ...
+	// return Response(500, StatusMessage{}), nil
+
+	return Response(http.StatusNotImplemented, nil), errors.New("HostsResyncById method not implemented")
 }
 
 // RootGet -

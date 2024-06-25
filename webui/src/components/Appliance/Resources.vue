@@ -1,6 +1,11 @@
 <template>
-  <v-container>
-    <v-data-table :headers="headers" :items="selectedBladeResources">
+  <v-container style="padding: 0">
+    <v-data-table
+      :headers="headers"
+      fixed-header
+      height="310"
+      :items="selectedBladeResources"
+    >
       <template v-slot:[`item.compositionStatus.compositionState`]="{ value }">
         <v-chip :color="getColor(value)">
           {{ value }}

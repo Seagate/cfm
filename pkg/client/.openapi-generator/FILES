@@ -28,6 +28,8 @@ docs/ServiceResource.md
 docs/StatusMessage.md
 docs/StatusMessageStatus.md
 git_push.sh
+go.mod
+go.sum
 model_appliance.go
 model_assign_memory_request.go
 model_blade.go

@@ -123,6 +123,44 @@ func GetAppliances(ctx context.Context) map[string]*Appliance {
 	return appliances
 }
 
+func ResyncApplianceById(ctx context.Context, applianceId string) (*Appliance, *[]string, error) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info(">>>>>> ResyncApplianceById: ", "applianceId", applianceId)
+
+	var failedBladeIds []string
+
+	appliance, err := deviceCache.GetApplianceById(applianceId)
+	if err != nil {
+		newErr := fmt.Errorf("get appliance by id [%s] failure: %w", appliance.Id, err)
+		logger.Error(newErr, "failure: resync appliance by id")
+		return nil, &failedBladeIds, &common.RequestError{StatusCode: common.StatusApplianceIdDoesNotExist, Err: newErr}
+	}
+
+	bladeIds := appliance.GetAllBladeIds()
+	for _, id := range bladeIds {
+		_, err := appliance.ResyncBladeById(ctx, id)
+		if err != nil {
+			newErr := fmt.Errorf("resync blade by id [%s] failure: appliance [%s]: %w", id, appliance.Id, err)
+			logger.Error(newErr, "failure: resync appliance by id: handle and continue")
+
+			failedBladeIds = append(failedBladeIds, id)
+		}
+	}
+
+	if len(failedBladeIds) == 0 {
+		logger.V(2).Info("success: resync appliance", "applianceId", applianceId, "bladeIds", bladeIds)
+		return appliance, &failedBladeIds, nil
+	} else if len(failedBladeIds) < len(bladeIds) {
+		newErr := fmt.Errorf("resync appliance by id [%s]: some failure(s): blade(s) [%s]: %w", appliance.Id, failedBladeIds, err)
+		logger.Error(newErr, "partial success: resync appliance by id")
+		return appliance, &failedBladeIds, &common.RequestError{StatusCode: common.StatusApplianceResyncPartialSuccess, Err: newErr}
+	} else {
+		newErr := fmt.Errorf("resync appliance by id [%s] failure: %w", appliance.Id, err)
+		logger.Error(newErr, "failure: resync appliance by id")
+		return nil, &failedBladeIds, &common.RequestError{StatusCode: common.StatusApplianceResyncFailure, Err: newErr}
+	}
+}
+
 ////////////////////
 // Host Functions //
 ////////////////////
@@ -198,6 +236,7 @@ func AddHost(ctx context.Context, c *openapi.Credentials) (*Host, error) {
 		Ip:         c.IpAddress,
 		Port:       uint16(c.Port),
 		BackendOps: ops,
+		Creds:      c,
 	}
 
 	host, err := NewHost(ctx, &r)
@@ -244,6 +283,11 @@ func DeleteHostById(ctx context.Context, hostId string) (*Host, error) {
 	if err != nil || response == nil {
 		newErr := fmt.Errorf("failed to delete host [%s] backend [%s] session [%s]: %w", host.Id, ops.GetBackendInfo(ctx).BackendName, host.Socket.String(), err)
 		logger.Error(newErr, "failure: delete host by id")
+
+		// Currently, backend ALWAYS deletes the host session from the backend map.  For now, need to delete host from manager map as well.
+		logger.V(2).Info("force host deletion after backend session failure", "hostId", host.Id)
+		deviceCache.DeleteHostById(host.Id)
+
 		return nil, &common.RequestError{StatusCode: common.StatusHostDeleteSessionFailure, Err: newErr}
 	}
 
@@ -289,4 +333,26 @@ func GetHosts(ctx context.Context) map[string]*Host {
 	logger.V(2).Info("success: get hosts", "count", len(hosts))
 
 	return hosts
+}
+
+func ResyncHostById(ctx context.Context, hostId string) (*Host, error) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info(">>>>>> ResyncHostById: ", "hostId", hostId)
+
+	host, err := DeleteHostById(ctx, hostId)
+	if err != nil {
+		newErr := fmt.Errorf("failed to resync host(delete): host [%s]: %w", hostId, err)
+		logger.Error(newErr, "failure: resync host: ignoring")
+	}
+
+	host, err = AddHost(ctx, host.creds)
+	if err != nil {
+		newErr := fmt.Errorf("failed to resync host(add): host [%s]: %w", hostId, err)
+		logger.Error(newErr, "failure: resync host")
+		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
+	}
+
+	logger.V(2).Info("success: resync host", "hostId", hostId)
+
+	return host, nil
 }

@@ -182,3 +182,32 @@ func (r *ServiceRequestListBlades) OutputResults(s *serviceWrap.ApplianceBladeSu
 
 	fmt.Printf("\n")
 }
+
+type ServiceRequestResyncBlade struct {
+	ServiceTcp  *TcpInfo
+	ApplianceId *Id
+	BladeId     *Id
+}
+
+func NewServiceRequestResyncBlade(cmd *cobra.Command) *ServiceRequestResyncBlade {
+	return &ServiceRequestResyncBlade{
+		ServiceTcp:  NewTcpInfo(cmd, flags.SERVICE),
+		ApplianceId: NewId(cmd, flags.APPLIANCE),
+		BladeId:     NewId(cmd, flags.BLADE),
+	}
+}
+
+func (r *ServiceRequestResyncBlade) Execute() (*service.Blade, error) {
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ServiceTcp", fmt.Sprintf("%+v", *r.ServiceTcp))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ApplianceId", fmt.Sprintf("%+v", *r.ApplianceId))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "BladeId", fmt.Sprintf("%+v", *r.BladeId))
+
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort())
+
+	blade, err := serviceWrap.ResyncBladeById(serviceClient, r.ApplianceId.GetId(), r.BladeId.GetId())
+	if err != nil {
+		return nil, fmt.Errorf("failure: resync blade: %s", err)
+	}
+
+	return blade, err
+}

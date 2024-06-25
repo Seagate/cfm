@@ -39,7 +39,7 @@ var (
 	queryDescape    = strings.NewReplacer("%5B", "[", "%5D", "]")
 )
 
-// APIClient manages communication with the Composable Fabric Manager Service OpenAPI API v1.6.6
+// APIClient manages communication with the Composable Fabric Manager Service OpenAPI API v1.6.8
 // In most cases there should be only one, shared, APIClient.
 type APIClient struct {
 	cfg    *Configuration

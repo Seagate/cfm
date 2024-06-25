@@ -34,7 +34,7 @@ var addHostCmd = &cobra.Command{
 			cobra.CheckErr(err)
 		}
 
-		serviceRequests.OutputResultsAddDeleteHost(addedHost, "added")
+		serviceRequests.OutputResultsHostAction(addedHost, "add")
 	},
 }
 

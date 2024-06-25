@@ -19,7 +19,7 @@ var freeBladeCmd = &cobra.Command{
 	Example: `
 	cfm free --serv-ip 127.0.0.1 --serv-net-port 8080 --appliance-id applId --blade-id bladeId --memory-id memoryId
 
-	cfm free -a 127.0.0.1 -p 8080 -L applId -H bladeId -m memoryId`,
+	cfm free -a 127.0.0.1 -p 8080 -L applId -B bladeId -m memoryId`,
 	Args: cobra.MatchAll(cobra.NoArgs),
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Free Memory...")

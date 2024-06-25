@@ -1,5 +1,5 @@
 /*
-Composable Fabric Manager Service OpenAPI
+Composer and Fabric Manager Service OpenAPI
 
 Testing DefaultAPIService
 

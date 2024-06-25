@@ -1,6 +1,6 @@
 <template>
-  <v-container>
-    <v-data-table :headers="headers" :items="bladePorts">
+  <v-container style="padding: 0">
+    <v-data-table :headers="headers" fixed-header :items="bladePorts">
       <template v-slot:[`item.memorychunk`]="{ item }">
         {{ linkedMemoryChunks[item.id] }}
       </template>

@@ -4,10 +4,10 @@ go 1.22.1
 
 require (
 	github.com/Seagate/cxl-lib v1.3.2
+	github.com/facette/natsort v0.0.0-20181210072756-2cd4dd1e2dcb
 	github.com/go-logr/logr v1.4.2
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
-	github.com/levigross/grequests v0.0.0-20231203190023-9c307ef1f48d
 	github.com/namsral/flag v1.7.4-pre
 	github.com/onsi/ginkgo/v2 v2.19.0
 	github.com/onsi/gomega v1.33.1
@@ -15,7 +15,6 @@ require (
 	github.com/rs/cors v1.11.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.19.0
-	github.com/stmcginnis/gofish v0.18.0
 	github.com/stretchr/testify v1.9.0
 	github.com/zcalusic/sysinfo v1.1.0
 	golang.org/x/crypto v0.23.0
@@ -29,7 +28,6 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
-	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/pprof v0.0.0-20240424215950-a892ee059fd6 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect

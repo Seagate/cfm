@@ -8,6 +8,7 @@ Method | HTTP request | Description
 [**AppliancesGet**](DefaultAPI.md#AppliancesGet) | **Get** /cfm/v1/appliances | 
 [**AppliancesGetById**](DefaultAPI.md#AppliancesGetById) | **Get** /cfm/v1/appliances/{applianceId} | 
 [**AppliancesPost**](DefaultAPI.md#AppliancesPost) | **Post** /cfm/v1/appliances | 
+[**AppliancesResyncById**](DefaultAPI.md#AppliancesResyncById) | **Patch** /cfm/v1/appliances/{applianceId} | 
 [**BladesAssignMemoryById**](DefaultAPI.md#BladesAssignMemoryById) | **Patch** /cfm/v1/appliances/{applianceId}/blades/{bladeId}/memory/{memoryId} | 
 [**BladesComposeMemory**](DefaultAPI.md#BladesComposeMemory) | **Post** /cfm/v1/appliances/{applianceId}/blades/{bladeId}/memory | 
 [**BladesComposeMemoryByResource**](DefaultAPI.md#BladesComposeMemoryByResource) | **Put** /cfm/v1/appliances/{applianceId}/blades/{bladeId}/memory | 
@@ -22,6 +23,7 @@ Method | HTTP request | Description
 [**BladesGetResourceById**](DefaultAPI.md#BladesGetResourceById) | **Get** /cfm/v1/appliances/{applianceId}/blades/{bladeId}/resources/{resourceId} | 
 [**BladesGetResources**](DefaultAPI.md#BladesGetResources) | **Get** /cfm/v1/appliances/{applianceId}/blades/{bladeId}/resources | 
 [**BladesPost**](DefaultAPI.md#BladesPost) | **Post** /cfm/v1/appliances/{applianceId}/blades | 
+[**BladesResyncById**](DefaultAPI.md#BladesResyncById) | **Patch** /cfm/v1/appliances/{applianceId}/blades/{bladeId} | 
 [**CfmGet**](DefaultAPI.md#CfmGet) | **Get** /cfm | 
 [**CfmV1Get**](DefaultAPI.md#CfmV1Get) | **Get** /cfm/v1 | 
 [**HostGetMemory**](DefaultAPI.md#HostGetMemory) | **Get** /cfm/v1/hosts/{hostId}/memory | 
@@ -36,6 +38,7 @@ Method | HTTP request | Description
 [**HostsGetPortById**](DefaultAPI.md#HostsGetPortById) | **Get** /cfm/v1/hosts/{hostId}/ports/{portId} | 
 [**HostsGetPorts**](DefaultAPI.md#HostsGetPorts) | **Get** /cfm/v1/hosts/{hostId}/ports | 
 [**HostsPost**](DefaultAPI.md#HostsPost) | **Post** /cfm/v1/hosts | Add a CXL host to be managed by CFM.
+[**HostsResyncById**](DefaultAPI.md#HostsResyncById) | **Patch** /cfm/v1/hosts/{hostId} | 
 [**RootGet**](DefaultAPI.md#RootGet) | **Get** / | 
 
 
@@ -300,6 +303,76 @@ No authorization required
 ### HTTP request headers
 
 - **Content-Type**: application/json
+- **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
+
+
+## AppliancesResyncById
+
+> Appliance AppliancesResyncById(ctx, applianceId).Execute()
+
+
+
+
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID/client"
+)
+
+func main() {
+    applianceId := "applianceId_example" // string | A unique identifier for a Memory Appliance
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.DefaultAPI.AppliancesResyncById(context.Background(), applianceId).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `DefaultAPI.AppliancesResyncById``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `AppliancesResyncById`: Appliance
+    fmt.Fprintf(os.Stdout, "Response from `DefaultAPI.AppliancesResyncById`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**applianceId** | **string** | A unique identifier for a Memory Appliance | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiAppliancesResyncByIdRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
+
+### Return type
+
+[**Appliance**](Appliance.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
 - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
@@ -1346,6 +1419,79 @@ No authorization required
 [[Back to README]](../README.md)
 
 
+## BladesResyncById
+
+> Blade BladesResyncById(ctx, applianceId, bladeId).Execute()
+
+
+
+
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID/client"
+)
+
+func main() {
+    applianceId := "applianceId_example" // string | A unique identifier for a Memory Appliance
+    bladeId := "bladeId_example" // string | A unique identifier for a Memory Blade
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.DefaultAPI.BladesResyncById(context.Background(), applianceId, bladeId).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `DefaultAPI.BladesResyncById``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `BladesResyncById`: Blade
+    fmt.Fprintf(os.Stdout, "Response from `DefaultAPI.BladesResyncById`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**applianceId** | **string** | A unique identifier for a Memory Appliance | 
+**bladeId** | **string** | A unique identifier for a Memory Blade | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiBladesResyncByIdRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
+
+
+### Return type
+
+[**Blade**](Blade.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
+
+
 ## CfmGet
 
 > string CfmGet(ctx).Execute()
@@ -2296,6 +2442,76 @@ No authorization required
 ### HTTP request headers
 
 - **Content-Type**: application/json
+- **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
+
+
+## HostsResyncById
+
+> Host HostsResyncById(ctx, hostId).Execute()
+
+
+
+
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID/client"
+)
+
+func main() {
+    hostId := "hostId_example" // string | A unique identifier for a CXL Host
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.DefaultAPI.HostsResyncById(context.Background(), hostId).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `DefaultAPI.HostsResyncById``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `HostsResyncById`: Host
+    fmt.Fprintf(os.Stdout, "Response from `DefaultAPI.HostsResyncById`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**hostId** | **string** | A unique identifier for a CXL Host | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiHostsResyncByIdRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
+
+### Return type
+
+[**Host**](Host.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
 - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
