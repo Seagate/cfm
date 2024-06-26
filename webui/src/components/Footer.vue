@@ -8,7 +8,7 @@
     dark
     class="d-flex align-center justify-center"
   >
-    &copy; {{ new Date().getFullYear() }} Seagate | CFM Service Version:
+    &copy; 2024 Seagate Technology LLC | CFM Service Version:
     <span :style="{ color: serviceVersion ? 'inherit' : 'red', margin: '8px' }">
       {{ serviceVersion || "Not Found" }}
     </span>
