@@ -9,6 +9,7 @@ A ready to use docker image for the cfm-service, the cli tool and the webui is r
 ```bash
 docker pull ghcr.io/seagate/cfm:vX.X.X
 ```
+
 where `X.X.X` is the desired CFM release version.
 
 ## Start the CFM service and its webUI
@@ -16,7 +17,7 @@ where `X.X.X` is the desired CFM release version.
 In order for the cfm-service to launch the webui properly, the user need to provide the IP address of the hosting server's IP to cfm-service. Example below:
 
 ```bash
-docker run --network=host --name <name> --detach cfm -webui -verbosity 4
+docker run --network=host --name <name> --detach ghcr.io/seagate/cfm:vX.X.X -webui -verbosity 4
 ```
 
 By default, the cfm-service will be hosted at port 8080 and the webui will be hosted at port 3000. The user could change the port by input argument -Port and/or -webuiPort. The webui only works with --network=host mode.
