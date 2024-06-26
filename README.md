@@ -35,3 +35,17 @@ NOTE: If uncertain of which install option to use, the “install using the apt 
 - [SETUP](docs/SETUP.md) - Information on setting up a development environment
 - [LOG](docs/LOG.md) - Information on logging level definations
 - [TEMPLATES](docs/TEMPLATES.md) - Information on the template file used in openapi-generate for generating the go service
+
+# Known Issues
+
+Here is a list of known issues that will be fixed in a future release:
+
+- CFM\Hardware Re-synchronization
+  - Currently, if a registered CMA blade is power-cycled, the cfm-service has no way to automatically detect this action.
+  - A `resync` webui button (and cli cmd) have been provided to give the user manual control to force the service to update itself against the hardware (since it is assumed that the user is aware of the power cycle action).
+- During startup, possible CFM response delay (via the WebUI\CLI tool)
+  - During cfm-service initialization, it re-register(s) with previously registered CMA and CXL-Host hardware.
+  - This can take some time, depending on how many devices are involved.
+    - A single blade takes ~5-10 sec to register\connect.
+  - There is currently no user feedback while this action is occurring (other than checking the docker service logs, `docker logs <container_name>`, in real time), so the user will need to wait before attempting any actions via the WebUI or CLI tools.
+  - For the WebUI, use the browser's refresh button when attempting to see if this service inialization is complete.
