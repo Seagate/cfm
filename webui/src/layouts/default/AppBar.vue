@@ -1,3 +1,4 @@
+<!-- Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates -->
 <template>
   <v-app-bar flat>
     <v-app-bar-title>

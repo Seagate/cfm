@@ -1,3 +1,4 @@
+<!-- Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates -->
 <template>
   <v-container>
     <v-dialog v-model="dialogComposeMemory" max-width="600px">

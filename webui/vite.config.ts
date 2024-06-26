@@ -1,3 +1,4 @@
+// Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
 // Plugins
 import vue from '@vitejs/plugin-vue'
 import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'

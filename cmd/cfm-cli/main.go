@@ -1,6 +1,5 @@
+// Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
 /*
-Copyright (c) 2023 Seagate Technology LLC and/or its Affiliates
-
 Package main represents a command line utility for interacting with a cfm-service daemon to control a Seagate Memory Appliance.
 */
 

@@ -1,3 +1,4 @@
+<!-- Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates -->
 <template>
   <v-container style="padding: 0">
     <v-data-table :headers="headers" fixed-header :items="bladePorts">

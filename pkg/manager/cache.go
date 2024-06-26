@@ -1,6 +1,5 @@
+// Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
 /*
-Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
-
 The primary struct (DeviceCache) serves 2 purposes.  It is:
 1.) The primary location where all information about recognized external devices is saved(cached), and
 2.) The primary control mechanism for cfm-service to interact with those devices when executing cfm-service requests.
