@@ -108,13 +108,15 @@ func FindWebUIDistPath(ctx context.Context) (*string, error) {
 func GetHostIp(ctx context.Context) string {
 	logger := klog.FromContext(ctx)
 
-	cmd := exec.Command("hostname", "-i")
+	cmd := exec.Command("hostname", "-I")
 	stdout, err := cmd.Output()
 	if err != nil {
 		logger.Error(err, ", [WEBUI] unable to retrive cfm-service's ip address")
 		return ""
 	}
-	return strings.TrimSpace(string(stdout))
+	output := string(stdout[:])
+	addresses := strings.Split(output, " ")
+	return strings.TrimSpace(string(addresses[0]))
 }
 
 // UpdateBasePath: Replace the base address in the webui distro file
