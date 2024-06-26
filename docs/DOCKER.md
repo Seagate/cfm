@@ -7,8 +7,9 @@ Notes regarding the use of Docker for the Composer & Fabric Manager (CFM) Softwa
 A ready to use docker image for the cfm-service, the cli tool and the webui is released with the github package feature. One can pull the image from the command line:
 
 ```bash
-docker pull ghcr.io/seagate/cfm
+docker pull ghcr.io/seagate/cfm:vX.X.X
 ```
+where `X.X.X` is the desired CFM release version.
 
 ## Start the CFM service and its webUI
 
