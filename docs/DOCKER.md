@@ -7,17 +7,17 @@ Notes regarding the use of Docker for the Composer & Fabric Manager (CFM) Softwa
 A ready to use docker image for the cfm-service, the cli tool and the webui is released with the github package feature. One can pull the image from the command line:
 
 ```bash
-docker pull ghcr.io/seagate/cfm:vX.X.X
+docker pull ghcr.io/seagate/cfm
 ```
 
-where `X.X.X` is the desired CFM release version.
+If desired, the user can add `:vX.X.X` to the end of the command to obtain an older CFM release version.
 
 ## Start the CFM service and its webUI
 
-In order for the cfm-service to launch the webui properly, the user need to provide the IP address of the hosting server's IP to cfm-service. Example below:
+To enable the webui launching during cfm-service startup, the user must provide the `-webui` flag in the command below.
 
 ```bash
-docker run --network=host --name <name> --detach ghcr.io/seagate/cfm:vX.X.X -webui -verbosity 4
+docker run --network=host --name <user-defined-name> --detach ghcr.io/seagate/cfm -webui -verbosity 4
 ```
 
 By default, the cfm-service will be hosted at port 8080 and the webui will be hosted at port 3000. The user could change the port by input argument -Port and/or -webuiPort. The webui only works with --network=host mode.
@@ -25,7 +25,7 @@ By default, the cfm-service will be hosted at port 8080 and the webui will be ho
 ## Stop and restart cfm-service
 
 ```bash
-docker restart <name>
+docker restart <user-defined-name>
 ```
 
 ## Excute CLI tool
@@ -41,7 +41,7 @@ docker run --network=host --entrypoint "/cfm/cfm-cli"  cfm <args>
 The developer could use the [DockerFile](../docker/Dockerfile) as a reference to build a new docker image with local changes
 
 ```bash
-docker build --no-cache -t <name> -f docker/Dockerfile .
+docker build --no-cache -t <user-defined-name> -f docker/Dockerfile .
 ```
 
 #TODO: cxl-host
