@@ -84,7 +84,7 @@ func main() {
 			logger.Error(err, ", [WEBUI] unable to locate cfm-service's webui service distro")
 		} else {
 			wg.Add(1)
-			go services.StartWebUIService(ctx, &settings.WebuiPort, &settings.Port, webuiDistPath)
+			go services.StartWebUIService(ctx, &settings.WebuiPort, &settings.Port, webuiDistPath, &settings.HostIpOverride)
 		}
 	}
 
