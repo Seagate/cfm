@@ -22,7 +22,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-var Version = "1.x.x"
+var Version = "1.1.0"
 
 // This variable is filled in during the linker step - -ldflags "-X main.buildTime=`date -u '+%Y-%m-%dT%H:%M:%S'`"
 var buildTime = ""

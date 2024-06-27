@@ -12,7 +12,7 @@ const (
 	DefaultVerbosity = "0"    // Default log level
 	DefaultPort      = "8082" // Default service port
 	RedfishVersion   = "/redfish/v1/"
-	Version          = "1.x.x"
+	Version          = "1.1.0"
 )
 
 type Settings struct {
