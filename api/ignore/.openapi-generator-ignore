@@ -1,0 +1,7 @@
+# OpenAPI Generator Ignore
+# Lines beginning with a # are comments
+
+# Exclude a single file explicitly
+/pkg/openapi/api_default_service.go
+/pkg/openapi/routers.go
+/pkg/openapi/logger.go

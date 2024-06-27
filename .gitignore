@@ -1,0 +1,12 @@
+# Compiled Object files, Static and Dynamic libs (Shared Objects)
+/cfm-service
+/cfm-cli
+/cxl-host
+/cmd/cxl-host/cxl-host
+
+# Folders
+_obj
+
+# Ignore the accounts file created during cxl-host execution
+/cxl-host-accounts.json
+/cmd/cxl-host/cxl-host-accounts.json

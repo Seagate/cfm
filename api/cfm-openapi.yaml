@@ -1,0 +1,1522 @@
+openapi: 3.0.1
+info:
+  title: Composable Fabric Manager Service OpenAPI
+  description: |
+    This API allows users to interact through the CFM Service with CXL Hosts and Memory Appliances.
+    The main purpose of this interface is to allow the retrieval of information and the creation and
+    mapping of memory from a Memory Appliance to a CXL host.
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.6.8
+
+servers:
+- url: http://localhost:8080/
+- url: https://localhost:8080/
+
+paths:
+
+  # Root
+  /:
+    get:
+      responses:
+        '200':
+          description: The CFM Service API
+          content:
+            application/json:
+              schema:
+                type: string
+
+  # Service Versions
+  /cfm:
+    get:
+      responses:
+        '200':
+          description: The current supported version(s)
+          content:
+            application/json:
+              schema:
+                type: string
+
+  # Service Information
+  /cfm/v1:
+    get:
+      responses:
+        '200':
+          description: Contains general service information, including version tag and root resource(s)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/serviceInformation"
+
+  # Memory Appliances
+  /cfm/v1/appliances:
+    get:
+      description: Retrieve a collection of all managed memory appliances. Collection may be empty.
+      operationId: appliancesGet
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/collection"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+    post:
+      description: Add a new memory appliance and optional credentials to be managed by cfm-service.
+      operationId: appliancesPost
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/credentials"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/appliance"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
+  # Single Memory Appliance
+  /cfm/v1/appliances/{applianceId}:
+    patch:
+      description: For any subsequent requests, force the appliance to re-synchronize all its' cfm-service data, for every blade, with the real hardware.
+      operationId: appliancesResyncById
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/appliance'
+        "206":
+          description: Partial Content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/appliance"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+    get:
+      description: Retrieve information for a single memory appliance. {applianceId} has to match the id of the appliance.
+      operationId: appliancesGetById
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/appliance'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+    delete:
+      description: Remove a memory appliance by id from cfm-service management.
+      operationId: appliancesDeleteById
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/appliance'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
+  # Memory Appliance Blades
+  /cfm/v1/appliances/{applianceId}/blades:
+    get:
+      description: Retrieve a collection of all managed blades under a memory appliance. Collection may be empty.
+      operationId: bladesGet
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/collection"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+    post:
+      description: Add a new blade under a memory appliance and credentials to be managed by cfm-service.
+      operationId: bladesPost
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/credentials"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/blade"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
+  # Single Memory Blade
+  /cfm/v1/appliances/{applianceId}/blades/{bladeId}:
+    patch:
+      description: For any subsequent requests, force the blade to re-synchronize all its' cfm-service data with the real hardware.
+      operationId: bladesResyncById
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      - $ref: "#/components/parameters/bladeId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/blade'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+    get:
+      description: Retrieve information for a single memory blade. {bladeId} has to match the id of the blade.
+      operationId: bladesGetById
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      - $ref: "#/components/parameters/bladeId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/blade'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+    delete:
+      description: Remove a memory blade by id from cfm-service management.
+      operationId: bladesDeleteById
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      - $ref: "#/components/parameters/bladeId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/blade'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
+  # Memory Blade Memory Resource Blocks
+  /cfm/v1/appliances/{applianceId}/blades/{bladeId}/resources:
+    get:
+      description: Retrieve a collection of memory blade resources. The collection may be empty.
+      operationId: bladesGetResources
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      - $ref: "#/components/parameters/bladeId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/collection"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
+  # Single Memory Blade Memory Resource Block
+  /cfm/v1/appliances/{applianceId}/blades/{bladeId}/resources/{resourceId}:
+    get:
+      description: Retrieve information for a single memory resource block.
+      operationId: bladesGetResourceById
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      - $ref: "#/components/parameters/bladeId"
+      - $ref: "#/components/parameters/resourceId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/memoryResourceBlock'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
+  # Memory Blade Ports
+  /cfm/v1/appliances/{applianceId}/blades/{bladeId}/ports:
+    get:
+      description: Retrieve a collection of memory appliance ports. The collection may be empty.
+      operationId: bladesGetPorts
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      - $ref: "#/components/parameters/bladeId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/collection"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
+  # Single Memory Blade Port
+  /cfm/v1/appliances/{applianceId}/blades/{bladeId}/ports/{portId}:
+    get:
+      description: Retrieve information for a single port.
+      operationId: bladesGetPortById
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      - $ref: "#/components/parameters/bladeId"
+      - $ref: "#/components/parameters/portId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/portInformation'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
+  # Memory Region Collection
+  /cfm/v1/appliances/{applianceId}/blades/{bladeId}/memory:
+    get:
+      description: Retrieve a collection of memory regions. The collection may be empty.
+      operationId: bladesGetMemory
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      - $ref: "#/components/parameters/bladeId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/collection"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+    post:
+      description: Allocate a new memory region from a Memory Blade and possibly assign it to a CXL Host.
+      operationId: bladesComposeMemory
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      - $ref: "#/components/parameters/bladeId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/composeMemoryRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/memoryRegion"
+        "206":
+          description: Partial Content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/memoryRegion"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+    put:
+      description: Allocate a new memory region from a Memory Blade with the supplied resource blocks and possibly assign it to a CXL Host.
+      operationId: bladesComposeMemoryByResource
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      - $ref: "#/components/parameters/bladeId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/composeMemoryByResourceRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/memoryRegion"
+        "206":
+          description: Partial Content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/memoryRegion"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
+  # Single Memory Region
+  /cfm/v1/appliances/{applianceId}/blades/{bladeId}/memory/{memoryId}:
+    get:
+      description: Retrieve information for a single memory region.
+      operationId: bladesGetMemoryById
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      - $ref: "#/components/parameters/bladeId"
+      - $ref: "#/components/parameters/memoryId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/memoryRegion'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+    patch:
+      description: Assign a memory region to a CXL port or Unassign a memory region from a CXL port
+      operationId: bladesAssignMemoryById
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      - $ref: "#/components/parameters/bladeId"
+      - $ref: "#/components/parameters/memoryId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/assignMemoryRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/memoryRegion'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+    delete:
+      description: Free a memory region by id
+      operationId: bladesFreeMemoryById
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      - $ref: "#/components/parameters/bladeId"
+      - $ref: "#/components/parameters/memoryId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/memoryRegion'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
+  # CXL Hosts
+  /cfm/v1/hosts:
+    get:
+      summary: Get CXL Host information.
+      description: Retrieves the current state of CXL hosts including allocated memory regions.
+      operationId: hostsGet
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/collection"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+    post:
+      summary: Add a CXL host to be managed by CFM.
+      description: Add a new CXL host and credentials to be managed by the cfm-service.
+      operationId: hostsPost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/credentials"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/host"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+  # Single CXL Host
+  /cfm/v1/hosts/{hostId}:
+    patch:
+      description: For any subsequent requests, force the host to re-synchronize all its' cfm-service data with the real hardware.
+      operationId: hostsResyncById
+      parameters:
+      - $ref: "#/components/parameters/hostId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/host'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+    get:
+      summary: Get information for a single CXL Host.
+      operationId: hostsGetById
+      parameters:
+      - $ref: "#/components/parameters/hostId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/host'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+    delete:
+      description: Remove a CXL Host by id from cfm-service management.
+      operationId: hostsDeleteById
+      parameters:
+      - $ref: "#/components/parameters/hostId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/host'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+  # CXL Host Ports
+  /cfm/v1/hosts/{hostId}/ports:
+    get:
+      description: Retrieve a collection of CXL host ports.
+      operationId: hostsGetPorts
+      parameters:
+      - $ref: "#/components/parameters/hostId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/collection"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
+# Single CXL host Port
+  /cfm/v1/hosts/{hostId}/ports/{portId}:
+    get:
+      description: Retrieve information for a single port.
+      operationId: hostsGetPortById
+      parameters:
+      - $ref: "#/components/parameters/hostId"
+      - $ref: "#/components/parameters/portId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/portInformation'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
+# CXL Host memory device
+  /cfm/v1/hosts/{hostId}/memory-devices:
+    get:
+      description: Retrieve a collection of CXL host memory devices ( CXL logical devices ).
+      operationId: hostsGetMemoryDevices
+      parameters:
+      - $ref: "#/components/parameters/hostId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/collection"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
+# Single CXL host memory device
+  /cfm/v1/hosts/{hostId}/memory-devices/{memoryDeviceId}:
+    get:
+      description: Retrieve information for a single memory device ( CXL logical device ).
+      operationId: hostsGetMemoryDeviceById
+      parameters:
+      - $ref: "#/components/parameters/hostId"
+      - $ref: "#/components/parameters/memoryDeviceId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/memoryDeviceInformation'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
+ # Memory Collection on CXL host
+  /cfm/v1/hosts/{hostId}/memory:
+    get:
+      description: Retrieve a collection of memory regions on CXL host.
+      operationId: hostGetMemory
+      parameters:
+      - $ref: "#/components/parameters/hostId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/collection"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+    post:
+      description: Inform the CXL Host about a new memory region from a memory appliance to a CXL host.
+      operationId: hostsComposeMemory
+      parameters:
+      - $ref: "#/components/parameters/hostId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/composeMemoryRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/memoryRegion"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
+# Single Memory Region on CXL host
+  /cfm/v1/hosts/{hostId}/memory/{memoryId}:
+    get:
+      description: Retrieve information for a single memory region.
+      operationId: hostsGetMemoryById
+      parameters:
+      - $ref: "#/components/parameters/hostId"
+      - $ref: "#/components/parameters/memoryId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/memoryRegion'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+    delete:
+      description: Free a memory region by id
+      operationId: hostsFreeMemoryById
+      parameters:
+      - $ref: "#/components/parameters/hostId"
+      - $ref: "#/components/parameters/memoryId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/memoryRegion'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
+
+# Common parameters and schemas used by this API
+components:
+  parameters:
+    applianceId:
+      description: A unique identifier for a Memory Appliance
+      name: applianceId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/id"
+    bladeId:
+      description: A unique identifier for a Memory Blade
+      name: bladeId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/id"
+    resourceId:
+      description: A unique identifier for a Memory Resource Block
+      name: resourceId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/id"
+    portId:
+      description: A unique identifier for a Port
+      name: portId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/id"
+    memoryDeviceId:
+      description: A unique identifier for a memory device
+      name: memoryDeviceId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/id"
+    memoryId:
+      description: A unique identifier for a Memory Region
+      name: memoryId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/id"
+    hostId:
+      description: A unique identifier for a CXL Host
+      name: hostId
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/id"
+
+  schemas:
+    collection:
+      type: object
+      required: [memberCount,members]
+      properties:
+        memberCount:
+          $ref: "#/components/schemas/memberTotal"
+        members:
+          $ref: "#/components/schemas/memberItems"
+    memberTotal:
+      type: integer
+      minimum: 0
+      maximum: 10000
+    memberItems:
+      type: array
+      minItems: 0
+      maxItems: 10000
+      items:
+        $ref: "#/components/schemas/memberItem"
+    memberItem:
+      type: object
+      required: [uri]
+      properties:
+        uri:
+          $ref: "#/components/schemas/uri"
+    statusMessage:
+      type: object
+      required: [uri,details]
+      properties:
+        uri:
+          type: string
+          description: The URI of the http request
+        details:
+          type: string
+          description: Additional information provided to the client regarding this response
+        status:
+          type: object
+          required: [code,message]
+          properties:
+            code:
+              type: integer
+              description: A unique status code value
+            message:
+              type: string
+              description: A description of the status code
+    commonString:
+      type: string
+      maxLength: 1024
+      description: A response string
+    username:
+      type: string
+      maxLength: 256
+      description: The username credentials used to communicate with another service
+      example: "User0"
+    protocol:
+      type: string
+      description: Examples of http vs https
+      default: https
+    backend:
+      type: string
+      description: Examples of backend
+      default: httpfish
+    customId:
+      type: string
+      description: A user-defined string to uniquely identify an individual endpoint device.
+      example: "device-1234"
+    id:
+      type: string
+      description: The id uniquely identifies the resource within a resource collection. Since URIs are constructed with ids, must not contain RFC1738 unsafe characters.
+      example: "device-1234"
+    ids:
+      type: array
+      minItems: 0
+      maxItems: 10000
+      items:
+        $ref: "#/components/schemas/id"
+    uri:
+      type: string
+      description: A full path to the resource with id as the last component
+      example: "/cfm/v1/.../device-1234"
+    password:
+      type: string
+      maxLength: 256
+      description: The password credentials used to communicate with another service
+      example: "User0password!"
+    ipAddress:
+      type: string
+      maxLength: 256
+      description: The IP Address in dot notation of the service
+      example: "127.0.0.1"
+    ipPort:
+      type: integer
+      minimum: 80
+      maximum: 65535
+      example: 80
+    insecure:
+      type: boolean
+      description: Set to true if an insecure connection should be used
+      default: false
+    cxlPort:
+      type: string
+      maxLength: 256
+      description: The CXL port name on the Memory Appliance
+      example: "P1"
+    MemoryType:
+      type: string
+      enum: ["MemoryTypeUnknown", "MemoryTypeRegion", "MemoryTypeLocal", "MemoryTypeCXL"]
+      description: The type of constructed memory.
+      example: "Memory Region"
+    mebibytes:
+      type: integer
+      description: A mebibyte equals 2**20 or 1,048,576 bytes.
+      minimum: 1
+    qos:
+      type: integer
+      enum: [1,2,4,8]
+    bandwidth:
+      type: integer
+      description: Memory bandwidth in the unit of GigaBytes per second
+      minimum: 1
+    latency:
+      type: integer
+      description: Memory latency in the unit of nanosecond
+      minimum: 1
+    credentials:
+      type: object
+      required: [username,password,ipAddress,port]
+      properties:
+        username:
+          $ref: "#/components/schemas/username"
+        password:
+          $ref: "#/components/schemas/password"
+        ipAddress:
+          $ref: "#/components/schemas/ipAddress"
+        port:
+          $ref: "#/components/schemas/ipPort"
+        insecure:
+          $ref: "#/components/schemas/insecure"
+        protocol:
+          $ref: "#/components/schemas/protocol"
+        backend:
+          $ref: "#/components/schemas/backend"
+        customId:
+          $ref: "#/components/schemas/customId"
+    appliance:
+      type: object
+      required: [id]
+      properties:
+        id:
+          $ref: "#/components/schemas/id"
+        ipAddress:
+          $ref: "#/components/schemas/ipAddress"
+        port:
+          $ref: "#/components/schemas/ipPort"
+        status:
+          $ref: "#/components/schemas/commonString"
+        blades:
+          $ref: "#/components/schemas/memberItem"
+        totalMemoryAvailableMiB:
+          $ref: "#/components/schemas/mebibytes"
+        totalMemoryAllocatedMiB:
+          $ref: "#/components/schemas/mebibytes"
+    blade:
+      type: object
+      required: [id,ipAddress,port]
+      properties:
+        id:
+          $ref: "#/components/schemas/id"
+        ipAddress:
+          $ref: "#/components/schemas/ipAddress"
+        port:
+          $ref: "#/components/schemas/ipPort"
+        status:
+          $ref: "#/components/schemas/commonString"
+        ports:
+          $ref: "#/components/schemas/memberItem"
+        resources:
+          $ref: "#/components/schemas/memberItem"
+        memory:
+          $ref: "#/components/schemas/memberItem"
+        totalMemoryAvailableMiB:
+          $ref: "#/components/schemas/mebibytes"
+        totalMemoryAllocatedMiB:
+          $ref: "#/components/schemas/mebibytes"
+    host:
+      type: object
+      required: [id,ipAddress,port]
+      properties:
+        id:
+          $ref: "#/components/schemas/id"
+        ipAddress:
+          $ref: "#/components/schemas/ipAddress"
+        port:
+          $ref: "#/components/schemas/ipPort"
+        status:
+          $ref: "#/components/schemas/commonString"
+        ports:
+          $ref: "#/components/schemas/memberItem"
+        memory-devices:
+          $ref: "#/components/schemas/memberItem"
+        memory:
+          $ref: "#/components/schemas/memberItem"
+        localMemoryMiB:
+          $ref: "#/components/schemas/mebibytes"
+        remoteMemoryMiB:
+          $ref: "#/components/schemas/mebibytes"
+    memoryResourceBlock:
+      type: object
+      required: [id,compositionStatus,channelId,channelResourceIndex]
+      properties:
+        id:
+          type: string
+          description: The id of this resource
+        compositionStatus:
+          type: object
+          required: [compositionState]
+          properties:
+            compositionState:
+              type: string
+              description: The current state of the resource block from a composition perspective
+            maxCompositions:
+              type: integer
+              description: The maximum number of compositions in which this resource block can participate simultaneously
+            numberOfCompositions:
+              type: integer
+              description: The number of compositions in which this resource block is currently participating
+        capacityMiB:
+          type: integer
+          description: The number of compositions in which this resource block is currently participating
+        dataWidthBits:
+          type: integer
+          description: The number of compositions in which this resource block is currently participating
+        memoryType:
+          type: string
+          description: The type of memory device
+        memoryDeviceType:
+          type: string
+          description: Type details of the memory device
+        manufacturer:
+          type: string
+          description: The memory device manufacturer
+        operatingSpeedMhz:
+          type: integer
+          description: Operating speed of the memory device in MHz
+        partNumber:
+          type: string
+          description: The product part number of this device
+        serialNumber:
+          type: string
+          description: The product serial number of this device
+        rankCount:
+          type: integer
+          description: Number of ranks available in the memory device
+        channelId:
+          type: integer
+          description: Id of the channel(dimm) associated with this resource
+        channelResourceIndex:
+          type: integer
+          description: Position index for this resource within the designated channel(dimm)
+    portInformation:
+      type: object
+      required: [id,statusHealth,statusState]
+      properties:
+        id:
+          type: string
+          description: The id of this resource
+        gCxlId:
+          type: string
+          description: The global CXL identifier
+        linkedPortUri:
+          $ref: "#/components/schemas/uri"
+          description: The uri of the port on the other side of the cable
+        portProtocol:
+          type: string
+          description: The protocol being sent over this port
+        portMedium:
+          type: string
+          description: The physical connection medium for this port
+        currentSpeedGbps:
+          type: integer
+          description: The current speed of this port
+        statusHealth:
+          type: string
+          description: The health of the resource
+        statusState:
+          type: string
+          description: The state of the resource
+        width:
+          type: integer
+          description: The number of lanes, phys, or other physical transport links that this port contains
+        linkStatus:
+          type: string
+          description: Status of the link, such as LinkUp or LinkDown
+    memoryDeviceInformation:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+          description: The id of this resource
+        deviceType:
+          type: string
+          description: The type of the device
+        memorySizeMiB:
+          $ref: "#/components/schemas/mebibytes"
+          description: The memory size of the device in MiB
+        linkStatus:
+          type: object
+          description: The speed and width about the link
+          properties:
+            currentSpeedGTps:
+              type: integer
+              description: The current speed of this link
+            maxSpeedGTps:
+              type: integer
+              description: The max speed of this link
+            currentWidth:
+              type: integer
+              description: The current width of this link
+            maxWidth:
+              type: integer
+              description: The max width of this link
+        statusState:
+          type: string
+          description: The state of the resource
+    composeMemoryRequest:
+      type: object
+      required: [memorySizeMiB,QoS]
+      properties:
+        Port:
+          $ref: "#/components/schemas/cxlPort"
+          description: The id of the CXL port to be connected to this memory region (optional)
+        memorySizeMiB:
+          $ref: "#/components/schemas/mebibytes"
+          description: The total MiB of the memory region to compose
+        QoS:
+          $ref: "#/components/schemas/qos"
+          description: Quality of Service represents the performance of the memory region. Supported values are 1,2,4 and 8.
+    composeMemoryByResourceRequest:
+      type: object
+      required: [memoryResources]
+      properties:
+        Port:
+          $ref: "#/components/schemas/cxlPort"
+          description: The id of the CXL port to be connected to this memory region (optional)
+        memoryResources:
+          $ref: "#/components/schemas/ids"
+          description: The ids of the exact memory resources to provision a new memory region
+    assignMemoryRequest:
+      type: object
+      required: [Port, Operation]
+      properties:
+        Port:
+          $ref: "#/components/schemas/cxlPort"
+          description: The id of the CXL port to be connected to this memory region
+        Operation:
+          type: string
+          enum: ["assign", "unassign"]
+          description: -assign- an existing memory to a port or -unassign- an existing link between memory and port
+    memoryRegion:
+      type: object
+      required: [id,type,sizeMiB]
+      properties:
+        id:
+          $ref: "#/components/schemas/id"
+        status:
+          $ref: "#/components/schemas/commonString"
+        type:
+          $ref: "#/components/schemas/MemoryType"
+        sizeMiB:
+          $ref: "#/components/schemas/mebibytes"
+        bandwidth:
+          $ref: "#/components/schemas/bandwidth"
+        latency:
+          $ref: "#/components/schemas/latency"
+        memoryApplianceId:
+          $ref: "#/components/schemas/id"
+        memoryBladeId:
+          $ref: "#/components/schemas/id"
+        memoryAppliancePort:
+          $ref: "#/components/schemas/cxlPort"
+        mappedHostId:
+          $ref: "#/components/schemas/id"
+        mappedHostPort:
+          $ref: "#/components/schemas/id"
+    serviceInformation:
+      type: object
+      required: [version,resources]
+      properties:
+        version:
+          type: string
+          description: The cfm-service version
+        resources:
+          type: array
+          items:
+            $ref: "#/components/schemas/serviceResource"
+    serviceResource:
+      type: object
+      required: [uri,methods,description]
+      properties:
+        uri:
+          $ref: "#/components/schemas/uri"
+        methods:
+          type: string
+          description: The service(s) available for the specified URI
+        description:
+          type: string
+          description: The description of service(s) offered by the URI
