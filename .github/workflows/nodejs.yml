@@ -1,0 +1,28 @@
+# This workflow will do a clean installation of node dependencies, and then build the source code
+# For information on more advanced testing see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+
+name: Node.js CI
+
+on: [push]
+
+jobs:
+  node-js-build:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./webui
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Clean Install Node.js
+        run: npm ci
+
+      - name: Build Node.js
+        run: npm run build
