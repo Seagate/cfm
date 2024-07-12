@@ -1,0 +1,22 @@
+# This workflow runs format and build checks on the projects golang code
+
+name: Golang CI
+
+on: [push]
+
+jobs:
+  go-format-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Golang
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.22.1"
+
+      - name: Format Golang
+        run: if [ "$(gofmt -l . | wc -l)" -gt 0 ]; then exit 1; fi
+
+      - name: Build Golang
+        run: make build-go
