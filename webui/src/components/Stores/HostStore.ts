@@ -16,11 +16,13 @@ export const useHostStore = defineStore('host', {
         addHostError: null as unknown,
         deleteHostError: null as unknown,
         resyncHostError: null as unknown,
+        hostIds: [] as string[],
     }),
 
     actions: {
         async fetchHosts() {
             this.hosts = [];
+            this.hostIds = [];
             try {
                 // Get all hosts from OpenBMC
                 const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
@@ -39,6 +41,7 @@ export const useHostStore = defineStore('host', {
                     // Store host in hosts
                     if (detailsResponseOfHost) {
                         this.hosts.push(detailsResponseOfHost.data);
+                        this.hostIds.push(detailsResponseOfHost.data.id)
                     }
                 }
             } catch (error) {
