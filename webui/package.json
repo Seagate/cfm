@@ -9,6 +9,7 @@
     "lint": "eslint . --fix --ignore-path .gitignore"
   },
   "dependencies": {
+    "@dagrejs/dagre": "^1.1.3",
     "@mdi/font": "7.0.96",
     "axios": "^1.7.2",
     "chart.js": "^4.4.3",
