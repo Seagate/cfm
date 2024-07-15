@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "@vue-flow/core": "^1.39.0"
+    "@vue-flow/core": "^1.39.0",
+    "dagre": "^0.8.5"
   }
 }
