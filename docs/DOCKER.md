@@ -17,15 +17,23 @@ If desired, the user can add `:vX.X.X` to the end of the command to obtain an ol
 To enable the webui launching during cfm-service startup, the user must provide the `-webui` flag in the command below.
 
 ```bash
-docker run --network=host --name <user-defined-name> --detach ghcr.io/seagate/cfm -webui -verbosity 4
+docker run --restart unless-stopped --network=host --name <user-defined-container-name> --detach ghcr.io/seagate/cfm -webui -verbosity 4
 ```
 
 By default, the cfm-service will be hosted at port 8080 and the webui will be hosted at port 3000. The user could change the port by input argument -Port and/or -webuiPort. The webui only works with --network=host mode.
 
+## View cfm-service logs
+
+The cfm-service runtime logs can be viewed using
+
+```bash
+docker logs --follow <user-defined-container-name>
+```
+
 ## Stop and restart cfm-service
 
 ```bash
-docker restart <user-defined-name>
+docker restart <user-defined-container-name>
 ```
 
 ## Excute CLI tool
@@ -36,12 +44,12 @@ The user can start a cfm docker container to use the cli tool to interact with t
 docker run --network=host --entrypoint "/cfm/cfm-cli"  cfm <args>
 ```
 
+NOTE: Use \<args\> = "-h" for help
+
 ## Customization
 
 The developer could use the [DockerFile](../docker/Dockerfile) as a reference to build a new docker image with local changes
 
 ```bash
-docker build --no-cache -t <user-defined-name> -f docker/Dockerfile .
+docker build --no-cache -t <user-defined-container-name> -f docker/Dockerfile .
 ```
-
-#TODO: cxl-host
