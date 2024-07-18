@@ -1,18 +1,12 @@
+<!-- Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates -->
 <template>
   <v-container style="width: 100%; height: 100vh">
-    <VueFlow
-      ref="vueFlow"
-      :nodes="nodes"
-      :edges="edges"
-      class="pinia-flow"
-      fit-view-on-init
-    >
-    </VueFlow>
+    <VueFlow :nodes="nodes" :edges="edges"> </VueFlow>
   </v-container>
 </template>
 
 <script>
-import { onMounted, ref } from "vue";
+import { onMounted } from "vue";
 import { useFlowData } from "./initial-elements";
 import { useApplianceStore } from "../Stores/ApplianceStore";
 import { useHostStore } from "../Stores/HostStore";
@@ -28,17 +22,15 @@ export default {
     const serviceStore = useServiceStore();
 
     const { nodes, edges } = useFlowData();
-    const vueFlow = ref(null);
 
     // Fetch appliances/blades/hosts when component is mounted
     onMounted(async () => {
       await serviceStore.getServiceVersion();
       await applianceStore.fetchAppliances();
       await hostStore.fetchHosts();
-      vueFlow.value.fitView();
     });
 
-    return { nodes, edges, vueFlow };
+    return { nodes, edges };
   },
 };
 </script>
