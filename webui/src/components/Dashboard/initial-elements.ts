@@ -23,7 +23,7 @@ export const useFlowData = () => {
           id: "cfm-service",
           label: "CFM Service",
           position: position,
-          style: { backgroundColor: "#ffcc00", color: "#000" },
+          style: { backgroundColor: "#6ebe4a", color: "#000" },
           type: serviceNodeType,
         },
       ]
@@ -33,16 +33,16 @@ export const useFlowData = () => {
       (appliance, applianceIndex) => [
         {
           id: `appliance-${appliance.id}`,
-          label: appliance.id,
+          data: { label: appliance.id, url: `/appliances/${appliance.id}` },
           position: position,
-          style: { backgroundColor: "#00ccff", color: "#fff" },
+          style: { backgroundColor: "#f2ae72", color: "#000" },
           type: applianceNodeType,
         },
         ...appliance.bladeIds.map((bladeId, bladeIndex) => ({
           id: `blade-${bladeId}`,
-          label: bladeId,
+          data: { label: bladeId, url: `/appliances/${appliance.id}/blades/${bladeId}`, associatedAppliance: appliance.id },
           position: position,
-          style: { backgroundColor: "#ff6600", color: "#fff" },
+          style: { backgroundColor: "#f2e394", color: "#000" },
           type: bladeNodeType,
         })),
       ]
@@ -50,9 +50,9 @@ export const useFlowData = () => {
 
     const hostNodes = hostStore.hostIds.map((host, index) => ({
       id: `host-${host}`,
-      label: host,
+      data: { label: host, url: `/hosts/${host}` },
       position: position,
-      style: { backgroundColor: "#66ff66", color: "#000" },
+      style: { backgroundColor: "#d9ecd0", color: "#000" },
       type: hostNodeType,
     }));
 
