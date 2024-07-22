@@ -1,6 +1,23 @@
 <template>
   <v-container style="width: 100%; height: 100vh">
-    <VueFlow :nodes="nodes" :edges="edges" @node-click="handleNodeClick">
+    <h2 style="text-align: center; margin-bottom: 20px">
+      Devices Connection Status
+    </h2>
+    <VueFlow
+      :nodes="nodes"
+      :edges="edges"
+      :class="{ dark }"
+      class="basic-flow"
+      :default-viewport="{ zoom: 1 }"
+      :min-zoom="0.2"
+      :max-zoom="4"
+      @node-click="handleNodeClick"
+    >
+      <Controls position="top-left">
+        <ControlButton title="Search">
+          <v-icon>mdi-magnify</v-icon>
+        </ControlButton>
+      </Controls>
     </VueFlow>
   </v-container>
 </template>
@@ -14,9 +31,10 @@ import { useBladeStore } from "../Stores/BladeStore";
 import { useServiceStore } from "../Stores/ServiceStore";
 import { VueFlow } from "@vue-flow/core";
 import { useRouter } from "vue-router";
+import { ControlButton, Controls } from "@vue-flow/controls";
 
 export default {
-  components: { VueFlow },
+  components: { VueFlow, ControlButton, Controls },
 
   setup() {
     const applianceStore = useApplianceStore();
@@ -59,7 +77,11 @@ export default {
       await hostStore.fetchHosts();
     });
 
-    return { nodes, edges, handleNodeClick };
+    return {
+      nodes,
+      edges,
+      handleNodeClick,
+    };
   },
 };
 </script>
