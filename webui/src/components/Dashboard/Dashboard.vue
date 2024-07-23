@@ -1,12 +1,30 @@
+<!-- Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates -->
 <template>
-  <v-container style="width: 100%; height: 100vh">
+  <v-container style="width: 100%; height: 80vh">
     <h2 style="text-align: center; margin-bottom: 20px">
       Devices Connection Status
     </h2>
+
+    <div style="position: relative; width: 25%">
+      <v-text-field
+        v-if="showSearch"
+        v-model="searchTerm"
+        label="Search"
+        @input="handleSearch"
+        style="margin-bottom: 5px"
+      ></v-text-field>
+      <v-icon
+        v-if="showSearch"
+        style="position: absolute; right: 8px; top: 8px; cursor: pointer"
+        @click="showSearch = false"
+      >
+        {{ "mdi-close" }}
+      </v-icon>
+    </div>
+
     <VueFlow
       :nodes="nodes"
       :edges="edges"
-      :class="{ dark }"
       class="basic-flow"
       :default-viewport="{ zoom: 1 }"
       :min-zoom="0.2"
@@ -14,7 +32,7 @@
       @node-click="handleNodeClick"
     >
       <Controls position="top-left">
-        <ControlButton title="Search">
+        <ControlButton title="Search" @click="toggleSearch">
           <v-icon>mdi-magnify</v-icon>
         </ControlButton>
       </Controls>
@@ -23,7 +41,7 @@
 </template>
 
 <script>
-import { onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import { useFlowData } from "./initial-elements";
 import { useApplianceStore } from "../Stores/ApplianceStore";
 import { useHostStore } from "../Stores/HostStore";
@@ -45,7 +63,40 @@ export default {
     const router = useRouter();
     const { nodes, edges } = useFlowData();
 
-    // Define the node click handler to skip to the target node device's detail page
+    const searchTerm = ref("");
+    const showSearch = ref(false);
+
+    const handleSearch = () => {
+      const term = searchTerm.value.toLowerCase();
+      const elements = document.querySelectorAll(".basic-flow *");
+
+      // Reset the color of all elements
+      elements.forEach((el) => {
+        el.style.color = "#000";
+      });
+
+      if (term) {
+        let firstMatch = null;
+        elements.forEach((el) => {
+          // Change color of the matched element
+          if (el.textContent.toLowerCase().includes(term)) {
+            el.style.color = "red";
+            if (!firstMatch) {
+              firstMatch = el;
+            }
+          }
+        });
+
+        if (firstMatch) {
+          firstMatch.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }
+    };
+
+    const toggleSearch = () => {
+      showSearch.value = !showSearch.value;
+    };
+
     const handleNodeClick = async (event) => {
       const node = event.node || event;
 
@@ -81,6 +132,10 @@ export default {
       nodes,
       edges,
       handleNodeClick,
+      searchTerm,
+      handleSearch,
+      showSearch,
+      toggleSearch,
     };
   },
 };

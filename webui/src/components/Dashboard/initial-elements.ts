@@ -21,7 +21,7 @@ export const useFlowData = () => {
       ? [
         {
           id: "cfm-service",
-          label: "CFM Service",
+          data: { label: "CFM Service", },
           position: position,
           style: { backgroundColor: "#6ebe4a", color: "#000" },
           type: serviceNodeType,
