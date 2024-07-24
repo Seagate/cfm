@@ -27,6 +27,10 @@ NOTE: If uncertain of which install option to use, the “install using the apt 
 
 - [DOCKER](docs/DOCKER.md) - Information on running the CFM Software Suite from within a Docker container
 
+## Build locally
+
+- User must run 'make generate' to generate all supporting files from the api yaml before building local binaries.
+
 # Additional Project Documentation
 
 - [README-SERVICE](docs/SERVICE.md) - README file for the **cfm-service** component
