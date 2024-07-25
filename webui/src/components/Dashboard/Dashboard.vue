@@ -2,7 +2,7 @@
 <template>
   <v-container style="width: 100%; height: 80vh">
     <h2 style="text-align: center; margin-bottom: 20px">
-      Devices Connection Status
+      CFM Ethernet Connections
     </h2>
 
     <div style="position: relative; width: 25%">
