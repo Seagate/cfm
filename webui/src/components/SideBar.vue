@@ -2,6 +2,13 @@
 <template>
   <v-list nav>
     <v-list-item
+      prepend-avatar="@/assets/icons/Icons-House-Web-Green.png"
+      to="/dashboard"
+      title="Dashboard"
+      value="Dashboard"
+    ></v-list-item>
+
+    <v-list-item
       prepend-avatar="@/assets/icons/Icons-Data-Center-Green.png"
       to="/appliances"
       title="Appliances"

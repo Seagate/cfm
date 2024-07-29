@@ -12,11 +12,13 @@ export const useApplianceStore = defineStore('appliance', {
         selectedApplianceId: null as unknown as string,
         addApplianceError: null as unknown,
         deleteApplianceError: null as unknown,
+        applianceIds: [] as { id: string, bladeIds: string[] }[],
     }),
 
     actions: {
         async fetchAppliances() {
             this.appliances = [];
+            this.applianceIds = [];
             try {
                 // Get all appliances from OpenBMC
                 const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
@@ -35,6 +37,21 @@ export const useApplianceStore = defineStore('appliance', {
                     // Store appliance in appliances
                     if (detailsResponseOfAppliance) {
                         this.appliances.push(detailsResponseOfAppliance.data);
+
+                        const responseOfBlades = await defaultApi.bladesGet(applianceId);
+                        const bladeCount = responseOfBlades.data.memberCount;
+                        const bladeIds = [];
+
+                        for (let i = 0; i < bladeCount; i++) {
+                            // Extract the id for each blade
+                            const uri = responseOfBlades.data.members[i];
+                            const bladeId: string = JSON.stringify(uri).split("/").pop()?.slice(0, -2) as string;
+                            // Store blade in blades
+                            if (bladeId) {
+                                bladeIds.push(bladeId);
+                            }
+                        }
+                        this.applianceIds.push({ id: detailsResponseOfAppliance.data.id, bladeIds });
                     }
                 }
             } catch (error) {

@@ -10,3 +10,6 @@ _obj
 # Ignore the accounts file created during cxl-host execution
 /cxl-host-accounts.json
 /cmd/cxl-host/cxl-host-accounts.json
+
+# Ignore the module files
+webui/node_modules/
