@@ -116,6 +116,7 @@ type PortInformation struct {
 	StatusState      string // The state of the resource
 	Width            int32  // The number of lanes, phys, or other physical transport links that this port contains
 	LinkStatus       string // The CXL link status
+	LinkState        string // The CXL link state
 }
 
 type GetPortDetailsResponse struct {

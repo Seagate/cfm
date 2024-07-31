@@ -1359,6 +1359,7 @@ func (service *httpfishService) GetPortDetails(ctx context.Context, settings *Co
 		ret.PortInformation.Width = int32(width)
 	}
 	ret.PortInformation.LinkStatus, _ = response.stringFromJSON("LinkStatus")
+	ret.PortInformation.LinkState, _ = response.stringFromJSON("LinkState")
 
 	status, _ := response.valueFromJSON("Status")
 
