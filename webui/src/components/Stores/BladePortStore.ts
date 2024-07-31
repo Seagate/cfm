@@ -46,6 +46,14 @@ export const useBladePortStore = defineStore('bladePort', {
                             detailsResponse.data.linkedPortUri = "NOT_FOUND";
                         }
 
+                        // Combine LinkStatus, linkWidth and linkSpeed if the port is not linked down
+                        if (detailsResponse.data.linkStatus && detailsResponse.data.linkStatus != "LinkDown") {
+                            const linkeStatus = detailsResponse.data.linkStatus;
+                            const linkSpeed = detailsResponse.data.currentSpeedGbps;
+                            const linkWidth = detailsResponse.data.width;
+                            detailsResponse.data.linkStatus = linkeStatus + "/" + linkWidth + "/" + linkSpeed
+                        }
+
                         // Store port in ports list
                         this.bladePorts.push(detailsResponse.data);
                     }
