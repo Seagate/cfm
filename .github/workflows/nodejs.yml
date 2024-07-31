@@ -21,6 +21,10 @@ jobs:
         with:
           node-version: 20
 
+      - name: Generate support files
+        working-directory: ./
+        run: make generate
+  
       - name: Clean Install Node.js
         run: npm ci
 

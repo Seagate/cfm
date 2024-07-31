@@ -111,6 +111,8 @@ generate-redfish:
 	docker run --rm -v ${PWD}:/local golang:$(GO_VERSION) $(GOFMT_OPTS)
 	@echo "Apply local patch for xml response fix"
 	git apply api/patch/Apply-xml-workaround-to-fix-metadata-response.patch
+	@echo "Apply local patch for missing import"
+	git apply api/patch/fix-missing-import.patch
 
 generate-axios:
 	@echo "Generating $(OPENAPI_YAML) axios server using openapi-generator-cli"
