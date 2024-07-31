@@ -28,9 +28,10 @@ RUN docker-entrypoint.sh generate -i ${BASEPATH}/${OPENAPI_REDFISH_YAML} -g go-s
 RUN docker-entrypoint.sh generate -i ${BASEPATH}/${OPENAPI_YAML} -g typescript-axios -o ${BASEPATH}/webui/src/axios --skip-validate-spec
 
 
-FROM golang:1.22.1 AS go
+FROM golang:1.22.1-alpine AS go
 ENV BASEPATH=/cfm
 
+RUN apk add git make
 # copy source code with generated files to go image
 COPY --from=api-gen ${BASEPATH} ${BASEPATH}
 
@@ -46,12 +47,10 @@ RUN git apply api/patch/fix-missing-import.patch
 # build the excutable
 RUN make build-go
 
-FROM node:slim as npm
+FROM node:alpine as npm
 ENV BASEPATH=/cfm
 
 # copy source code with generated files to go image
-COPY --from=go ${BASEPATH}/cfm-service ${BASEPATH}/cfm-service
-COPY --from=go ${BASEPATH}/cfm-cli ${BASEPATH}/cfm-cli
 COPY --from=go ${BASEPATH}/webui ${BASEPATH}/webui
 
 # setup web UI and build the dist package
@@ -59,10 +58,18 @@ WORKDIR ${BASEPATH}/webui
 RUN npm install
 RUN npm run build
 
+FROM alpine:latest
+ENV BASEPATH=/cfm
+
+# copy source code with generated files to go image
+COPY --from=go ${BASEPATH}/cfm-service ${BASEPATH}/cfm-service
+COPY --from=go ${BASEPATH}/cfm-cli ${BASEPATH}/cfm-cli
+COPY --from=npm ${BASEPATH}/webui/dist ${BASEPATH}/webui/dist
+
 RUN ln -s /local/cfmdatastore.json ${BASEPATH}/cfmdatastore.json
 
 LABEL org.opencontainers.image.source https://github.com/seagate/cfm
 
 WORKDIR ${BASEPATH}
 # Start the service
-ENTRYPOINT [  "/cfm/cfm-service" ]
+ENTRYPOINT [ "/cfm/cfm-service" ]
