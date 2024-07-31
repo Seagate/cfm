@@ -6,6 +6,10 @@
 
 # Folders
 _obj
+pkg/client
+pkg/openapi
+pkg/redfishapi
+webui/src/axios
 
 # Ignore the accounts file created during cxl-host execution
 /cxl-host-accounts.json

@@ -1,0 +1,25 @@
+From 5dcdc9a0e93a05efe3cf0eb3fae7669bf0975354 Mon Sep 17 00:00:00 2001
+From: Hongjian Fan <hongjian.fan@seagate.com>
+Date: Tue, 9 Jul 2024 15:28:25 -0500
+Subject: [PATCH] fix missing import
+
+---
+ pkg/redfishapi/model_resource_status_conditions_inner.go | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/pkg/redfishapi/model_resource_status_conditions_inner.go b/pkg/redfishapi/model_resource_status_conditions_inner.go
+index 94ba4c9..a543d69 100644
+--- a/pkg/redfishapi/model_resource_status_conditions_inner.go
++++ b/pkg/redfishapi/model_resource_status_conditions_inner.go
+@@ -8,6 +8,8 @@
+ 
+ package redfishapi
+ 
++import "time"
++
+ type ResourceStatusConditionsInner struct {
+ 	LogEntry OdataV4IdRef `json:"LogEntry,omitempty"`
+ 
+-- 
+2.25.1
+
