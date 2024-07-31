@@ -1370,9 +1370,10 @@ func (service *httpfishService) GetPortDetails(ctx context.Context, settings *Co
 	ret.PortInformation.StatusState = state
 	ret.Status = healthAndState
 
-	speed, err := response.floatFromJSON("CurrentSpeedGbps")
+	portField, err := response.valueFromJSON("Port")
 	if err == nil {
-		ret.PortInformation.CurrentSpeedGbps = int32(speed)
+		speedFloat, _ := strconv.ParseFloat(strings.TrimSpace(portField.(map[string]interface{})["CurrentSpeedGbps"].(string)), 64)
+		ret.PortInformation.CurrentSpeedGbps = int32(speedFloat)
 	}
 
 	// Extract GCXLID from endpoint
