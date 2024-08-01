@@ -23,8 +23,8 @@
     </div>
 
     <VueFlow
-      :nodes="nodes"
-      :edges="edges"
+      :nodes="controlNodes"
+      :edges="controlEdges"
       class="basic-flow"
       :default-viewport="{ zoom: 1 }"
       :min-zoom="0.2"
@@ -42,7 +42,7 @@
 
 <script>
 import { ref, onMounted } from "vue";
-import { useFlowData } from "./initial-elements";
+import { useControlData } from "./initial-control-elements";
 import { useApplianceStore } from "../Stores/ApplianceStore";
 import { useHostStore } from "../Stores/HostStore";
 import { useBladeStore } from "../Stores/BladeStore";
@@ -61,7 +61,7 @@ export default {
     const serviceStore = useServiceStore();
 
     const router = useRouter();
-    const { nodes, edges } = useFlowData();
+    const { controlNodes, controlEdges } = useControlData();
 
     const searchTerm = ref("");
     const showSearch = ref(false);
@@ -129,8 +129,8 @@ export default {
     });
 
     return {
-      nodes,
-      edges,
+      controlNodes,
+      controlEdges,
       handleNodeClick,
       searchTerm,
       handleSearch,
