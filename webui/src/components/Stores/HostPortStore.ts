@@ -39,8 +39,8 @@ export const useHostPortStore = defineStore('hostPort', {
                                 detailsResponse.data.linkedPortUri
                             ).split("/");
                             const applianceId = uri[4];
-                            const hostId = uri[6];
-                            detailsResponse.data.linkedPortUri = applianceId + "/" + hostId;
+                            const bladeId = uri[6];
+                            detailsResponse.data.linkedPortUri = applianceId + "/" + bladeId;
                         }
                         this.hostPorts.push(detailsResponse.data);
                     }

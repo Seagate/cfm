@@ -9,6 +9,8 @@ const API_BASE_PATH = process.env.BASE_PATH || BASE_PATH;
 export const useBladePortStore = defineStore('bladePort', {
     state: () => ({
         bladePorts: [] as PortInformation[],
+        // Use bladeIds to store the relationship between blade and host, the relationship is used to determine the dataEdges in the dashboard
+        bladeIds: [] as { id: string, connectedHostIds: string[] }[],
     }),
 
     actions: {
@@ -22,6 +24,7 @@ export const useBladePortStore = defineStore('bladePort', {
                     bladeId
                 );
 
+                const hostIds = [];
                 const portsCount = response.data.memberCount;
                 for (let i = 0; i < portsCount; i++) {
                     // Extract the id for each port
@@ -42,6 +45,7 @@ export const useBladePortStore = defineStore('bladePort', {
                             const hostId = JSON.stringify(linkedPortUri).split("/")[4];
                             const hostPort: string = JSON.stringify(linkedPortUri).split("/").pop()?.slice(0, -1) as string;
                             detailsResponse.data.linkedPortUri = hostId + "/" + hostPort;
+                            hostIds.push(hostId);
                         } else {
                             detailsResponse.data.linkedPortUri = "NOT_FOUND";
                         }
@@ -50,6 +54,7 @@ export const useBladePortStore = defineStore('bladePort', {
                         this.bladePorts.push(detailsResponse.data);
                     }
                 }
+                this.bladeIds.push({ id: bladeId, connectedHostIds: hostIds });
             } catch (error) {
                 console.error("Error fetching ports:", error);
             }

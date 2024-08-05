@@ -1,9 +1,22 @@
 <!-- Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates -->
 <template>
-  <v-container style="width: 100%; height: 80vh">
-    <h2 style="text-align: center; margin-bottom: 20px">
-      CFM Ethernet Connections
+  <v-container
+    style="
+      width: 100%;
+      height: 80vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    "
+  >
+    <h2 style="margin-bottom: 20px">
+      {{ currentTitle }}
     </h2>
+
+    <v-btn @click="toggleGraph" style="margin-bottom: 40px" variant="tonal">
+      {{ buttonLabel }}
+    </v-btn>
 
     <div style="position: relative; width: 25%">
       <v-text-field
@@ -23,8 +36,8 @@
     </div>
 
     <VueFlow
-      :nodes="controlNodes"
-      :edges="controlEdges"
+      :nodes="nodes"
+      :edges="edges"
       class="basic-flow"
       :default-viewport="{ zoom: 1 }"
       :min-zoom="0.2"
@@ -41,12 +54,14 @@
 </template>
 
 <script>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useControlData } from "./initial-control-elements";
+import { useData } from "./initial-data-elements";
 import { useApplianceStore } from "../Stores/ApplianceStore";
 import { useHostStore } from "../Stores/HostStore";
 import { useBladeStore } from "../Stores/BladeStore";
 import { useServiceStore } from "../Stores/ServiceStore";
+import { useBladePortStore } from "../Stores/BladePortStore";
 import { VueFlow } from "@vue-flow/core";
 import { useRouter } from "vue-router";
 import { ControlButton, Controls } from "@vue-flow/controls";
@@ -59,12 +74,17 @@ export default {
     const hostStore = useHostStore();
     const bladeStore = useBladeStore();
     const serviceStore = useServiceStore();
+    const bladePortStore = useBladePortStore();
 
     const router = useRouter();
     const { controlNodes, controlEdges } = useControlData();
+    const { dataNodes, dataEdges } = useData();
 
     const searchTerm = ref("");
     const showSearch = ref(false);
+
+    // Set Data Plane as the default one
+    const currentGraph = ref("dataPlane");
 
     const handleSearch = () => {
       const term = searchTerm.value.toLowerCase();
@@ -97,6 +117,7 @@ export default {
       showSearch.value = !showSearch.value;
     };
 
+    // Jump to the target page by changing the url
     const handleNodeClick = async (event) => {
       const node = event.node || event;
 
@@ -121,21 +142,63 @@ export default {
       }
     };
 
+    // Toggle graphs by changing the current graph value
+    const toggleGraph = () => {
+      currentGraph.value =
+        currentGraph.value === "controlPlane" ? "dataPlane" : "controlPlane";
+    };
+
+    // Change the nodes and edges by the current graph value
+    const nodes = computed(() =>
+      currentGraph.value === "controlPlane"
+        ? controlNodes.value
+        : dataNodes.value
+    );
+    const edges = computed(() =>
+      currentGraph.value === "controlPlane"
+        ? controlEdges.value
+        : dataEdges.value
+    );
+
+    // Make the title of this conponent dynamic
+    const currentTitle = computed(() =>
+      currentGraph.value === "controlPlane"
+        ? "CFM Ethernet Connections"
+        : "CFM CXL Connections"
+    );
+
+    // Make the switch button label of this conponent dynamic
+    const buttonLabel = computed(() =>
+      currentGraph.value === "controlPlane"
+        ? "Switch to Data Plane"
+        : "Switch to Control Plane"
+    );
+
     // Fetch appliances/blades/hosts when component is mounted
     onMounted(async () => {
       await serviceStore.getServiceVersion();
       await applianceStore.fetchAppliances();
       await hostStore.fetchHosts();
+      // Ensure blade ports are fetched after appliances, this action will create the edges for dataPlane
+      for (const appliance of applianceStore.applianceIds) {
+        for (const bladeId of appliance.bladeIds) {
+          await bladePortStore.fetchBladePorts(appliance.id, bladeId);
+        }
+      }
     });
 
     return {
-      controlNodes,
-      controlEdges,
+      nodes,
+      edges,
+      currentGraph,
       handleNodeClick,
       searchTerm,
       handleSearch,
       showSearch,
       toggleSearch,
+      toggleGraph,
+      currentTitle,
+      buttonLabel,
     };
   },
 };
