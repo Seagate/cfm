@@ -907,7 +907,7 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdPCIeDevicesPCIeDeviceIdCXLL
 
 	dev := GetCXLDevInfo(BDtoBDF(pCIeDeviceId))
 	gcxlid := FormatGCXLID(dev)
-	fmt := redfishapi.ResourceV1190DurableNameFormat("GCXLID")
+	fmt := redfishapi.ResourceV1191DurableNameFormat("GCXLID")
 	resource := redfishapi.CxlLogicalDeviceV111CxlLogicalDevice{
 		OdataContext: "/redfish/v1/$metadata#CXLLogicalDevice.CXLLogicalDevice",
 		OdataId:      "/redfish/v1/Chassis/" + chassisId + "/PCIeDevices/" + pCIeDeviceId + "/CXLLogicalDevices/" + cXLLogicalDeviceId,
