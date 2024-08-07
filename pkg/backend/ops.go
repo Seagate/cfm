@@ -15,6 +15,8 @@ type CreateSessionResponse struct {
 	SessionId    string // The session id returned form creating a session
 	Status       string // The status of the request
 	ServiceError error  // Any error returned by the service
+	ChassisSN    string // The serial number returned from the redfish chassis schema
+	EnclosureSN  string // The serial number returned from the redfish chassis schema for the enclosure
 }
 
 type DeleteSessionRequest struct {

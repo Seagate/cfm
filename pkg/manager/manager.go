@@ -209,9 +209,12 @@ func AddHost(ctx context.Context, c *openapi.Credentials) (*Host, error) {
 	}
 
 	hostId := c.CustomId
-	if hostId == "" {
-		// Generate default id using last N digits of the session id combined with the default prefix
-		hostId = fmt.Sprintf("%s-%s", ID_PREFIX_HOST_DFLT, response.SessionId[(len(response.SessionId)-common.NumUuidCharsForId):])
+	if hostId == "" { // Order CustomeId > HostSN > UUID
+		hostId = response.ChassisSN
+		if hostId == "" {
+			// Generate default id using last N digits of the session id combined with the default prefix
+			hostId = fmt.Sprintf("%s-%s", ID_PREFIX_HOST_DFLT, response.SessionId[(len(response.SessionId)-common.NumUuidCharsForId):])
+		}
 	}
 
 	// Check for duplicate ID.

@@ -59,6 +59,9 @@ type Session struct {
 	protocol string // http or https
 	insecure bool   // ignore secure flag in https
 	xToken   string // Authentication token
+
+	BladeSN     string // The serial number of the blade
+	ApplianceSN string // The serial number of the appliance if applicable
 }
 
 // Map of UUID to Session object
@@ -407,19 +410,28 @@ func (session *Session) pathInit() {
 
 	if err == nil {
 		response := session.query(HTTPOperation.GET, path)
-		session.redfishPaths[ChassisKey], err = response.memberOdataIndex(0)
 
+		// Check if the collection contains more than 1 member
+		chassisCollection, err := response.memberOdataArray()
 		if err == nil {
-			session.redfishPaths[ChassisMemoryKey] = session.redfishPaths[ChassisKey] + "/Memory"
-			response := session.query(HTTPOperation.GET, session.redfishPaths[ChassisKey])
-			session.redfishPaths[ChassisPcieDevKey], err = response.odataStringFromJSON("PCIeDevices")
-			if err != nil {
-				fmt.Println("init ChassisPcieDev path err", err)
+			for _, chassisPath := range chassisCollection {
+				response := session.query(HTTPOperation.GET, chassisPath)
+				PartNumber, _ := response.stringFromJSON("PartNumber")
+				if PartNumber == "62-00000629-00-01" { // Seagate CMA enclosure part number
+					session.ApplianceSN, _ = response.stringFromJSON("SerialNumber")
+				} else {
+					session.redfishPaths[ChassisKey] = chassisPath
+					session.redfishPaths[ChassisMemoryKey] = session.redfishPaths[ChassisKey] + "/Memory"
+					session.redfishPaths[ChassisPcieDevKey], err = response.odataStringFromJSON("PCIeDevices")
+					if err != nil {
+						fmt.Println("init ChassisPcieDev path err", err)
+					}
+					session.BladeSN, _ = response.stringFromJSON("SerialNumber")
+				}
 			}
 		} else {
 			fmt.Println("init ChassisMemory path err", err)
 		}
-
 	} else {
 		fmt.Println("init Chassis path err", err)
 	}
@@ -529,7 +541,7 @@ func (service *httpfishService) CreateSession(ctx context.Context, settings *Con
 	activeSessions[session.SessionId] = &session
 	service.service.session = &session
 
-	return &CreateSessionResponse{SessionId: session.SessionId, Status: "Success", ServiceError: nil}, nil
+	return &CreateSessionResponse{SessionId: session.SessionId, Status: "Success", ServiceError: nil, ChassisSN: session.BladeSN, EnclosureSN: session.ApplianceSN}, nil
 }
 
 // DeleteSession: Delete a session previously established with an endpoint service

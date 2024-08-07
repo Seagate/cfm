@@ -97,9 +97,12 @@ func (a *Appliance) AddBlade(ctx context.Context, c *openapi.Credentials) (*Blad
 	}
 
 	bladeId := c.CustomId
-	if bladeId == "" {
-		// Generate default id using last N digits of the session id combined with the default prefix
-		bladeId = fmt.Sprintf("%s-%s", ID_PREFIX_BLADE_DFLT, response.SessionId[(len(response.SessionId)-common.NumUuidCharsForId):])
+	if bladeId == "" { // Order CustomeId > BladeSN > UUID
+		bladeId = response.ChassisSN
+		if bladeId == "" {
+			// Generate default id using last N digits of the session id combined with the default prefix
+			bladeId = fmt.Sprintf("%s-%s", ID_PREFIX_BLADE_DFLT, response.SessionId[(len(response.SessionId)-common.NumUuidCharsForId):])
+		}
 	}
 
 	// Check for duplicate ID
