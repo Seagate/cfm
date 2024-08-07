@@ -5,7 +5,7 @@ import { useHostStore } from "../Stores/HostStore";
 import { useServiceStore } from "../Stores/ServiceStore";
 import { useLayout } from "./useLayout";
 
-export const useFlowData = () => {
+export const useControlData = () => {
   const applianceStore = useApplianceStore();
   const hostStore = useHostStore();
   const serviceStore = useServiceStore();
@@ -16,7 +16,7 @@ export const useFlowData = () => {
   const hostNodeType = "host";
   const bladeNodeType = "blade";
 
-  const nodes = computed(() => {
+  const controlNodes = computed(() => {
     const coreNode = serviceStore.serviceVersion
       ? [
         {
@@ -88,7 +88,7 @@ export const useFlowData = () => {
     return useLayout().layout(allNodes, edges.value, 'LR');
   });
 
-  const edges = computed(() => {
+  const controlEdges = computed(() => {
     const coreEdges = serviceStore.serviceVersion
       ? applianceStore.applianceIds.flatMap((appliance) => [
         {
@@ -116,5 +116,5 @@ export const useFlowData = () => {
     return [...coreEdges, ...hostEdges];
   });
 
-  return { nodes, edges };
+  return { controlNodes, controlEdges };
 };
