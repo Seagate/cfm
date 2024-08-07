@@ -4,9 +4,9 @@ package services
 import (
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -115,15 +115,17 @@ func FindWebUIDistPath(ctx context.Context) (*string, error) {
 func GetHostIp(ctx context.Context) string {
 	logger := klog.FromContext(ctx)
 
-	cmd := exec.Command("hostname", "-I")
-	stdout, err := cmd.Output()
+	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
 		logger.Error(err, ", [WEBUI] unable to retrive cfm-service's ip address")
 		return ""
 	}
-	output := string(stdout[:])
-	addresses := strings.Split(output, " ")
-	return strings.TrimSpace(string(addresses[0]))
+	defer conn.Close()
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	logger.V(2).Info("[WEBUI] found webui service", "ip addr", localAddr.IP)
+
+	return fmt.Sprintf("%s", localAddr.IP[:]) // deep copy
 }
 
 // UpdateBasePath: Replace the base address in the webui distro file
