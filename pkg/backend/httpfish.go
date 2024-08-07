@@ -1373,7 +1373,7 @@ func (service *httpfishService) GetPortDetails(ctx context.Context, settings *Co
 
 	portField, err := response.valueFromJSON("Port")
 	if err == nil {
-		speedFloat, _ := strconv.ParseFloat(strings.TrimSpace(portField.(map[string]interface{})["CurrentSpeedGbps"].(string)), 64)
+		speedFloat, _ := portField.(map[string]interface{})["CurrentSpeedGbps"].(float64)
 		ret.PortInformation.CurrentSpeedGbps = int32(speedFloat)
 	}
 
