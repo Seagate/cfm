@@ -80,6 +80,7 @@ func (p *CxlBladePort) GetDetails(ctx context.Context) (openapi.PortInformation,
 			StatusState:      response.PortInformation.StatusState,
 			Width:            response.PortInformation.Width,
 			LinkStatus:       response.PortInformation.LinkStatus,
+			LinkState:        response.PortInformation.StatusState,
 		}
 
 		p.ValidateCache()

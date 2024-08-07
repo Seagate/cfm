@@ -1405,6 +1405,9 @@ components:
         linkStatus:
           type: string
           description: Status of the link, such as LinkUp or LinkDown
+        linkState:
+          type: string
+          description: State of the link, such as Enabled or Disabled
     memoryDeviceInformation:
       type: object
       required: [id]
