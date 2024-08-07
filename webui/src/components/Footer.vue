@@ -18,36 +18,21 @@
 </template>
 
 <script>
-import { DefaultApi } from "@/axios/api";
-import { BASE_PATH } from "@/axios/base";
+import { computed } from "vue";
 import packageJson from "/package.json";
-
-// Use API_BASE_PATH to overwrite the BASE_PATH in the generated client code
-const API_BASE_PATH = process.env.BASE_PATH || BASE_PATH;
+import { useServiceStore } from "./Stores/ServiceStore";
 
 export default {
-  data() {
+  setup() {
+    const serviceStore = useServiceStore();
+    const serviceVersion = computed(() => serviceStore.serviceVersion);
+
+    const uiVersion = packageJson.version;
+
     return {
-      uiVersion: null, // Fetch from the package.json file
-      serviceVersion: null, // Fetch from cfm-service through API cfmV1Get
+      serviceVersion,
+      uiVersion,
     };
-  },
-
-  mounted() {
-    this.getServiceVersion();
-    this.uiVersion = packageJson.version;
-  },
-
-  methods: {
-    async getServiceVersion() {
-      try {
-        const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-        const response = await defaultApi.cfmV1Get();
-        this.serviceVersion = response.data.version;
-      } catch (error) {
-        console.error("Error fetching CFM Service version:", error);
-      }
-    },
   },
 };
 </script>
