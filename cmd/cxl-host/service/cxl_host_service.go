@@ -168,8 +168,8 @@ func (s *CxlHostApiService) RedfishV1AccountServiceGet(ctx context.Context) (red
 		},
 		ServiceEnabled: &enabled,
 		Status: redfishapi.ResourceStatus{
-			Health: &resourcehealthOk,
-			State:  &resourcestateEnabled,
+			Health: resourcehealthOk,
+			State:  resourcestateEnabled,
 		},
 	}
 
@@ -270,8 +270,8 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdGet(ctx context.Context, ch
 		// },
 		SerialNumber: &uuid,
 		Status: redfishapi.ResourceStatus{
-			Health: &resourcehealthOk,
-			State:  &resourcestateEnabled,
+			Health: resourcehealthOk,
+			State:  resourcestateEnabled,
 		},
 		UUID:    uuid,
 		Version: &version,
@@ -344,8 +344,8 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdMemoryMemoryIdGet(ctx conte
 		Enabled:      true,
 		Name:         memoryId,
 		Status: redfishapi.ResourceStatus{
-			Health: &resourcehealthOk,
-			State:  &resourcestateEnabled,
+			Health: resourcehealthOk,
+			State:  resourcestateEnabled,
 		},
 	}
 
@@ -393,8 +393,8 @@ func (s *CxlHostApiService) RedfishV1FabricsFabricIdGet(ctx context.Context, fab
 		Name:         fabricId + " Fabric",
 		Oem:          nil,
 		Status: redfishapi.ResourceStatus{
-			Health: &resourcehealthOk,
-			State:  &resourcestateEnabled,
+			Health: resourcehealthOk,
+			State:  resourcestateEnabled,
 		},
 		Switches: redfishapi.OdataV4IdRef{
 			OdataId: "/redfish/v1/Fabrics/" + fabricId + "/Switches",
@@ -456,8 +456,8 @@ func (s *CxlHostApiService) RedfishV1FabricsFabricIdSwitchesSwitchIdGet(ctx cont
 		RedundancyodataCount: 1,
 		SerialNumber:         &serial,
 		Status: redfishapi.ResourceStatus{
-			Health: &resourcehealthOk,
-			State:  &resourcestateEnabled,
+			Health: resourcehealthOk,
+			State:  resourcestateEnabled,
 		},
 		SupportedProtocols: []redfishapi.ProtocolProtocol{redfishapi.PROTOCOLPROTOCOL_CXL},
 		SwitchType:         redfishapi.PROTOCOLPROTOCOL_CXL,
@@ -529,8 +529,8 @@ func (s *CxlHostApiService) RedfishV1FabricsFabricIdSwitchesSwitchIdPortsPortIdG
 		PortType:         redfishapi.PORTV1110PORTTYPE_BIDIRECTIONAL_PORT,
 		SignalDetected:   &detected,
 		Status: redfishapi.ResourceStatus{
-			Health: &resourcehealthOk,
-			State:  &resourcestateEnabled,
+			Health: resourcehealthOk,
+			State:  resourcestateEnabled,
 		},
 	}
 
@@ -623,8 +623,8 @@ func (s *CxlHostApiService) RedfishV1SessionServiceGet(ctx context.Context) (red
 		SessionTimeout: int64(SessionTimeout),
 		Sessions:       redfishapi.OdataV4IdRef{OdataId: "/redfish/v1/SessionService/Sessions"},
 		Status: redfishapi.ResourceStatus{
-			Health: &resourcehealthOk,
-			State:  &resourcestateEnabled,
+			Health: resourcehealthOk,
+			State:  resourcestateEnabled,
 		},
 	}
 
@@ -932,12 +932,12 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdPCIeDevicesPCIeDeviceIdCXLL
 		Name:               "Locally attached CXL Logical Device " + string(dev.GetCxlType()),
 		SemanticsSupported: []redfishapi.CxlLogicalDeviceV111CxlSemantic{},
 		Status: redfishapi.ResourceStatus{
-			Health: &resourcehealthOk,
-			State:  &resourcestateEnabled,
+			Health: resourcehealthOk,
+			State:  resourcestateEnabled,
 		},
 		Identifiers: []redfishapi.ResourceIdentifier{{
 			DurableName:       &gcxlid,
-			DurableNameFormat: &fmt,
+			DurableNameFormat: fmt,
 		}},
 	}
 	devCap := dev.GetCxlCap()
@@ -1027,8 +1027,8 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdPCIeDevicesPCIeDeviceIdGet(
 			OdataId: "/redfish/v1/Chassis/" + chassisId + "/PCIeDevices/" + pCIeDeviceId + "/PCIeFunctions",
 		},
 		Status: redfishapi.ResourceStatus{
-			Health: &resourcehealthOk,
-			State:  &resourcestateEnabled,
+			Health: resourcehealthOk,
+			State:  resourcestateEnabled,
 		},
 	}
 
@@ -1112,8 +1112,8 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdPCIeDevicesPCIeDeviceIdPCIe
 		Name:       "PCIe Function",
 		RevisionId: &revisionId,
 		Status: redfishapi.ResourceStatus{
-			Health: &resourcehealthOk,
-			State:  &resourcestateEnabled,
+			Health: resourcehealthOk,
+			State:  resourcestateEnabled,
 		},
 		VendorId: &vendorId,
 	}
@@ -1448,8 +1448,8 @@ func (s *CxlHostApiService) RedfishV1SystemsComputerSystemIdMemoryMemoryIdGet(ct
 		Name:         "CXL Device memory",
 		MemoryMedia:  []redfishapi.MemoryV1190MemoryMedia{redfishapi.MEMORYV1190MEMORYMEDIA_PROPRIETARY},
 		Status: redfishapi.ResourceStatus{
-			Health: &resourcehealthOk,
-			State:  &resourcestateEnabled,
+			Health: resourcehealthOk,
+			State:  resourcestateEnabled,
 		},
 		Links: redfishapi.MemoryV1190Links{
 			MemoryMediaSources: []redfishapi.OdataV4IdRef{
