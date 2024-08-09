@@ -464,17 +464,22 @@ func GetMemOnlyNumaNodes() []string {
 // GetCXLNumaNodes: return a map of [node]BDF
 func GetCXLNumaNodes() map[string]string {
 	nodeMap := make(map[string]string)
+	for _, node := range GetMemOnlyNumaNodes() { // Initialize Node Map
+		nodeMap[node] = ""
+	}
 	if blockSizeByte != -1 {
 		cxlDevList := GetCXLWithMemDevList()
 		for _, bdf := range cxlDevList {
 			dev := GetCXLDevInfo(bdf)
 			base_addr := dev.GetMemoryBaseAddr()
-			blockIndex := base_addr / blockSizeByte
-			entries, err := os.ReadDir(fmt.Sprintf("%smemory%d", PlatformPath.SysMem, blockIndex))
-			if err == nil {
-				for _, entry := range entries {
-					if strings.HasPrefix(entry.Name(), "node") {
-						nodeMap[entry.Name()] = bdf
+			if base_addr != 0 {
+				blockIndex := base_addr / blockSizeByte
+				entries, err := os.ReadDir(fmt.Sprintf("%smemory%d", PlatformPath.SysMem, blockIndex))
+				if err == nil {
+					for _, entry := range entries {
+						if strings.HasPrefix(entry.Name(), "node") {
+							nodeMap[entry.Name()] = bdf
+						}
 					}
 				}
 			}

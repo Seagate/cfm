@@ -1386,15 +1386,22 @@ func (s *CxlHostApiService) RedfishV1SystemsComputerSystemIdMemoryDomainsMemoryD
 
 	} else {
 		bdf := CxlDevNodeToBDF(memoryChunksId)
-		memAddr := GetCxlAddressInfoMiB(bdf)
-		resource.AddressRangeOffsetMiB = &memAddr.BaseAddress
-		resource.MemoryChunkSizeMiB = &memAddr.Size
-		resource.Links.Endpoints = append(resource.Links.Endpoints, redfishapi.OdataV4IdRef{OdataId: fmt.Sprintf("/redfish/v1/Systems/%s/Memory/CXL%d", computerSystemId, CxlDevBDFtoIndex(CxlDevNodeToBDF(memoryChunksId)))})
-		resource.Links.EndpointsodataCount = 1
+		if bdf == "" { // node doesn't match to a CXL dev's base address
+			mem := GetNumaMemInfo(memoryChunksId)
+			memMiB := mem.MemTotal >> 10 // MemTotal is in KiB
+			resource.MemoryChunkSizeMiB = &memMiB
+			resource.Links.Endpoints = make([]redfishapi.OdataV4IdRef, 0)
+		} else {
+			memAddr := GetCxlAddressInfoMiB(bdf)
+			resource.AddressRangeOffsetMiB = &memAddr.BaseAddress
+			resource.MemoryChunkSizeMiB = &memAddr.Size
+			resource.Links.Endpoints = append(resource.Links.Endpoints, redfishapi.OdataV4IdRef{OdataId: fmt.Sprintf("/redfish/v1/Systems/%s/Memory/CXL%d", computerSystemId, CxlDevBDFtoIndex(CxlDevNodeToBDF(memoryChunksId)))})
+			resource.Links.EndpointsodataCount = 1
 
-		perfMetric := GetCXLMemPerf(bdf)
-		if perfMetric != nil {
-			resource.Oem = map[string]interface{}{"Seagate": map[string]interface{}{"Bandwidth": perfMetric.Bandwidth, "Latency": perfMetric.Latency}}
+			perfMetric := GetCXLMemPerf(bdf)
+			if perfMetric != nil {
+				resource.Oem = map[string]interface{}{"Seagate": map[string]interface{}{"Bandwidth": perfMetric.Bandwidth, "Latency": perfMetric.Latency}}
+			}
 		}
 	}
 
