@@ -15,7 +15,7 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:     "cfm <command> <device> [<flags>]",
-	Version: "1.x.x",
+	Version: "1.2.0",
 	Short:   "CLI for managing memory appliance(s) via cfm-service.",
 	Long:    `A command line interface that connects to a cfm-service instance.  Once connected, can use CLI to to manage one or more memory appliances.`,
 	Args:    cobra.MatchAll(cobra.NoArgs),
