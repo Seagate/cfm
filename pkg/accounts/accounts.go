@@ -43,9 +43,14 @@ type AccountsData struct {
 
 // Return our singleton accounts handler
 func AccountsHandler() *accountsHandler {
+	storageFileName := "cxl-host-accounts.json"
+	pwd, _ := os.Getwd()
+	if pwd == "/" { // executable run as systemd service
+		storageFileName = "/etc/cxl-host-accounts.json"
+	}
 	once.Do(func() {
 		a = &accountsHandler{
-			storage: "cxl-host-accounts.json",
+			storage: storageFileName,
 			accounts: AccountsData{
 				Accounts: make([]*AccountSingle, 0),
 			},
