@@ -34,6 +34,11 @@ type Settings struct {
 	HostIpOverride string // An user override option for the host server Ip address
 }
 
+type CustomResponse struct {
+	Data  interface{} `json:"data,omitempty"`
+	Error string      `json:"error,omitempty"`
+}
+
 const (
 	KeyVerbosity = "cfmCtxVerbosity"
 	KeyBackend   = "cfmCtxBackend"

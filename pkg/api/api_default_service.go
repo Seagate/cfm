@@ -235,7 +235,12 @@ func (cfm *CfmApiService) BladesComposeMemory(ctx context.Context, applianceId s
 	memory, err := blade.ComposeMemory(ctx, &r)
 	if err != nil {
 		if memory != nil {
-			return openapi.Response(http.StatusPartialContent, memory), nil
+			// Use the custom response structure to pass both the memory and partial error to the frontend.
+			customResponse := common.CustomResponse{
+				Data:  memory,
+				Error: err.Error(),
+			}
+			return openapi.Response(http.StatusPartialContent, customResponse), nil
 		} else {
 			return formatErrorResp(ctx, err.(*common.RequestError))
 		}

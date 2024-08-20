@@ -46,7 +46,7 @@ func AddAppliance(ctx context.Context, c *openapi.Credentials) (*Appliance, erro
 	if err != nil || appliance == nil {
 		newErr := fmt.Errorf("new appliance creation failure: %w", err)
 		logger.Error(newErr, "failure: add appliance")
-		return nil, &common.RequestError{StatusCode: common.StatusManagerInitializationFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
 	// Cache it
@@ -54,7 +54,7 @@ func AddAppliance(ctx context.Context, c *openapi.Credentials) (*Appliance, erro
 	if err != nil {
 		newErr := fmt.Errorf("add appliance [%s] failure: %w", appliance.Id, err)
 		logger.Error(newErr, "failure: add appliance")
-		return nil, &common.RequestError{StatusCode: common.StatusManagerInitializationFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
 	logger.V(2).Info("success: add appliance", "applianceId", appliance.Id)
@@ -69,8 +69,9 @@ func DeleteApplianceById(ctx context.Context, applianceId string) (*Appliance, e
 	// query cache
 	appliance, ok := deviceCache.GetApplianceByIdOk(applianceId)
 	if !ok {
-		logger.V(2).Info("appliance not found during delete: do nothing", "applianceId", applianceId)
-		return &Appliance{Id: applianceId}, nil
+		newErr := fmt.Errorf("failed to get appliance [%s]", applianceId)
+		logger.Error(newErr, "failure: delete appliance by id")
+		return nil, &common.RequestError{StatusCode: common.StatusApplianceIdDoesNotExist, Err: newErr}
 	}
 
 	err := appliance.DeleteAllBlades(ctx) // cache and hardware interactions here
@@ -85,7 +86,7 @@ func DeleteApplianceById(ctx context.Context, applianceId string) (*Appliance, e
 	if a == nil {
 		newErr := fmt.Errorf("appliance [%s] cache delete failed", appliance.Id)
 		logger.Error(newErr, "failure: delete appliance by id")
-		return nil, &common.RequestError{StatusCode: common.StatusHostDeleteSessionFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: common.StatusApplianceDeleteSessionFailure, Err: newErr}
 	}
 
 	logger.V(2).Info("success: delete appliance by id", "applianceId", a.Id)
@@ -104,7 +105,8 @@ func GetApplianceById(ctx context.Context, applianceId string) (*Appliance, erro
 	appliance, err := deviceCache.GetApplianceById(applianceId)
 	if err != nil {
 		logger.Error(err, "failure: get appliance by id")
-		return nil, &common.RequestError{StatusCode: common.StatusApplianceIdDoesNotExist, Err: err}
+		newErr := fmt.Errorf("appliance [%s] doesn't exist", applianceId)
+		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
 	logger.V(2).Info("success: get appliance by id", "applianceId", applianceId)
@@ -133,7 +135,7 @@ func ResyncApplianceById(ctx context.Context, applianceId string) (*Appliance, *
 	if err != nil {
 		newErr := fmt.Errorf("get appliance by id [%s] failure: %w", appliance.Id, err)
 		logger.Error(newErr, "failure: resync appliance by id")
-		return nil, &failedBladeIds, &common.RequestError{StatusCode: common.StatusApplianceIdDoesNotExist, Err: newErr}
+		return nil, &failedBladeIds, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
 	bladeIds := appliance.GetAllBladeIds()
@@ -230,7 +232,7 @@ func AddHost(ctx context.Context, c *openapi.Credentials) (*Host, error) {
 
 		newErr := fmt.Errorf("invalid id: hostId [%s] already exists in cfm-service", hostId)
 		logger.Error(newErr, "failure: add host")
-		return nil, &common.RequestError{StatusCode: common.StatusManagerInitializationFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: common.StatusHostIdDuplicate, Err: newErr}
 	}
 
 	// Create a new cfm-service Host object
@@ -245,8 +247,8 @@ func AddHost(ctx context.Context, c *openapi.Credentials) (*Host, error) {
 	host, err := NewHost(ctx, &r)
 	if err != nil || host == nil {
 		req := backend.DeleteSessionRequest{}
-		response, err := ops.DeleteSession(ctx, &settings, &req)
-		if err != nil || response == nil {
+		response, deleErr := ops.DeleteSession(ctx, &settings, &req)
+		if deleErr != nil || response == nil {
 			newErr := fmt.Errorf("failed to delete session [%s:%d] after failed host [%s] object creation: %w", c.IpAddress, c.Port, hostId, err)
 			logger.Error(newErr, "failure: add host")
 			return nil, &common.RequestError{StatusCode: common.StatusHostDeleteSessionFailure, Err: newErr}
@@ -272,8 +274,9 @@ func DeleteHostById(ctx context.Context, hostId string) (*Host, error) {
 	// query cache
 	host, ok := deviceCache.GetHostByIdOk(hostId)
 	if !ok {
-		logger.V(2).Info("host not found during delete: do nothing", "hostId", hostId)
-		return &Host{Id: hostId}, nil
+		newErr := fmt.Errorf("failed to get host [%s]", hostId)
+		logger.Error(newErr, "failure: delete host by id")
+		return nil, &common.RequestError{StatusCode: common.StatusHostIdDoesNotExist, Err: newErr}
 	}
 
 	ops := host.backendOps
@@ -319,7 +322,8 @@ func GetHostById(ctx context.Context, hostId string) (*Host, error) {
 	host, err := deviceCache.GetHostById(hostId)
 	if err != nil {
 		logger.Error(err, "failure: get host by id")
-		return nil, &common.RequestError{StatusCode: common.StatusHostIdDoesNotExist, Err: err}
+		newErr := fmt.Errorf("failure: get host by id [%s]", hostId)
+		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
 	logger.V(2).Info("success: get host by id", "hostId", hostId)

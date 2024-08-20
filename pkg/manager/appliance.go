@@ -38,7 +38,8 @@ func NewAppliance(ctx context.Context, id string) (*Appliance, error) {
 	// Check for duplicate ID
 	_, exists := deviceCache.GetApplianceByIdOk(applianceId)
 	if exists {
-		return nil, fmt.Errorf("invalid id: applianceId [%s] already exists in cfm-service", applianceId)
+		newErr := fmt.Errorf("invalid id: applianceId [%s] already exists in cfm-service", applianceId)
+		return nil, &common.RequestError{StatusCode: common.StatusApplianceIdDuplicate, Err: newErr}
 	}
 
 	a := Appliance{
@@ -93,7 +94,7 @@ func (a *Appliance) AddBlade(ctx context.Context, c *openapi.Credentials) (*Blad
 	if err != nil || response == nil {
 		newErr := fmt.Errorf("create session failure at [%s:%d] using interface [%s]: %w", c.IpAddress, c.Port, backendName, err)
 		logger.Error(newErr, "failure: add blade")
-		return nil, &common.RequestError{StatusCode: common.StatusApplianceCreateSessionFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: common.StatusBladeCreateSessionFailure, Err: newErr}
 	}
 
 	bladeId := c.CustomId
@@ -113,12 +114,12 @@ func (a *Appliance) AddBlade(ctx context.Context, c *openapi.Credentials) (*Blad
 		if err != nil || response == nil {
 			newErr := fmt.Errorf("failed to delete session [%s:%d] after failed duplicate bladeId [%s] check: %w", c.IpAddress, c.Port, bladeId, err)
 			logger.Error(newErr, "failure: add blade")
-			return nil, &common.RequestError{StatusCode: common.StatusApplianceDeleteSessionFailure, Err: newErr}
+			return nil, &common.RequestError{StatusCode: common.StatusBladeDeleteSessionFailure, Err: newErr}
 		}
 
 		newErr := fmt.Errorf("invalid id: bladeId [%s] already exists on appliance [%s] ", bladeId, a.Id)
 		logger.Error(newErr, "failure: add blade")
-		return nil, &common.RequestError{StatusCode: common.StatusManagerInitializationFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: common.StatusBladeIdDuplicate, Err: newErr}
 	}
 
 	// Create the new Blade
@@ -134,11 +135,11 @@ func (a *Appliance) AddBlade(ctx context.Context, c *openapi.Credentials) (*Blad
 	blade, err := NewBlade(ctx, &r)
 	if err != nil || blade == nil {
 		req := backend.DeleteSessionRequest{}
-		response, err := ops.DeleteSession(ctx, &settings, &req)
-		if err != nil || response == nil {
+		response, deleErr := ops.DeleteSession(ctx, &settings, &req)
+		if deleErr != nil || response == nil {
 			newErr := fmt.Errorf("failed to delete session [%s:%d] after failed blade [%s] object creation: %w", c.IpAddress, c.Port, bladeId, err)
 			logger.Error(newErr, "failure: add blade")
-			return nil, &common.RequestError{StatusCode: common.StatusApplianceDeleteSessionFailure, Err: newErr}
+			return nil, &common.RequestError{StatusCode: common.StatusBladeDeleteSessionFailure, Err: newErr}
 		}
 
 		newErr := fmt.Errorf("appliance [%s] new blade object creation failure: %w", a.Id, err)
@@ -178,8 +179,9 @@ func (a *Appliance) DeleteBladeById(ctx context.Context, bladeId string) (*Blade
 	// query for blade
 	blade, ok := a.Blades[bladeId]
 	if !ok {
-		logger.V(2).Info("blade not found during delete: do nothing", "bladeId", bladeId, "applianceId", a.Id)
-		return &Blade{Id: bladeId}, nil
+		logger.V(2).Info("blade not found during delete:", "bladeId", bladeId, "applianceId", a.Id)
+		newErr := fmt.Errorf("blade [%s] not found during delete", bladeId)
+		return nil, &common.RequestError{StatusCode: common.StatusBladeIdDoesNotExist, Err: newErr}
 	}
 
 	// get blade backend
@@ -198,7 +200,7 @@ func (a *Appliance) DeleteBladeById(ctx context.Context, bladeId string) (*Blade
 		logger.V(2).Info("force blade deletion after backend session failure", "bladeId", blade.Id, "applianceId", a.Id)
 		delete(a.Blades, blade.Id)
 
-		return nil, &common.RequestError{StatusCode: common.StatusApplianceDeleteSessionFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: common.StatusBladeDeleteSessionFailure, Err: newErr}
 	}
 
 	// delete blade
