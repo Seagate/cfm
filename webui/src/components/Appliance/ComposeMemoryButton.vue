@@ -267,7 +267,7 @@ export default {
       },
       qoSs: [Qos.NUMBER_1, Qos.NUMBER_2, Qos.NUMBER_4, Qos.NUMBER_8],
       showQoS: Qos.NUMBER_1,
-      showPort: "port0",
+      showPort: "",
       partialSuccess: "",
 
       newMemoryId: "", // Be used on success popup
