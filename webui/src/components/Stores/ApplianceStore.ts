@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia'
 import { Appliance, Credentials, DefaultApi } from "@/axios/api";
 import { BASE_PATH } from "@/axios/base";
+import axios from 'axios';
 
 // Use API_BASE_PATH to overwrite the BASE_PATH in the generated client code
 const API_BASE_PATH = process.env.BASE_PATH || BASE_PATH;
@@ -69,7 +70,15 @@ export const useApplianceStore = defineStore('appliance', {
                 this.appliances.push(addedAppliance);
                 return addedAppliance;
             } catch (error) {
-                this.addApplianceError = error;
+                if (axios.isAxiosError(error)) {
+                    this.addApplianceError = error.message;
+                    if (error.response) {
+                        this.addApplianceError = error.response?.data.status.message + " (" + error.message + ")";
+                    }
+                }
+                else {
+                    this.addApplianceError = error;
+                }
                 console.error("Error:", error);
             }
         },
@@ -89,7 +98,15 @@ export const useApplianceStore = defineStore('appliance', {
                 }
                 return deletedAppliance;
             } catch (error) {
-                this.deleteApplianceError = error;
+                if (axios.isAxiosError(error)) {
+                    this.deleteApplianceError = error.message;
+                    if (error.response) {
+                        this.deleteApplianceError = error.response?.data.status.message + " (" + error.message + ")";
+                    }
+                }
+                else {
+                    this.deleteApplianceError = error;
+                }
                 console.error("Error:", error);
             }
         },

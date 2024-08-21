@@ -153,8 +153,6 @@
         ></v-icon>
         <h2 class="text-h5 mb-6">Compose memory failed!</h2>
         <p class="mb-4 text-medium-emphasis text-body-2">
-          Error Message:
-          <br />
           {{ composeMemoryError }}
         </p>
         <v-divider class="mb-4"></v-divider>
@@ -269,7 +267,7 @@ export default {
       },
       qoSs: [Qos.NUMBER_1, Qos.NUMBER_2, Qos.NUMBER_4, Qos.NUMBER_8],
       showQoS: Qos.NUMBER_1,
-      showPort: "",
+      showPort: "port0",
       partialSuccess: "",
 
       newMemoryId: "", // Be used on success popup

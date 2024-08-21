@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia'
 import { Blade, Credentials, DefaultApi } from "@/axios/api";
 import { BASE_PATH } from "@/axios/base";
+import axios from 'axios';
 // Use API_BASE_PATH to overwrite the BASE_PATH in the generated client code
 const API_BASE_PATH = process.env.BASE_PATH || BASE_PATH;
 
@@ -75,7 +76,15 @@ export const useBladeStore = defineStore('blade', {
                 const resyncedBlade = response.data;
                 return resyncedBlade;
             } catch (error) {
-                this.resyncBladeError = error;
+                if (axios.isAxiosError(error)) {
+                    this.resyncBladeError = error.message;
+                    if (error.response) {
+                        this.resyncBladeError = error.response?.data.status.message + " (" + error.message + ")";
+                    }
+                }
+                else {
+                    this.resyncBladeError = error;
+                }
                 console.error("Error:", error);
             }
         },
@@ -94,7 +103,15 @@ export const useBladeStore = defineStore('blade', {
                 this.blades.push(newBlade);
                 return newBlade;
             } catch (error) {
-                this.addBladeError = error;
+                if (axios.isAxiosError(error)) {
+                    this.addBladeError = error.message;
+                    if (error.response) {
+                        this.addBladeError = error.response?.data.status.message + " (" + error.message + ")";
+                    }
+                }
+                else {
+                    this.addBladeError = error;
+                }
                 console.error("Error:", error);
             }
         },
@@ -114,7 +131,15 @@ export const useBladeStore = defineStore('blade', {
                 }
                 return deletedBlade;
             } catch (error) {
-                this.deleteBladeError = error;
+                if (axios.isAxiosError(error)) {
+                    this.deleteBladeError = error.message;
+                    if (error.response) {
+                        this.deleteBladeError = error.response?.data.status.message + " (" + error.message + ")";
+                    }
+                }
+                else {
+                    this.deleteBladeError = error;
+                }
                 console.error("Error:", error);
             }
         },

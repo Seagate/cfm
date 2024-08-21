@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia'
 import { MemoryRegion, DefaultApi, ComposeMemoryRequest, AssignMemoryRequest } from "@/axios/api";
 import { BASE_PATH } from "@/axios/base";
+import axios from 'axios';
 
 // Use API_BASE_PATH to overwrite the BASE_PATH in the generated client code
 const API_BASE_PATH = process.env.BASE_PATH || BASE_PATH;
@@ -63,7 +64,15 @@ export const useBladeMemoryStore = defineStore('bladeMemory', {
                 this.bladeMemory.push(newMemory);
                 return newMemory;
             } catch (error) {
-                this.composeMemoryError = error;
+                if (axios.isAxiosError(error)) {
+                    this.composeMemoryError = error.message;
+                    if (error.response) {
+                        this.composeMemoryError = error.response?.data.status.message + " (" + error.message + ")";
+                    }
+                }
+                else {
+                    this.composeMemoryError = error;
+                }
                 console.error("Error:", error);
             }
         },
@@ -79,7 +88,15 @@ export const useBladeMemoryStore = defineStore('bladeMemory', {
                 );
                 return response;
             } catch (error) {
-                this.assignOrUnassignMemoryError = error;
+                if (axios.isAxiosError(error)) {
+                    this.assignOrUnassignMemoryError = error.message;
+                    if (error.response) {
+                        this.assignOrUnassignMemoryError = error.response?.data.status.message + " (" + error.message + ")";
+                    }
+                }
+                else {
+                    this.assignOrUnassignMemoryError = error;
+                }
                 console.error("Error assign or unassign memory:", error);
             }
         },
@@ -100,7 +117,15 @@ export const useBladeMemoryStore = defineStore('bladeMemory', {
                 }
                 return response;
             } catch (error) {
-                this.freeMemoryError = error;
+                if (axios.isAxiosError(error)) {
+                    this.freeMemoryError = error.message;
+                    if (error.response) {
+                        this.freeMemoryError = error.response?.data.status.message + " (" + error.message + ")";
+                    }
+                }
+                else {
+                    this.freeMemoryError = error;
+                }
                 console.error("Error free memory:", error);
             }
         }
