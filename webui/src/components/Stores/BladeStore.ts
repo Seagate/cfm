@@ -79,7 +79,7 @@ export const useBladeStore = defineStore('blade', {
                 if (axios.isAxiosError(error)) {
                     this.resyncBladeError = error.message;
                     if (error.response) {
-                        this.resyncBladeError = error.response?.data.status.message + " (" + error.message + ")";
+                        this.resyncBladeError = error.response?.data.status.message + " (" + error.response?.request.status + ")";
                     }
                 }
                 else {
@@ -106,7 +106,7 @@ export const useBladeStore = defineStore('blade', {
                 if (axios.isAxiosError(error)) {
                     this.addBladeError = error.message;
                     if (error.response) {
-                        this.addBladeError = error.response?.data.status.message + " (" + error.message + ")";
+                        this.addBladeError = error.response?.data.status.message + " (" + error.response?.request.status + ")";
                     }
                 }
                 else {
@@ -134,7 +134,7 @@ export const useBladeStore = defineStore('blade', {
                 if (axios.isAxiosError(error)) {
                     this.deleteBladeError = error.message;
                     if (error.response) {
-                        this.deleteBladeError = error.response?.data.status.message + " (" + error.message + ")";
+                        this.deleteBladeError = error.response?.data.status.message + " (" + error.response?.request.status + ")";
                     }
                 }
                 else {

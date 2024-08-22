@@ -63,7 +63,7 @@ export const useHostStore = defineStore('host', {
                 if (axios.isAxiosError(error)) {
                     this.addHostError = error.message;
                     if (error.response) {
-                        this.addHostError = error.response?.data.status.message + " (" + error.message + ")";
+                        this.addHostError = error.response?.data.status.message + " (" + error.response?.request.status + ")";
                     }
                 }
                 else {
@@ -91,7 +91,7 @@ export const useHostStore = defineStore('host', {
                 if (axios.isAxiosError(error)) {
                     this.deleteHostError = error.message;
                     if (error.response) {
-                        this.deleteHostError = error.response?.data.status.message + " (" + error.message + ")";
+                        this.deleteHostError = error.response?.data.status.message + " (" + error.response?.request.status + ")";
                     }
                 }
                 else {
@@ -113,7 +113,7 @@ export const useHostStore = defineStore('host', {
                 if (axios.isAxiosError(error)) {
                     this.resyncHostError = error.message;
                     if (error.response) {
-                        this.resyncHostError = error.response?.data.status.message + " (" + error.message + ")";
+                        this.resyncHostError = error.response?.data.status.message + " (" + error.response?.request.status + ")";
                     }
                 }
                 else {

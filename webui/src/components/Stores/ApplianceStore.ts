@@ -73,7 +73,7 @@ export const useApplianceStore = defineStore('appliance', {
                 if (axios.isAxiosError(error)) {
                     this.addApplianceError = error.message;
                     if (error.response) {
-                        this.addApplianceError = error.response?.data.status.message + " (" + error.message + ")";
+                        this.addApplianceError = error.response?.data.status.message + " (" + error.response?.request.status + ")";
                     }
                 }
                 else {
@@ -101,7 +101,7 @@ export const useApplianceStore = defineStore('appliance', {
                 if (axios.isAxiosError(error)) {
                     this.deleteApplianceError = error.message;
                     if (error.response) {
-                        this.deleteApplianceError = error.response?.data.status.message + " (" + error.message + ")";
+                        this.deleteApplianceError = error.response?.data.status.message + " (" + error.response?.request.status + ")";
                     }
                 }
                 else {

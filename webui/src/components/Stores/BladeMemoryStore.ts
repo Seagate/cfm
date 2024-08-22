@@ -67,7 +67,7 @@ export const useBladeMemoryStore = defineStore('bladeMemory', {
                 if (axios.isAxiosError(error)) {
                     this.composeMemoryError = error.message;
                     if (error.response) {
-                        this.composeMemoryError = error.response?.data.status.message + " (" + error.message + ")";
+                        this.composeMemoryError = error.response?.data.status.message + " (" + error.response?.request.status + ")";
                     }
                 }
                 else {
@@ -91,7 +91,7 @@ export const useBladeMemoryStore = defineStore('bladeMemory', {
                 if (axios.isAxiosError(error)) {
                     this.assignOrUnassignMemoryError = error.message;
                     if (error.response) {
-                        this.assignOrUnassignMemoryError = error.response?.data.status.message + " (" + error.message + ")";
+                        this.assignOrUnassignMemoryError = error.response?.data.status.message + " (" + error.response?.request.status + ")";
                     }
                 }
                 else {
@@ -120,7 +120,7 @@ export const useBladeMemoryStore = defineStore('bladeMemory', {
                 if (axios.isAxiosError(error)) {
                     this.freeMemoryError = error.message;
                     if (error.response) {
-                        this.freeMemoryError = error.response?.data.status.message + " (" + error.message + ")";
+                        this.freeMemoryError = error.response?.data.status.message + " (" + error.response?.request.status + ")";
                     }
                 }
                 else {
