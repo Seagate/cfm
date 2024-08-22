@@ -60,7 +60,6 @@ import { useData } from "./initial-data-elements";
 import { useApplianceStore } from "../Stores/ApplianceStore";
 import { useHostStore } from "../Stores/HostStore";
 import { useBladeStore } from "../Stores/BladeStore";
-import { useServiceStore } from "../Stores/ServiceStore";
 import { useBladePortStore } from "../Stores/BladePortStore";
 import { VueFlow } from "@vue-flow/core";
 import { useRouter } from "vue-router";
@@ -73,7 +72,6 @@ export default {
     const applianceStore = useApplianceStore();
     const hostStore = useHostStore();
     const bladeStore = useBladeStore();
-    const serviceStore = useServiceStore();
     const bladePortStore = useBladePortStore();
 
     const router = useRouter();
@@ -176,7 +174,6 @@ export default {
 
     // Fetch appliances/blades/hosts when component is mounted
     onMounted(async () => {
-      await serviceStore.getServiceVersion();
       await applianceStore.fetchAppliances();
       await hostStore.fetchHosts();
       // Ensure blade ports are fetched after appliances, this action will create the edges for dataPlane

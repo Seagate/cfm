@@ -18,16 +18,21 @@
 </template>
 
 <script>
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import packageJson from "/package.json";
 import { useServiceStore } from "./Stores/ServiceStore";
 
 export default {
   setup() {
     const serviceStore = useServiceStore();
+
     const serviceVersion = computed(() => serviceStore.serviceVersion);
 
     const uiVersion = packageJson.version;
+
+    onMounted(() => {
+      serviceStore.getServiceVersion();
+    });
 
     return {
       serviceVersion,
