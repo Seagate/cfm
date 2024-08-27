@@ -78,7 +78,7 @@ func (h *Host) ComposeMemory(ctx context.Context, r *RequestComposeMemory) (*ope
 	if err != nil {
 		newErr := fmt.Errorf("connected blade port not found: host [%s] request [%v]", h.Id, r)
 		logger.Error(newErr, "failure: compose memory(host)")
-		return nil, &common.RequestError{StatusCode: common.StatusComposeMemoryFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
 	req := RequestComposeMemory{
@@ -91,7 +91,7 @@ func (h *Host) ComposeMemory(ctx context.Context, r *RequestComposeMemory) (*ope
 	if err != nil {
 		newErr := fmt.Errorf("blade [%s] port [%s] compose memory failure: host [%s] request [%v]", blade.Id, bladePort.Id, h.Id, r)
 		logger.Error(newErr, "failure: compose memory(host)")
-		return nil, &common.RequestError{StatusCode: common.StatusComposeMemoryFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
 	memory.MappedHostId = h.Id
