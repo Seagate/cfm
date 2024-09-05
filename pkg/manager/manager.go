@@ -42,7 +42,7 @@ func AddAppliance(ctx context.Context, c *openapi.Credentials) (*Appliance, erro
 	logger.V(4).Info(">>>>>> AddAppliance: ")
 
 	// Create a new cfm-service Appliance object
-	appliance, err := NewAppliance(ctx, c.CustomId)
+	appliance, err := NewAppliance(ctx, c)
 	if err != nil || appliance == nil {
 		newErr := fmt.Errorf("new appliance creation failure: %w", err)
 		logger.Error(newErr, "failure: add appliance")
@@ -217,6 +217,7 @@ func AddHost(ctx context.Context, c *openapi.Credentials) (*Host, error) {
 			// Generate default id using last N digits of the session id combined with the default prefix
 			hostId = fmt.Sprintf("%s-%s", ID_PREFIX_HOST_DFLT, response.SessionId[(len(response.SessionId)-common.NumUuidCharsForId):])
 		}
+		c.CustomId = hostId
 	}
 
 	// Check for duplicate ID.

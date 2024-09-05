@@ -130,8 +130,6 @@ func (cfm *CfmApiService) AppliancesPost(ctx context.Context, credentials openap
 	}
 
 	// The user's purpose for "credentials" object is complete.  Now, reusing this object for DataStore.
-	// Update credentials ID with final appliance ID.
-	credentials.CustomId = appliance.Id
 	datastore.DStore().GetDataStore().AddAppliance(&credentials)
 	datastore.DStore().Store()
 
@@ -575,8 +573,6 @@ func (cfm *CfmApiService) BladesPost(ctx context.Context, applianceId string, cr
 	}
 
 	// The user's purpose for "credentials" object is complete.  Now, reusing this object for DataStore.
-	// Update credentials ID with final blade ID.
-	credentials.CustomId = blade.Id
 	datastore.DStore().GetDataStore().AddBlade(&credentials, appliance.Id)
 	datastore.DStore().Store()
 
@@ -921,8 +917,6 @@ func (cfm *CfmApiService) HostsPost(ctx context.Context, credentials openapi.Cre
 	}
 
 	// The user's purpose for "credentials" object is complete.  Now, reusing this object for DataStore.
-	// Update credentials ID with final host ID.
-	credentials.CustomId = host.Id
 	datastore.DStore().GetDataStore().AddHost(&credentials)
 	datastore.DStore().Store()
 

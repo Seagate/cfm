@@ -132,7 +132,6 @@ func ReloadDataStore(ctx context.Context, s openapi.DefaultAPIServicer, c *DataS
 	logger.V(2).Info("cfm-service: restoring saved appliances")
 	var appliancesToDelete []string
 	for applianceId, appliance := range c.SavedAppliances {
-		appliance.Credentials.CustomId = applianceId
 		_, err = s.AppliancesPost(ctx, *appliance.Credentials)
 		if err != nil {
 			logger.V(2).Info("cfm-service: appliance restore failure", "applianceId", applianceId)
@@ -142,7 +141,6 @@ func ReloadDataStore(ctx context.Context, s openapi.DefaultAPIServicer, c *DataS
 
 		bladesToDelete := make(map[string]string)
 		for bladeId, blade := range appliance.SavedBlades {
-			blade.Credentials.CustomId = bladeId
 			_, err = s.BladesPost(ctx, applianceId, *blade.Credentials)
 			if err != nil {
 				logger.V(2).Info("cfm-service: blade restore failure", "bladeId", bladeId, "applianceId", applianceId)
@@ -162,7 +160,6 @@ func ReloadDataStore(ctx context.Context, s openapi.DefaultAPIServicer, c *DataS
 	logger.V(2).Info("cfm-service: restoring saved hosts")
 	var hostsToDelete []string
 	for hostId, host := range c.SavedHosts {
-		host.Credentials.CustomId = hostId
 		_, err = s.HostsPost(ctx, *host.Credentials)
 		if err != nil {
 			logger.V(2).Info("cfm-service: host restore failure", "hostId", hostId)

@@ -24,15 +24,16 @@ type Appliance struct {
 }
 
 // NewAppliance - Creates a new Appliance object.
-func NewAppliance(ctx context.Context, id string) (*Appliance, error) {
+func NewAppliance(ctx context.Context, c *openapi.Credentials) (*Appliance, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> NewAppliance: ")
 
-	applianceId := id
+	applianceId := c.CustomId
 	if applianceId == "" {
 		// Generate uuid here and combine the last N digits with the prefix to be the appliance default id
 		uuid := uuid.New().String()
 		applianceId = fmt.Sprintf("%s-%s", ID_PREFIX_APPLIANCE_DFLT, uuid[(len(uuid)-common.NumUuidCharsForId):])
+		c.CustomId = applianceId
 	}
 
 	// Check for duplicate ID
@@ -104,6 +105,7 @@ func (a *Appliance) AddBlade(ctx context.Context, c *openapi.Credentials) (*Blad
 			// Generate default id using last N digits of the session id combined with the default prefix
 			bladeId = fmt.Sprintf("%s-%s", ID_PREFIX_BLADE_DFLT, response.SessionId[(len(response.SessionId)-common.NumUuidCharsForId):])
 		}
+		c.CustomId = bladeId
 	}
 
 	// Check for duplicate ID
