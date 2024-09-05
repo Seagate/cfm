@@ -299,11 +299,6 @@ func DeleteHostById(ctx context.Context, hostId string) (*Host, error) {
 
 	// delete host from cache
 	h := deviceCache.DeleteHostById(host.Id)
-	if h == nil {
-		newErr := fmt.Errorf("host [%s] cache delete failed", host.Id)
-		logger.Error(newErr, "failure: delete host by id")
-		return nil, &common.RequestError{StatusCode: common.StatusHostDeleteSessionFailure, Err: newErr}
-	}
 
 	logger.V(2).Info("success: delete host by id", "hostId", h.Id)
 
