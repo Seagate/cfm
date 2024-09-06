@@ -694,10 +694,13 @@ func (cfm *CfmApiService) HostsComposeMemory(ctx context.Context, hostId string,
 func (cfm *CfmApiService) HostsDeleteById(ctx context.Context, hostId string) (openapi.ImplResponse, error) {
 	host, err := manager.DeleteHostById(ctx, hostId)
 	if err != nil {
+		// Force delete on failure since, currently, manager always removes host from deviceCache, even on failure
+		datastore.DStore().GetDataStore().DeleteHost(hostId)
+		datastore.DStore().Store()
+
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
-	// Update DataStore.
 	datastore.DStore().GetDataStore().DeleteHost(host.Id)
 	datastore.DStore().Store()
 
@@ -904,20 +907,56 @@ func (cfm *CfmApiService) HostsGetPorts(ctx context.Context, hostId string) (ope
 func (cfm *CfmApiService) HostsPost(ctx context.Context, credentials openapi.Credentials) (openapi.ImplResponse, error) {
 	hosts := manager.GetHosts(ctx)
 	if len(hosts) >= MAX_COUNT_HOSTS {
+
+		if datastore.DStore().GetDataStore().ContainsHost(credentials.CustomId) {
+
+			// If host limit exceeded AND host in datastore, set it inactive
+			req := datastore.HostUpdateRequest{
+				HostId: credentials.CustomId,
+				Status: datastore.Inactive,
+			}
+			datastore.DStore().GetDataStore().UpdateHost(&req)
+			datastore.DStore().Store()
+		}
+
 		err := common.RequestError{
 			StatusCode: common.StatusHostsExceedMaximum,
 			Err:        fmt.Errorf("cfm-service at maximum host capacity (%d)", MAX_COUNT_HOSTS),
 		}
+
 		return formatErrorResp(ctx, &err)
 	}
 
 	host, err := manager.AddHost(ctx, &credentials)
 	if err != nil {
+
+		if datastore.DStore().GetDataStore().ContainsHost(credentials.CustomId) {
+
+			// If host add fails AND host in datastore, set it inactive
+			req := datastore.HostUpdateRequest{
+				HostId: credentials.CustomId,
+				Status: datastore.Inactive,
+			}
+			datastore.DStore().GetDataStore().UpdateHost(&req)
+			datastore.DStore().Store()
+		}
+
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
-	// The user's purpose for "credentials" object is complete.  Now, reusing this object for DataStore.
-	datastore.DStore().GetDataStore().AddHost(&credentials)
+	if datastore.DStore().GetDataStore().ContainsHost(host.Id) {
+
+		// If host add passes AND host in datastore, set it active
+		req := datastore.HostUpdateRequest{
+			HostId: host.Id,
+			Status: datastore.Active,
+		}
+		datastore.DStore().GetDataStore().UpdateHost(&req)
+	} else {
+		// The original need for "credentials" object is fulfilled.  Now, reusing this object for DataStore.
+		datastore.DStore().GetDataStore().AddHost(&credentials)
+	}
+
 	datastore.DStore().Store()
 
 	h := openapi.Host{
@@ -945,11 +984,29 @@ func (cfm *CfmApiService) HostsPost(ctx context.Context, credentials openapi.Cre
 func (cfm *CfmApiService) HostsResyncById(ctx context.Context, hostId string) (openapi.ImplResponse, error) {
 	host, err := manager.ResyncHostById(ctx, hostId)
 	if err != nil {
-		// Update DataStore.
-		datastore.DStore().GetDataStore().DeleteHost(host.Id)
-		datastore.DStore().Store()
+		if datastore.DStore().GetDataStore().ContainsHost(hostId) {
+
+			// If host resync fails AND host in datastore, just set it inactive
+			req := datastore.HostUpdateRequest{
+				HostId: hostId,
+				Status: datastore.Inactive,
+			}
+			datastore.DStore().GetDataStore().UpdateHost(&req)
+			datastore.DStore().Store()
+		}
 
 		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	if datastore.DStore().GetDataStore().ContainsHost(host.Id) {
+
+		// If host resync passes AND host in datastore, set it active
+		req := datastore.HostUpdateRequest{
+			HostId: host.Id,
+			Status: datastore.Active,
+		}
+		datastore.DStore().GetDataStore().UpdateHost(&req)
+		datastore.DStore().Store()
 	}
 
 	h := openapi.Host{

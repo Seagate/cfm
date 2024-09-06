@@ -258,18 +258,12 @@ func ReloadDataStore(ctx context.Context, s openapi.DefaultAPIServicer, c *DataS
 		delete(c.SavedAppliances, applianceId)
 	}
 
-	logger.V(2).Info("cfm-service: restoring saved hosts")
-	var hostsToDelete []string
+	logger.V(2).Info("cfm-service: reloading saved hosts")
 	for hostId, host := range c.SavedHosts {
 		_, err = s.HostsPost(ctx, *host.Credentials)
 		if err != nil {
-			logger.V(2).Info("cfm-service: host restore failure", "hostId", hostId)
-			hostsToDelete = append(hostsToDelete, hostId)
+			logger.V(2).Info("cfm-service: host reload failure", "hostId", hostId)
 			continue
 		}
-	}
-
-	for _, hostId := range hostsToDelete {
-		delete(c.SavedHosts, hostId)
 	}
 }
