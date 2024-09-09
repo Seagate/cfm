@@ -275,10 +275,13 @@ func (cfm *CfmApiService) BladesDeleteById(ctx context.Context, applianceId stri
 
 	blade, err := appliance.DeleteBladeById(ctx, bladeId)
 	if err != nil {
+		// Force delete on failure since, currently, manager always removes blade from deviceCache, even on failure
+		datastore.DStore().GetDataStore().DeleteBlade(blade.Id, applianceId)
+		datastore.DStore().Store()
+
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
-	// Update DataStore.
 	datastore.DStore().GetDataStore().DeleteBlade(blade.Id, applianceId)
 	datastore.DStore().Store()
 
@@ -560,6 +563,18 @@ func (cfm *CfmApiService) BladesPost(ctx context.Context, applianceId string, cr
 
 	// Appliance can be empty but may include up to 8 blades
 	if len(appliance.Blades) == MAX_COUNT_BLADES {
+		if datastore.DStore().GetDataStore().ContainsBlade(credentials.CustomId, appliance.Id) {
+
+			// If blade limit exceeded AND blade in datastore, set it inactive
+			req := datastore.BladeUpdateRequest{
+				ApplianceId: appliance.Id,
+				BladeId:     credentials.CustomId,
+				Status:      datastore.Inactive,
+			}
+			datastore.DStore().GetDataStore().UpdateBlade(&req)
+			datastore.DStore().Store()
+		}
+
 		err := common.RequestError{
 			StatusCode: common.StatusBladesExceedMaximum,
 			Err:        fmt.Errorf("no more blades can be associated with this appliance (%s)", applianceId),
@@ -569,11 +584,35 @@ func (cfm *CfmApiService) BladesPost(ctx context.Context, applianceId string, cr
 
 	blade, err := appliance.AddBlade(ctx, &credentials)
 	if err != nil {
+		if datastore.DStore().GetDataStore().ContainsBlade(blade.Id, appliance.Id) {
+
+			// If blade add fails AND blade in datastore, set it inactive
+			req := datastore.BladeUpdateRequest{
+				ApplianceId: appliance.Id,
+				BladeId:     blade.Id,
+				Status:      datastore.Inactive,
+			}
+			datastore.DStore().GetDataStore().UpdateBlade(&req)
+			datastore.DStore().Store()
+		}
+
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
-	// The user's purpose for "credentials" object is complete.  Now, reusing this object for DataStore.
-	datastore.DStore().GetDataStore().AddBlade(&credentials, appliance.Id)
+	if datastore.DStore().GetDataStore().ContainsBlade(blade.Id, appliance.Id) {
+
+		// If blade add passes AND blade in datastore, set it active
+		req := datastore.BladeUpdateRequest{
+			ApplianceId: appliance.Id,
+			BladeId:     blade.Id,
+			Status:      datastore.Active,
+		}
+		datastore.DStore().GetDataStore().UpdateBlade(&req)
+	} else {
+		// The original need for "credentials" object is fulfilled.  Now, reusing this object for DataStore.
+		datastore.DStore().GetDataStore().AddBlade(&credentials, appliance.Id)
+	}
+
 	datastore.DStore().Store()
 
 	totals, err := blade.GetResourceTotals(ctx)
@@ -611,11 +650,31 @@ func (cfm *CfmApiService) BladesResyncById(ctx context.Context, applianceId stri
 
 	blade, err := appliance.ResyncBladeById(ctx, bladeId)
 	if err != nil {
-		// Update DataStore.
-		datastore.DStore().GetDataStore().DeleteBlade(blade.Id, applianceId)
-		datastore.DStore().Store()
+		if datastore.DStore().GetDataStore().ContainsBlade(bladeId, applianceId) {
+
+			// If blade resync fails AND blade in datastore, just set it inactive
+			req := datastore.BladeUpdateRequest{
+				ApplianceId: applianceId,
+				BladeId:     bladeId,
+				Status:      datastore.Inactive,
+			}
+			datastore.DStore().GetDataStore().UpdateBlade(&req)
+			datastore.DStore().Store()
+		}
 
 		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	if datastore.DStore().GetDataStore().ContainsBlade(bladeId, applianceId) {
+
+		// If blade resync pass AND blade in datastore, set it active
+		req := datastore.BladeUpdateRequest{
+			ApplianceId: applianceId,
+			BladeId:     bladeId,
+			Status:      datastore.Active,
+		}
+		datastore.DStore().GetDataStore().UpdateBlade(&req)
+		datastore.DStore().Store()
 	}
 
 	totals, err := blade.GetResourceTotals(ctx)
