@@ -15,6 +15,14 @@ const (
 	DefaultDataStoreFile = "cfmdatastore.json" // Default JSON datastore file
 )
 
+type ConnectionStatus string
+
+const (
+	Active        ConnectionStatus = "active"
+	Inactive      ConnectionStatus = "inactive"
+	NotApplicable ConnectionStatus = "n/a"
+)
+
 type DataStore struct {
 	SavedAppliances map[string]*ApplianceDataStore `json:"saved-appliances"`
 	SavedHosts      map[string]*HostDataStore      `json:"saved-hosts"`
@@ -160,13 +168,14 @@ func (c *DataStore) UpdateHost(r *HostUpdateRequest) error {
 type ApplianceDataStore struct {
 	Credentials      *openapi.Credentials       `json:"credentials"`
 	SavedBlades      map[string]*BladeDataStore `json:"saved-blades"`
-	ConnectionStatus ConnectionStatus
+	ConnectionStatus ConnectionStatus           `json:"connection-status"`
 }
 
 func NewApplianceDataStore(creds *openapi.Credentials) *ApplianceDataStore {
 	return &ApplianceDataStore{
-		Credentials: creds,
-		SavedBlades: make(map[string]*BladeDataStore),
+		Credentials:      creds,
+		SavedBlades:      make(map[string]*BladeDataStore),
+		ConnectionStatus: NotApplicable,
 	}
 }
 
@@ -189,16 +198,9 @@ func (a *ApplianceDataStore) UpdateBlade(r *BladeUpdateRequest) error {
 	return nil
 }
 
-type ConnectionStatus string
-
-const (
-	Active   ConnectionStatus = "active"
-	Inactive ConnectionStatus = "inactive"
-)
-
 type BladeDataStore struct {
 	Credentials      *openapi.Credentials `json:"credentials"`
-	ConnectionStatus ConnectionStatus
+	ConnectionStatus ConnectionStatus     `json:"connection-status"`
 }
 
 func NewBladeDataStore(creds *openapi.Credentials) *BladeDataStore {
@@ -210,7 +212,7 @@ func NewBladeDataStore(creds *openapi.Credentials) *BladeDataStore {
 
 type HostDataStore struct {
 	Credentials      *openapi.Credentials `json:"credentials"`
-	ConnectionStatus ConnectionStatus
+	ConnectionStatus ConnectionStatus     `json:"connection-status"`
 }
 
 func NewHostDataStore(creds *openapi.Credentials) *HostDataStore {
