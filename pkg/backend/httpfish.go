@@ -1138,6 +1138,74 @@ func (service *httpfishService) GetMemoryResourceBlocks(ctx context.Context, set
 	return &MemoryResourceBlocksResponse{MemoryResources: memoryResources, Status: "Success", ServiceError: nil}, nil
 }
 
+// GetMemoryResourceBlocks: Request Memory Resource Block information from the backends
+func (service *httpfishService) GetMemoryResourceBlocksCompositionStatus(ctx context.Context, settings *ConfigurationSettings, req *MemoryResourceBlocksCompositionRequest) (*MemoryResourceBlocksCompositionResponse, error) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("====== GetMemoryResourceBlocksCompositionStatus ======")
+	logger.V(4).Info("memory resource blocks", "request", req)
+
+	memoryResourcesStatus := make([]MemoryResourceBlock, 0)
+
+	session := service.service.session.(*Session)
+
+	response := session.query(HTTPOperation.GET, session.redfishPaths[ResourceBlocksKey])
+
+	if response.err != nil {
+		return &MemoryResourceBlocksCompositionResponse{Status: "Failure", ServiceError: response.err}, response.err
+	}
+
+	oemField, err := response.valueFromJSON("Oem")
+
+	if err == nil {
+		compositionStatus := oemField.(map[string]interface{})["Seagate"].(map[string]interface{})["CompositionStatus"].([]map[string]interface{})
+		for _, resourceBlock := range compositionStatus {
+			// Update CompositionState using the Reserved and CompositionState values from Redfish
+
+			compositionState := resourceBlock["CompositionState"].(string)
+			reserved := resourceBlock["Reserved"].(bool)
+
+			resourceState := findResourceState(&compositionState, reserved)
+
+			blockInfo := MemoryResourceBlock{
+				Id: getIdFromOdataId(resourceBlock["@odata.id"].(string)),
+				CompositionStatus: MemoryResourceBlockCompositionStatus{
+					CompositionState: *resourceState,
+				},
+			}
+			memoryResourcesStatus = append(memoryResourcesStatus, blockInfo)
+		}
+
+	} else {
+
+		resourceBlocks, _ := response.arrayFromJSON("Members")
+		for _, resourceBlock := range resourceBlocks {
+			blockDetails := session.query(HTTPOperation.GET, resourceBlock.(map[string]interface{})["@odata.id"].(string))
+
+			if !(blockDetails.err == nil && blockDetails.isMemoryResourceBlock()) {
+				continue
+			}
+
+			uri, _ := blockDetails.stringFromJSON("@odata.id")
+
+			compositionStatus, _ := blockDetails.valueFromJSON("CompositionStatus")
+			reserved := compositionStatus.(map[string]interface{})["Reserved"].(bool)
+			compositionState := compositionStatus.(map[string]interface{})["CompositionState"].(string)
+
+			resourceState := findResourceState(&compositionState, reserved)
+
+			blockInfo := MemoryResourceBlock{
+				Id: getIdFromOdataId(uri),
+				CompositionStatus: MemoryResourceBlockCompositionStatus{
+					CompositionState: *resourceState,
+				},
+			}
+			memoryResourcesStatus = append(memoryResourcesStatus, blockInfo)
+		}
+	}
+
+	return &MemoryResourceBlocksCompositionResponse{MemoryResourcesStatus: memoryResourcesStatus, Status: "Success", ServiceError: nil}, nil
+}
+
 // GetMemoryResourceBlockById: Request a particular Memory Resource Block information by ID from the backends
 func (service *httpfishService) GetMemoryResourceBlockById(ctx context.Context, settings *ConfigurationSettings, req *MemoryResourceBlockByIdRequest) (*MemoryResourceBlockByIdResponse, error) {
 	logger := klog.FromContext(ctx)

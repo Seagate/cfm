@@ -94,6 +94,15 @@ type MemoryResourceBlocksResponse struct {
 	ServiceError    error    // Any error returned by the service
 }
 
+type MemoryResourceBlocksCompositionRequest struct {
+}
+
+type MemoryResourceBlocksCompositionResponse struct {
+	MemoryResourcesStatus []MemoryResourceBlock // Array to hold detail of memory resources
+	Status                string                // The status of the request
+	ServiceError          error                 // Any error returned by the service
+}
+
 type GetPortsRequest struct {
 }
 

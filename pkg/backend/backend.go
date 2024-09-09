@@ -11,6 +11,7 @@ type BackendOperations interface {
 	CreateSession(context.Context, *ConfigurationSettings, *CreateSessionRequest) (*CreateSessionResponse, error)
 	DeleteSession(context.Context, *ConfigurationSettings, *DeleteSessionRequest) (*DeleteSessionResponse, error)
 	GetMemoryResourceBlocks(context.Context, *ConfigurationSettings, *MemoryResourceBlocksRequest) (*MemoryResourceBlocksResponse, error)
+	GetMemoryResourceBlocksCompositionStatus(context.Context, *ConfigurationSettings, *MemoryResourceBlocksCompositionRequest) (*MemoryResourceBlocksCompositionResponse, error)
 	GetMemoryResourceBlockById(context.Context, *ConfigurationSettings, *MemoryResourceBlockByIdRequest) (*MemoryResourceBlockByIdResponse, error)
 	GetPorts(context.Context, *ConfigurationSettings, *GetPortsRequest) (*GetPortsResponse, error)
 	GetHostPortPcieDevices(ctx context.Context, settings *ConfigurationSettings, req *GetPortsRequest) (*GetPortsResponse, error)

@@ -160,6 +160,26 @@ type RequestComposeMemory struct {
 	Qos     openapi.Qos
 }
 
+// updateAllResourceStatus: Update the composition status on all resource blocks
+func (b *Blade) updateAllResourceStatus(ctx context.Context) error {
+	logger := klog.FromContext(ctx)
+	logger.V(3).Info(">>>>>> updateAllResourceStatus: ")
+
+	request := backend.MemoryResourceBlocksCompositionRequest{}
+	settings := backend.ConfigurationSettings{}
+	compositionResponse, err := b.backendOps.GetMemoryResourceBlocksCompositionStatus(ctx, &settings, &request)
+
+	if err != nil {
+		return fmt.Errorf("unable to udpate resource block composition status")
+	}
+
+	for _, blockInfo := range compositionResponse.MemoryResourcesStatus {
+		block, _ := b.GetResourceById(ctx, blockInfo.Id)
+		block.details.CompositionStatus.CompositionState = blockInfo.CompositionStatus.CompositionState.String()
+	}
+	return nil
+}
+
 // ComposeMemory: Create a new memory region of the requested size and, if a port is requested, assign it to a port.
 // In ComposeMemory, there are two steps in backend, one is AllocateMemory and the other one is AssignMemory
 // AllocateMemory creates memory region (memorychunk), AssignMemory connects the memory region to an port
@@ -168,14 +188,12 @@ func (b *Blade) ComposeMemory(ctx context.Context, r *RequestComposeMemory) (*op
 	logger.V(4).Info(">>>>>> ComposeMemory: ", "portId", r.PortId, "SizeMiB", r.SizeMib, "Qos", r.Qos, "bladeId", b.Id, "applianceId", b.ApplianceId)
 
 	// Update all resource details
-	for _, resource := range b.Resources {
-		_, err := resource.GetDetails(ctx)
-		if err != nil {
-			newErr := fmt.Errorf("get details failure on blade [%s] resource [%s]: %w", b.Id, resource.Id, err)
-			logger.Error(newErr, "failure: compose memory")
-			return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
-		}
+	err := b.updateAllResourceStatus(ctx)
+	if err != nil {
+		logger.Error(err, "failure: compose memory")
+		return nil, &common.RequestError{StatusCode: common.StatusBladeGetMemoryResourceBlocksFailure, Err: err}
 	}
+
 	resourceIds := b.findResourcesByQoS(r.SizeMib, r.Qos)
 	if resourceIds == nil {
 		newErr := fmt.Errorf("unable to find resources by qos during compose: appliance [%s] blade [%s] request [%v]", b.ApplianceId, b.Id, r)
