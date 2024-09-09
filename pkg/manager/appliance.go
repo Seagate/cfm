@@ -297,6 +297,7 @@ func (a *Appliance) ResyncBladeById(ctx context.Context, bladeId string) (*Blade
 	if err != nil {
 		newErr := fmt.Errorf("failed to resync blade(delete): appliance [%s] blade [%s]: %w", a.Id, bladeId, err)
 		logger.Error(newErr, "failure: resync blade: ignoring")
+		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
 	blade, err = a.AddBlade(ctx, blade.creds)

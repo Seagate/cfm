@@ -346,6 +346,7 @@ func ResyncHostById(ctx context.Context, hostId string) (*Host, error) {
 	if err != nil {
 		newErr := fmt.Errorf("failed to resync host(delete): host [%s]: %w", hostId, err)
 		logger.Error(newErr, "failure: resync host: ignoring")
+		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
 	host, err = AddHost(ctx, host.creds)
