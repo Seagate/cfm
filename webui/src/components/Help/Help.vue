@@ -1,3 +1,4 @@
+<!-- Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates -->
 <template>
   <v-container>
     <h2>CFM Help Center</h2>
@@ -48,7 +49,7 @@ export default {
     return {
       variants: [
         {
-          id: 1,
+          id: 0,
           title: "WebUI User Guide",
           content:
             "For instructions on our product, please refer to the CFM User Guide.",
@@ -56,14 +57,14 @@ export default {
           icon: "mdi-book-open-page-variant",
         },
         {
-          id: 2,
+          id: 1,
           title: "CFM GitHub Repository",
           content: "For more details, please visit our GitHub repository",
           url: "https://github.com/Seagate/cfm",
           icon: "mdi-github",
         },
         {
-          id: 3,
+          id: 2,
           title: "Trouble Shooting",
           content:
             "For solutions to common issues, please see our GitHub wiki page.",
