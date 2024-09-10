@@ -65,10 +65,10 @@ export default {
         },
         {
           id: 2,
-          title: "Trouble Shooting",
+          title: "Troubleshooting",
           content:
-            "For solutions to common issues, please see our GitHub wiki page.",
-          url: "https://github.com/Seagate/cfm/wiki",
+            "For solutions to common issues, please see our troubleshooting.",
+          url: "https://github.com/Seagate/cfm/wiki/Troubleshooting",
           icon: "mdi-tools",
         },
       ],
