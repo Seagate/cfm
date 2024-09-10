@@ -9,6 +9,7 @@ import (
 
 type BackendOperations interface {
 	CreateSession(context.Context, *ConfigurationSettings, *CreateSessionRequest) (*CreateSessionResponse, error)
+	CheckSession(context.Context) bool
 	DeleteSession(context.Context, *ConfigurationSettings, *DeleteSessionRequest) (*DeleteSessionResponse, error)
 	GetMemoryResourceBlocks(context.Context, *ConfigurationSettings, *MemoryResourceBlocksRequest) (*MemoryResourceBlocksResponse, error)
 	GetMemoryResourceBlockById(context.Context, *ConfigurationSettings, *MemoryResourceBlockByIdRequest) (*MemoryResourceBlockByIdResponse, error)

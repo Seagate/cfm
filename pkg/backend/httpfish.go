@@ -321,19 +321,6 @@ func (session *Session) queryWithJSON(operation HTTPOperationType, path string, 
 		return response
 	}
 
-	// check for error due to session timeout ( service would return error code 401)
-	if session.xToken != "" && response.StatusCode == http.StatusUnauthorized {
-		// Re-authenticate
-		fmt.Print("Redfish session might have timed out. Re-authenticate. Warning! infinite loop might occur if the issue is from the redfish server.\n")
-		session.client = nil
-		session.xToken = ""
-		err := session.auth()
-		if err == nil {
-			path = session.buildPath(SessionServiceKey, session.RedfishSessionId)
-			response = session.queryWithJSON(operation, path, jsonData)
-		}
-	}
-
 	return response
 }
 
@@ -542,6 +529,18 @@ func (service *httpfishService) CreateSession(ctx context.Context, settings *Con
 	service.service.session = &session
 
 	return &CreateSessionResponse{SessionId: session.SessionId, Status: "Success", ServiceError: nil, ChassisSN: session.BladeSN, EnclosureSN: session.ApplianceSN}, nil
+}
+
+// CheckSession: Check if the redfish session is still alive
+func (service *httpfishService) CheckSession(ctx context.Context) bool {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("====== CheckSession ======")
+	session := service.service.session.(*Session)
+	logger.V(4).Info("check session", "session id", session.SessionId, "redfish session id", session.RedfishSessionId)
+
+	response := session.query(HTTPOperation.GET, session.buildPath(SessionServiceKey, session.RedfishSessionId))
+
+	return response.err == nil
 }
 
 // DeleteSession: Delete a session previously established with an endpoint service

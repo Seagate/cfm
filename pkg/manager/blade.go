@@ -8,6 +8,7 @@ import (
 	"math"
 	"sort"
 	"strings"
+	"time"
 
 	"cfm/pkg/backend"
 	"cfm/pkg/common"
@@ -33,8 +34,9 @@ type Blade struct {
 	ResourceSizeMib     int32
 
 	// Backend access data
-	backendOps backend.BackendOperations
-	creds      *openapi.Credentials // Used during resync
+	backendOps        backend.BackendOperations
+	creds             *openapi.Credentials // Used during resync
+	lastSyncTimeStamp time.Time
 }
 
 type RequestNewBlade struct {
@@ -69,9 +71,29 @@ func NewBlade(ctx context.Context, r *RequestNewBlade) (*Blade, error) {
 		return nil, newErr
 	}
 
+	b.SetSync(ctx)
+
 	logger.V(2).Info("success: new blade", "bladeId", b.Id, "applianceId", b.ApplianceId)
 
 	return &b, nil
+}
+
+func (b *Blade) SetSync(ctx context.Context) {
+	logger := klog.FromContext(ctx)
+	logger.V(3).Info(">>>>>> SetSyncFlag(Blade): ", "bladeId", b.Id)
+	b.lastSyncTimeStamp = time.Now()
+}
+
+func (b *Blade) CheckSync(ctx context.Context) bool {
+	logger := klog.FromContext(ctx)
+	logger.V(2).Info(">>>>>> CheckSyncFlag(Blade): ", "bladeId", b.Id)
+
+	if time.Since(b.lastSyncTimeStamp).Seconds() > common.SyncChekTimeoutSeconds {
+		return false
+	} else {
+		b.SetSync(ctx) // renew the timestamp
+		return true
+	}
 }
 
 type RequestAssignMemory struct {

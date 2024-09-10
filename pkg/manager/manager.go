@@ -294,7 +294,7 @@ func DeleteHostById(ctx context.Context, hostId string) (*Host, error) {
 		logger.V(2).Info("force host deletion after backend session failure", "hostId", host.Id)
 		deviceCache.DeleteHostById(host.Id)
 
-		return nil, &common.RequestError{StatusCode: common.StatusHostDeleteSessionFailure, Err: newErr}
+		return host, &common.RequestError{StatusCode: common.StatusHostDeleteSessionFailure, Err: newErr} // Still return the host for recovery
 	}
 
 	// delete host from cache
@@ -324,6 +324,24 @@ func GetHostById(ctx context.Context, hostId string) (*Host, error) {
 		logger.Error(err, "failure: get host by id")
 		newErr := fmt.Errorf("failure: get host by id [%s]", hostId)
 		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
+	}
+
+	// Check for resync
+	if !host.CheckSync(ctx) {
+		logger.V(2).Info("GetHostById: host might be out of sync", "hostId", hostId)
+		ok := host.backendOps.CheckSession(ctx)
+		if !ok {
+			host, err = ResyncHostById(ctx, hostId)
+			if err != nil {
+				newErr := fmt.Errorf("failed to resync host(add): host [%s]: %w", hostId, err)
+				logger.Error(newErr, "failure: resync host")
+				return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
+			} else {
+				logger.V(2).Info("success: auto resync host", "hostId", hostId)
+			}
+		} else {
+			host.SetSync(ctx)
+		}
 	}
 
 	logger.V(2).Info("success: get host by id", "hostId", hostId)

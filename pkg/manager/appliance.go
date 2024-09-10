@@ -200,7 +200,7 @@ func (a *Appliance) DeleteBladeById(ctx context.Context, bladeId string) (*Blade
 		logger.V(2).Info("force blade deletion after backend session failure", "bladeId", blade.Id, "applianceId", a.Id)
 		delete(a.Blades, blade.Id)
 
-		return nil, &common.RequestError{StatusCode: common.StatusBladeDeleteSessionFailure, Err: newErr}
+		return blade, &common.RequestError{StatusCode: common.StatusBladeDeleteSessionFailure, Err: newErr} // Still return the blade for recovery
 	}
 
 	// delete blade
@@ -224,12 +224,31 @@ func (a *Appliance) GetAllBladeIds() []string {
 func (a *Appliance) GetBladeById(ctx context.Context, bladeId string) (*Blade, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetBladeById: ", "bladeId", bladeId, "applianceId", a.Id)
+	var err error
 
 	blade, ok := a.Blades[bladeId]
 	if !ok {
 		newErr := fmt.Errorf("appliance [%s] blade [%s] doesn't exist", a.Id, bladeId)
 		logger.Error(newErr, "failure: get blade by id")
 		return nil, &common.RequestError{StatusCode: common.StatusBladeIdDoesNotExist, Err: newErr}
+	}
+
+	// Check for resync
+	if !blade.CheckSync(ctx) {
+		logger.V(2).Info("GetBladeById: blade might be out of sync", "bladeId", bladeId)
+		ok := blade.backendOps.CheckSession(ctx)
+		if !ok {
+			blade, err = a.ResyncBladeById(ctx, bladeId)
+			if err != nil {
+				newErr := fmt.Errorf("failed to resync host(add): host [%s]: %w", bladeId, err)
+				logger.Error(newErr, "failure: resync host")
+				return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
+			} else {
+				logger.V(2).Info("success: auto resync host", "bladeId", bladeId)
+			}
+		} else {
+			blade.SetSync(ctx)
+		}
 	}
 
 	logger.V(2).Info("success: get blade by id", "bladeId", blade.Id, "applianceId", a.Id)

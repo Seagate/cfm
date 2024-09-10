@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"cfm/pkg/backend"
 	"cfm/pkg/common"
@@ -26,8 +27,9 @@ type Host struct {
 	Memory        map[string]*HostMemory
 
 	// Backend access data
-	backendOps backend.BackendOperations
-	creds      *openapi.Credentials // Used during resync
+	backendOps        backend.BackendOperations
+	creds             *openapi.Credentials // Used during resync
+	lastSyncTimeStamp time.Time
 }
 
 var HostMemoryDomain = map[string]openapi.MemoryType{
@@ -65,9 +67,29 @@ func NewHost(ctx context.Context, r *RequestNewHost) (*Host, error) {
 		return nil, newErr
 	}
 
+	h.SetSync(ctx)
+
 	logger.V(2).Info("success: new host", "hostId", h.Id)
 
 	return &h, nil
+}
+
+func (h *Host) SetSync(ctx context.Context) {
+	logger := klog.FromContext(ctx)
+	logger.V(3).Info(">>>>>> SetSyncFlag(Host): ", "hostId", h.Id)
+	h.lastSyncTimeStamp = time.Now()
+}
+
+func (h *Host) CheckSync(ctx context.Context) bool {
+	logger := klog.FromContext(ctx)
+	logger.V(2).Info(">>>>>> CheckSyncFlag(Host): ", "hostId", h.Id)
+
+	if time.Since(h.lastSyncTimeStamp).Seconds() > common.SyncChekTimeoutSeconds {
+		return false
+	} else {
+		h.SetSync(ctx) // renew the timestamp
+		return true
+	}
 }
 
 func (h *Host) ComposeMemory(ctx context.Context, r *RequestComposeMemory) (*openapi.MemoryRegion, error) {
