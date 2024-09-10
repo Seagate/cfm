@@ -59,7 +59,7 @@ export default {
         {
           id: 1,
           title: "CFM GitHub Repository",
-          content: "For more details, please visit our GitHub repository",
+          content: "For more details, please visit our GitHub repository.",
           url: "https://github.com/Seagate/cfm",
           icon: "mdi-github",
         },
