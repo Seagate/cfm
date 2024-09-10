@@ -21,6 +21,12 @@
       title="CXL-Hosts"
       value="CXL-Hosts"
     ></v-list-item>
+    <v-list-item
+      prepend-avatar="@/assets/icons/Icons-Questions--Web-Green.png"
+      to="/help"
+      title="Help"
+      value="Help"
+    ></v-list-item>
     <!--  
     <v-list-item
       prepend-avatar="@/assets/icons/Icons-Lightbulb-Web-Green.png"
