@@ -1,0 +1,119 @@
+branches: ['main']
+ci: true
+debug: true
+dryRun: false
+preset: 'conventionalcommits'
+
+# Specify plugins to override semantic-release defaults
+plugins:
+- "@semantic-release/commit-analyzer"
+- "@semantic-release/release-notes-generator"
+- "@semantic-release/github"
+- "@semantic-release/exec"
+
+verifyConditions:
+  - '@semantic-release/github'
+
+analyzeCommits:
+  - path: '@semantic-release/commit-analyzer'
+    # Determine the type of release by analyzing commits with conventional-changelog
+    releaseRules:
+      - breaking: true
+        release: major
+      - type: build     # Changes that affect the build system or external dependencies
+                        # (example scopes: gulp, broccoli, npm)
+        release: patch
+      - type: chore     # Other changes that don't modify src or test files
+        release: false
+      - type: ci        # Changes to our CI configuration files and scripts
+        release: false
+      - type: docs      # Documentation only changes
+        release: patch
+      - type: feat      # A new feature
+        release: minor
+      - type: fix       # A bug fix
+        release: patch
+      - type: perf      # A code change that improves performance
+        release: patch
+      - type: refactor  # A code change that neither fixes a bug nor adds a feature
+        release: false
+      - type: revert    # Reverts a previous commit
+        release: patch
+      - type: style     # Changes that do not affect the meaning of the code
+                        # (white-space, formatting, missing semi-colons, etc)
+        release: false
+      - type: test      # Adding missing tests or correcting existing tests
+        release: false
+
+verifyRelease:
+    - path: '@semantic-release/exec'
+      verifyReleaseCmd: 'echo "LAST_VERSION=${lastRelease.version}" >> $GITHUB_ENV && echo "NEXT_VERSION=${nextRelease.version}" >> $GITHUB_ENV'
+
+generateNotes:
+  - path: '@semantic-release/release-notes-generator'
+    # writerOpts:
+    #   groupBy: 'type'
+    #   commitGroupsSort: 'title'
+    #   commitsSort: 'header'
+    # linkCompare: true
+    # linkReferences: true
+    # parserOpts:
+    #   # detect JIRA issues in merge commits
+    #   issuePrefixes: ['DEV-']
+    #   mergePattern: "^Merge branch '(.*)' into (.*)$"
+    #   mergeCorrespondence: ['branch_src', 'branch_dst']
+    presetConfig:
+      types:  # looks like it only works with 'conventionalcommits' preset
+        - type: 'build'
+          section: '🧰 Build'
+          hidden: false
+        - type: 'chore'
+          section: '🐝 Chore'
+          hidden: false
+        - type: 'ci'
+          section: '🦊 CI/CD'
+          hidden: false
+        - type: 'docs'
+          section: '📔 Docs'
+          hidden: false
+        - type: 'example'
+          section: '📝 Examples'
+          hidden: false
+        - type: 'feat'
+          section: '🚀 Features'
+          hidden: false
+        - type: 'fix'
+          section: '🛠️ Fixes'
+          hidden: false
+        - type: 'perf'
+          section: '⏩ Performance'
+        - type: 'refactor'
+          section: '✂️ Refactor'
+          hidden: false
+        - type: 'revert'
+          section: '🙅‍♂️ Reverts'
+        - type: 'style'
+          section: '💈 Style'
+        - type: 'test'
+          section: '🧪 Tests'
+          hidden: false
+
+prepare:
+
+publish:
+  #TODO: Can't figure out how to turn off the default, unversioned source code from also being added as assets.
+  - path: "@semantic-release/github"
+    assets:
+      - path: "/tmp/dist/*.tar.gz"
+        label: "Versioned source code (tar.gz)"
+      - path: "/tmp/dist/*.zip"
+        label: "Versioned source code (zip)"
+
+addChannel:
+  - path: '@semantic-release/github'
+
+success:
+  - path: '@semantic-release/github'
+
+fail:
+  - path: '@semantic-release/github'
