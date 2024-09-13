@@ -48,6 +48,11 @@ const routes = [
   //  component: () => import(/* webpackChunkName: "blades" */ '@/views/Alerts.vue'),
   // },
   {
+    path: '/help',
+    name: 'Help',
+    component: () => import(/* webpackChunkName: "blades" */ '@/views/Help.vue'),
+   },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFoundPage',
     component: () => import(/* webpackChunkName: "NotFoundPage" */ '@/views/NotFoundPage.vue'),
