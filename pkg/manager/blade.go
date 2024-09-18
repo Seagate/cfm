@@ -917,7 +917,7 @@ func (b *Blade) initMemory(ctx context.Context) error {
 	logger.V(4).Info(">>>>>> initMemory: ", "bladeId", b.Id, "applianceId", b.ApplianceId)
 
 	memoryIds, err := b.GetMemoryBackend(ctx)
-	if err != nil || memoryIds == nil {
+	if err != nil {
 		newErr := fmt.Errorf("blade [%s] init failed during get memory: %w", b.Id, err)
 		logger.Error(newErr, "failure: init memory: blade")
 		return newErr
