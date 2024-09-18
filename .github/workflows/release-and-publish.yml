@@ -1,0 +1,109 @@
+name: Release and Publish
+
+on:
+  workflow_dispatch:
+
+env:
+  LAST_VERSION:
+  NEXT_VERSION:
+  PUBLISH_IMAGE:
+  IMAGE_REGISTRY: ghcr.io
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
+
+jobs:
+  release-and-publish:
+    permissions:
+      contents: write # to be able to publish a GitHub release
+      packages: write # to be able to upload a registry image
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup npm\npx
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install semantic-release and dependencies
+        run: npm install semantic-release@v24 @semantic-release/exec@v6 -D conventional-changelog-conventionalcommits@v8
+
+      # Need the dry-run to get the next version # BEFORE running the formal semantic release
+      - name: Run Semantic Release (dry-run)
+        run: npx semantic-release --dry-run
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Retrieve Semantic Release Dry-Run Output
+        run: |
+          echo 'LAST_VERSION = "${{ env.LAST_VERSION }}"'
+          echo 'NEXT_VERSION = "${{ env.NEXT_VERSION }}"'
+          if [ "${{ env.LAST_VERSION }}" != "${{ env.NEXT_VERSION }}" ]; then
+            echo "PUBLISH_IMAGE=true" >> $GITHUB_ENV
+            echo 'PUBLISH_IMAGE = "true"'
+          else
+            echo "PUBLISH_IMAGE=false" >> $GITHUB_ENV
+            echo 'PUBLISH_IMAGE = "false"'
+          fi
+
+      # Update source code files where version is currently hardcoded BEFORE the real semantic-release is executed.
+      # This allows the release assets to be created using correctly versioned source code files.
+      # This source code version update is also leveraged during docker image creation.
+      - name: Update Local VERSION file (Conditional)
+        if: ${{ env.PUBLISH_IMAGE == 'true' }}
+        run: |
+          sed -i 's/1\.x\.x/${{ env.NEXT_VERSION }}/g' ./cmd/cfm-cli/cmd/root.go
+          sed -i 's/1\.x\.x/${{ env.NEXT_VERSION }}/g' ./cmd/cfm-service/main.go
+          sed -i 's/1\.x\.x/${{ env.NEXT_VERSION }}/g' ./cmd/cxl-host/service/parameters.go
+          sed -i 's/1\.x\.x/${{ env.NEXT_VERSION }}/g' ./webui/package.json
+          sed -i 's/1\.x\.x/${{ env.NEXT_VERSION }}/g' ./webui/package-lock.json
+
+      # Test build to just make sure that it runs.
+      #TODO: Remove once CI\CD matures.
+      - name: Test Docker Build Local (Conditional)
+        if: ${{ env.PUBLISH_IMAGE == 'true' }}
+        run: |
+          docker build --no-cache -t ${{ env.CFM_TEST_IMAGE }} -f ./docker/Dockerfile .
+          docker rmi ${{ env.CFM_TEST_IMAGE }}
+        env:
+          CFM_TEST_IMAGE: cfm-test-image:v${{ env.NEXT_VERSION }}
+
+      # Manually create separate GitHub Release assets for upload using source code with updated version number.
+      - name: Create Release Assets for Semantic Release (Conditional)
+        if: ${{ env.PUBLISH_IMAGE == 'true' }}
+        run: |
+          mkdir -p /tmp/dist
+          cd ..
+          cp -r ./cfm ./${{ env.ARCHIVE_FOLDER }}
+          zip -r /tmp/dist/${{ env.ARCHIVE_NAME }}.zip ${{ env.ARCHIVE_FOLDER }} -x "./${{ env.ARCHIVE_FOLDER }}/.git/*" -x "./${{ env.ARCHIVE_FOLDER }}/node_modules/*"
+          tar --exclude='./${{ env.ARCHIVE_FOLDER }}/.git' --exclude='./${{ env.ARCHIVE_FOLDER }}/node_modules' -czf /tmp/dist/${{ env.ARCHIVE_NAME }}.tar.gz ${{ env.ARCHIVE_FOLDER }}
+          cd cfm
+        env:
+          ARCHIVE_FOLDER: cfm-v${{ env.NEXT_VERSION }}
+          ARCHIVE_NAME: cfm-${{ env.NEXT_VERSION }}-versioned
+
+      - name: Run Semantic Release (Conditional)
+        if: ${{ env.PUBLISH_IMAGE == 'true' }}
+        run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Container Registry Login (Conditional)
+        if: ${{ env.PUBLISH_IMAGE == 'true' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker Image Build (Conditional)
+        if: ${{ env.PUBLISH_IMAGE == 'true' }}
+        run: docker build --no-cache -t ${{ env.CFM_NEXT_VERSION }} -t ${{ env.CFM_LATEST_VERSION }} -f ./docker/Dockerfile .
+        env:
+          CFM_NEXT_VERSION: ${{ env.IMAGE_NAME }}:v${{ env.NEXT_VERSION }}
+          CFM_LATEST_VERSION: ${{ env.IMAGE_NAME }}:latest
+
+      - name: Docker Image Publish (Conditional)
+        if: ${{ env.PUBLISH_IMAGE == 'true' }}
+        run: docker push --all-tags ${{ env.IMAGE_NAME }}
