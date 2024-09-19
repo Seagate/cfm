@@ -279,3 +279,10 @@ type GetBackendInfoResponse struct {
 	Version     string
 	SessionId   string
 }
+type GetRootServiceRequest struct {
+}
+
+type GetRootServiceResponse struct {
+	Name string
+	Uuid string
+}
