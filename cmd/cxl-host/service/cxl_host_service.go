@@ -878,6 +878,7 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdPCIeDevicesGet(ctx context.
 		Description:  "PCIeDevice Collection",
 		Name:         "PCIeDevice Collection",
 		Oem:          nil,
+		Members:      []redfishapi.OdataV4IdRef{},
 	}
 
 	// Only show CXL device in the PCIe device collection. Use CXL dev name as PCIe dev name
