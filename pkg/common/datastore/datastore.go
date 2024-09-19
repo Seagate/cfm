@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 
+	"cfm/pkg/common"
 	"cfm/pkg/openapi"
 
 	"k8s.io/klog/v2"
@@ -13,14 +14,6 @@ import (
 
 const (
 	DefaultDataStoreFile = "cfmdatastore.json" // Default JSON datastore file
-)
-
-type ConnectionStatus string
-
-const (
-	Active        ConnectionStatus = "active"
-	Inactive      ConnectionStatus = "inactive"
-	NotApplicable ConnectionStatus = "n/a"
 )
 
 type DataStore struct {
@@ -115,17 +108,23 @@ func (c *DataStore) InitDataStore(ctx context.Context, args []string) error {
 
 type ApplianceUpdateRequest struct {
 	ApplianceId string
-	Status      ConnectionStatus
+	Status      common.ConnectionStatus
 }
 
 // UpdateAppliance: Update an appliance's data
-func (c *DataStore) UpdateAppliance(r *ApplianceUpdateRequest) error {
+func (c *DataStore) UpdateAppliance(ctx context.Context, r *ApplianceUpdateRequest) error {
+	logger := klog.FromContext(ctx)
+
 	appliance, exists := c.SavedAppliances[r.ApplianceId]
 	if !exists {
-		return fmt.Errorf("appliance [%s] not found in data store appliance update", r.ApplianceId)
+		err := fmt.Errorf("appliance [%s] not found in data store during appliance update", r.ApplianceId)
+		logger.Error(err, "failure: update appliance")
+		return err
 	}
 
-	appliance.ConnectionStatus = r.Status
+	if r.Status != "" {
+		appliance.ConnectionStatus = r.Status
+	}
 
 	return nil
 }
@@ -133,34 +132,42 @@ func (c *DataStore) UpdateAppliance(r *ApplianceUpdateRequest) error {
 type BladeUpdateRequest struct {
 	ApplianceId string
 	BladeId     string
-	Status      ConnectionStatus
+	Status      common.ConnectionStatus
 }
 
 // UpdateBlade: Update an appliance's data
-func (c *DataStore) UpdateBlade(r *BladeUpdateRequest) error {
+func (c *DataStore) UpdateBlade(ctx context.Context, r *BladeUpdateRequest) error {
+	logger := klog.FromContext(ctx)
+
 	appliance, exists := c.SavedAppliances[r.ApplianceId]
 	if !exists {
-		return fmt.Errorf("appliance [%s] not found in data store blade update", r.ApplianceId)
+		err := fmt.Errorf("appliance [%s] not found in data store during blade update", r.ApplianceId)
+		logger.Error(err, "failure: update blade")
+		return err
 	}
 
-	appliance.UpdateBlade(r)
-
-	return nil
+	return appliance.UpdateBlade(ctx, r)
 }
 
-type HostUpdateRequest struct {
+type UpdateHostRequest struct {
 	HostId string
-	Status ConnectionStatus
+	Status common.ConnectionStatus
 }
 
 // UpdateHost: Update a host's data
-func (c *DataStore) UpdateHost(r *HostUpdateRequest) error {
+func (c *DataStore) UpdateHost(ctx context.Context, r *UpdateHostRequest) error {
+	logger := klog.FromContext(ctx)
+
 	host, exists := c.SavedHosts[r.HostId]
 	if !exists {
-		return fmt.Errorf("host [%s] not found in data store host update", r.HostId)
+		err := fmt.Errorf("host [%s] not found in data store during host update", r.HostId)
+		logger.Error(err, "failure: update host")
+		return err
 	}
 
-	host.ConnectionStatus = r.Status
+	if r.Status != "" {
+		host.ConnectionStatus = r.Status
+	}
 
 	return nil
 }
@@ -168,14 +175,14 @@ func (c *DataStore) UpdateHost(r *HostUpdateRequest) error {
 type ApplianceDataStore struct {
 	Credentials      *openapi.Credentials       `json:"credentials"`
 	SavedBlades      map[string]*BladeDataStore `json:"saved-blades"`
-	ConnectionStatus ConnectionStatus           `json:"connection-status"`
+	ConnectionStatus common.ConnectionStatus    `json:"connection-status"`
 }
 
 func NewApplianceDataStore(creds *openapi.Credentials) *ApplianceDataStore {
 	return &ApplianceDataStore{
 		Credentials:      creds,
 		SavedBlades:      make(map[string]*BladeDataStore),
-		ConnectionStatus: NotApplicable,
+		ConnectionStatus: common.NOT_APPLICABLE,
 	}
 }
 
@@ -187,38 +194,44 @@ func (a *ApplianceDataStore) DeleteBlade(bladeId string) {
 	delete(a.SavedBlades, bladeId)
 }
 
-func (a *ApplianceDataStore) UpdateBlade(r *BladeUpdateRequest) error {
+func (a *ApplianceDataStore) UpdateBlade(ctx context.Context, r *BladeUpdateRequest) error {
+	logger := klog.FromContext(ctx)
+
 	blade, exists := a.SavedBlades[r.BladeId]
 	if !exists {
-		return fmt.Errorf("blade [%s] not found in data store blade update", r.BladeId)
+		err := fmt.Errorf("blade [%s] not found in data store during blade update", r.BladeId)
+		logger.Error(err, "failure: update blade")
+		return err
 	}
 
-	blade.ConnectionStatus = r.Status
+	if r.Status != "" {
+		blade.ConnectionStatus = r.Status
+	}
 
 	return nil
 }
 
 type BladeDataStore struct {
-	Credentials      *openapi.Credentials `json:"credentials"`
-	ConnectionStatus ConnectionStatus     `json:"connection-status"`
+	Credentials      *openapi.Credentials    `json:"credentials"`
+	ConnectionStatus common.ConnectionStatus `json:"connection-status"`
 }
 
 func NewBladeDataStore(creds *openapi.Credentials) *BladeDataStore {
 	return &BladeDataStore{
 		Credentials:      creds,
-		ConnectionStatus: Active,
+		ConnectionStatus: common.ONLINE,
 	}
 }
 
 type HostDataStore struct {
-	Credentials      *openapi.Credentials `json:"credentials"`
-	ConnectionStatus ConnectionStatus     `json:"connection-status"`
+	Credentials      *openapi.Credentials    `json:"credentials"`
+	ConnectionStatus common.ConnectionStatus `json:"connection-status"`
 }
 
 func NewHostDataStore(creds *openapi.Credentials) *HostDataStore {
 	return &HostDataStore{
 		Credentials:      creds,
-		ConnectionStatus: Active,
+		ConnectionStatus: common.ONLINE,
 	}
 }
 
