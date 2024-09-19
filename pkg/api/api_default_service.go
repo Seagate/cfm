@@ -565,13 +565,13 @@ func (cfm *CfmApiService) BladesPost(ctx context.Context, applianceId string, cr
 	if len(appliance.Blades) == MAX_COUNT_BLADES {
 		if datastore.DStore().GetDataStore().ContainsBlade(credentials.CustomId, appliance.Id) {
 
-			// If blade limit exceeded AND blade in datastore, set it inactive
+			// If blade limit exceeded AND blade in datastore, set it offline
 			req := datastore.BladeUpdateRequest{
 				ApplianceId: appliance.Id,
 				BladeId:     credentials.CustomId,
-				Status:      datastore.Inactive,
+				Status:      common.OFFLINE,
 			}
-			datastore.DStore().GetDataStore().UpdateBlade(&req)
+			datastore.DStore().GetDataStore().UpdateBlade(ctx, &req)
 			datastore.DStore().Store()
 		}
 
@@ -586,13 +586,13 @@ func (cfm *CfmApiService) BladesPost(ctx context.Context, applianceId string, cr
 	if err != nil {
 		if datastore.DStore().GetDataStore().ContainsBlade(blade.Id, appliance.Id) {
 
-			// If blade add fails AND blade in datastore, set it inactive
+			// If blade add fails AND blade in datastore, set it offline
 			req := datastore.BladeUpdateRequest{
 				ApplianceId: appliance.Id,
 				BladeId:     blade.Id,
-				Status:      datastore.Inactive,
+				Status:      common.OFFLINE,
 			}
-			datastore.DStore().GetDataStore().UpdateBlade(&req)
+			datastore.DStore().GetDataStore().UpdateBlade(ctx, &req)
 			datastore.DStore().Store()
 		}
 
@@ -601,13 +601,13 @@ func (cfm *CfmApiService) BladesPost(ctx context.Context, applianceId string, cr
 
 	if datastore.DStore().GetDataStore().ContainsBlade(blade.Id, appliance.Id) {
 
-		// If blade add passes AND blade in datastore, set it active
+		// If blade add passes AND blade in datastore, set it online
 		req := datastore.BladeUpdateRequest{
 			ApplianceId: appliance.Id,
 			BladeId:     blade.Id,
-			Status:      datastore.Active,
+			Status:      common.ONLINE,
 		}
-		datastore.DStore().GetDataStore().UpdateBlade(&req)
+		datastore.DStore().GetDataStore().UpdateBlade(ctx, &req)
 	} else {
 		// The original need for "credentials" object is fulfilled.  Now, reusing this object for DataStore.
 		datastore.DStore().GetDataStore().AddBlade(&credentials, appliance.Id)
@@ -652,13 +652,13 @@ func (cfm *CfmApiService) BladesResyncById(ctx context.Context, applianceId stri
 	if err != nil {
 		if datastore.DStore().GetDataStore().ContainsBlade(bladeId, applianceId) {
 
-			// If blade resync fails AND blade in datastore, just set it inactive
+			// If blade resync fails AND blade in datastore, just set it offline
 			req := datastore.BladeUpdateRequest{
 				ApplianceId: applianceId,
 				BladeId:     bladeId,
-				Status:      datastore.Inactive,
+				Status:      common.OFFLINE,
 			}
-			datastore.DStore().GetDataStore().UpdateBlade(&req)
+			datastore.DStore().GetDataStore().UpdateBlade(ctx, &req)
 			datastore.DStore().Store()
 		}
 
@@ -667,13 +667,13 @@ func (cfm *CfmApiService) BladesResyncById(ctx context.Context, applianceId stri
 
 	if datastore.DStore().GetDataStore().ContainsBlade(bladeId, applianceId) {
 
-		// If blade resync pass AND blade in datastore, set it active
+		// If blade resync pass AND blade in datastore, set it online
 		req := datastore.BladeUpdateRequest{
 			ApplianceId: applianceId,
 			BladeId:     bladeId,
-			Status:      datastore.Active,
+			Status:      common.ONLINE,
 		}
-		datastore.DStore().GetDataStore().UpdateBlade(&req)
+		datastore.DStore().GetDataStore().UpdateBlade(ctx, &req)
 		datastore.DStore().Store()
 	}
 
@@ -749,7 +749,7 @@ func (cfm *CfmApiService) HostsComposeMemory(ctx context.Context, hostId string,
 	return openapi.Response(http.StatusCreated, memory), nil
 }
 
-// HostsDeleteById -
+// HostsDeleteById - Guarenteed host deletion from service.
 func (cfm *CfmApiService) HostsDeleteById(ctx context.Context, hostId string) (openapi.ImplResponse, error) {
 	host, err := manager.DeleteHostById(ctx, hostId)
 	if err != nil {
@@ -757,7 +757,9 @@ func (cfm *CfmApiService) HostsDeleteById(ctx context.Context, hostId string) (o
 		datastore.DStore().GetDataStore().DeleteHost(hostId)
 		datastore.DStore().Store()
 
-		return formatErrorResp(ctx, err.(*common.RequestError))
+		h := openapi.Host{Id: host.Id}
+
+		return openapi.Response(http.StatusOK, h), nil
 	}
 
 	datastore.DStore().GetDataStore().DeleteHost(host.Id)
@@ -767,7 +769,7 @@ func (cfm *CfmApiService) HostsDeleteById(ctx context.Context, hostId string) (o
 		Id:        host.Id,
 		IpAddress: host.GetNetIp(),
 		Port:      int32(host.GetNetPort()),
-		Status:    "", // Unused
+		Status:    string(host.Status),
 		Ports: openapi.MemberItem{
 			Uri: manager.GetCfmUriHostPorts(host.Id),
 		},
@@ -820,22 +822,48 @@ func (cfm *CfmApiService) HostsGet(ctx context.Context) (openapi.ImplResponse, e
 }
 
 // HostsGetById - Get information for a single CXL Host.
+// Note: Do NOT add\delete to\from the datastore here.
 func (cfm *CfmApiService) HostsGetById(ctx context.Context, hostId string) (openapi.ImplResponse, error) {
 	host, err := manager.GetHostById(ctx, hostId)
-	if err != nil {
+	if err != nil || host == nil {
+
+		// If host get buy id fails AND host in datastore, set it offline
+		req := datastore.UpdateHostRequest{
+			HostId: hostId,
+			Status: common.OFFLINE,
+		}
+		datastore.DStore().GetDataStore().UpdateHost(ctx, &req)
+		datastore.DStore().Store()
+
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
-	totals, err := host.GetMemoryTotals(ctx)
-	if err != nil {
-		return formatErrorResp(ctx, err.(*common.RequestError))
+	// Update datastore status
+	req := datastore.UpdateHostRequest{
+		HostId: host.Id,
+		Status: common.ConnectionStatus(host.Status),
+	}
+	datastore.DStore().GetDataStore().UpdateHost(ctx, &req)
+	datastore.DStore().Store()
+
+	var totals *manager.ResponseHostMemoryTotals
+	if host.Status == common.ONLINE {
+		totals, err = host.GetMemoryTotals(ctx)
+		if err != nil {
+			return formatErrorResp(ctx, err.(*common.RequestError))
+		}
+	} else {
+		totals = &manager.ResponseHostMemoryTotals{
+			LocalMemoryMib:  0,
+			RemoteMemoryMib: 0,
+		}
 	}
 
 	h := openapi.Host{
 		Id:        host.Id,
 		IpAddress: host.GetNetIp(),
 		Port:      int32(host.GetNetPort()),
-		Status:    "", // Unused
+		Status:    string(host.Status),
 		Ports: openapi.MemberItem{
 			Uri: manager.GetCfmUriHostPorts(host.Id),
 		},
@@ -967,17 +995,6 @@ func (cfm *CfmApiService) HostsPost(ctx context.Context, credentials openapi.Cre
 	hosts := manager.GetHosts(ctx)
 	if len(hosts) >= MAX_COUNT_HOSTS {
 
-		if datastore.DStore().GetDataStore().ContainsHost(credentials.CustomId) {
-
-			// If host limit exceeded AND host in datastore, set it inactive
-			req := datastore.HostUpdateRequest{
-				HostId: credentials.CustomId,
-				Status: datastore.Inactive,
-			}
-			datastore.DStore().GetDataStore().UpdateHost(&req)
-			datastore.DStore().Store()
-		}
-
 		err := common.RequestError{
 			StatusCode: common.StatusHostsExceedMaximum,
 			Err:        fmt.Errorf("cfm-service at maximum host capacity (%d)", MAX_COUNT_HOSTS),
@@ -991,38 +1008,27 @@ func (cfm *CfmApiService) HostsPost(ctx context.Context, credentials openapi.Cre
 
 		if datastore.DStore().GetDataStore().ContainsHost(credentials.CustomId) {
 
-			// If host add fails AND host in datastore, set it inactive
-			req := datastore.HostUpdateRequest{
+			// If host add fails BUT host already in datastore, set pre-existing host offline
+			req := datastore.UpdateHostRequest{
 				HostId: credentials.CustomId,
-				Status: datastore.Inactive,
+				Status: common.OFFLINE,
 			}
-			datastore.DStore().GetDataStore().UpdateHost(&req)
+			datastore.DStore().GetDataStore().UpdateHost(ctx, &req)
 			datastore.DStore().Store()
 		}
 
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
-	if datastore.DStore().GetDataStore().ContainsHost(host.Id) {
-
-		// If host add passes AND host in datastore, set it active
-		req := datastore.HostUpdateRequest{
-			HostId: host.Id,
-			Status: datastore.Active,
-		}
-		datastore.DStore().GetDataStore().UpdateHost(&req)
-	} else {
-		// The original need for "credentials" object is fulfilled.  Now, reusing this object for DataStore.
-		datastore.DStore().GetDataStore().AddHost(&credentials)
-	}
-
+	datastore.DStore().GetDataStore().DeleteHost(host.Id)
+	datastore.DStore().GetDataStore().AddHost(&credentials)
 	datastore.DStore().Store()
 
 	h := openapi.Host{
 		Id:        host.Id,
 		IpAddress: host.GetNetIp(),
 		Port:      int32(host.GetNetPort()),
-		Status:    "", // Unused
+		Status:    string(host.Status),
 		Ports: openapi.MemberItem{
 			Uri: manager.GetCfmUriHostPorts(host.Id),
 		},
@@ -1043,36 +1049,21 @@ func (cfm *CfmApiService) HostsPost(ctx context.Context, credentials openapi.Cre
 func (cfm *CfmApiService) HostsResyncById(ctx context.Context, hostId string) (openapi.ImplResponse, error) {
 	host, err := manager.ResyncHostById(ctx, hostId)
 	if err != nil {
-		if datastore.DStore().GetDataStore().ContainsHost(hostId) {
-
-			// If host resync fails AND host in datastore, just set it inactive
-			req := datastore.HostUpdateRequest{
-				HostId: hostId,
-				Status: datastore.Inactive,
-			}
-			datastore.DStore().GetDataStore().UpdateHost(&req)
-			datastore.DStore().Store()
-		}
-
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
-	if datastore.DStore().GetDataStore().ContainsHost(host.Id) {
-
-		// If host resync passes AND host in datastore, set it active
-		req := datastore.HostUpdateRequest{
-			HostId: host.Id,
-			Status: datastore.Active,
-		}
-		datastore.DStore().GetDataStore().UpdateHost(&req)
-		datastore.DStore().Store()
+	req := datastore.UpdateHostRequest{
+		HostId: host.Id,
+		Status: common.ConnectionStatus(host.Status),
 	}
+	datastore.DStore().GetDataStore().UpdateHost(ctx, &req)
+	datastore.DStore().Store()
 
 	h := openapi.Host{
 		Id:        host.Id,
 		IpAddress: host.GetNetIp(),
 		Port:      int32(host.GetNetPort()),
-		Status:    "", // Unused
+		Status:    string(host.Status),
 		Ports: openapi.MemberItem{
 			Uri: manager.GetCfmUriHostPorts(host.Id),
 		},

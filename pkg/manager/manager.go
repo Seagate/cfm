@@ -241,6 +241,7 @@ func AddHost(ctx context.Context, c *openapi.Credentials) (*Host, error) {
 		HostId:     hostId,
 		Ip:         c.IpAddress,
 		Port:       uint16(c.Port),
+		Status:     common.ONLINE,
 		BackendOps: ops,
 		Creds:      c,
 	}
@@ -291,7 +292,8 @@ func DeleteHostById(ctx context.Context, hostId string) (*Host, error) {
 		newErr := fmt.Errorf("failed to delete host [%s] backend [%s] session [%s]: %w", host.Id, ops.GetBackendInfo(ctx).BackendName, host.Socket.String(), err)
 		logger.Error(newErr, "failure: delete host by id")
 
-		// Currently, backend ALWAYS deletes the host session from the backend map.  For now, need to delete host from manager map as well.
+		// Currently, backend ALWAYS deletes the host session from the backend map.
+		// Delete host from manager map as well.
 		logger.V(2).Info("force host deletion after backend session failure", "hostId", host.Id)
 		deviceCache.DeleteHostById(host.Id)
 
@@ -318,11 +320,13 @@ func GetHostById(ctx context.Context, hostId string) (*Host, error) {
 	host, err := deviceCache.GetHostById(hostId)
 	if err != nil {
 		logger.Error(err, "failure: get host by id")
-		newErr := fmt.Errorf("failure: get host by id [%s]", hostId)
+		newErr := fmt.Errorf("failure: get host by id [%s]: %w", hostId, err)
 		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
-	logger.V(2).Info("success: get host by id", "hostId", hostId)
+	host.UpdateConnectionStatusBackend(ctx)
+
+	logger.V(2).Info("success: get host by id", "status", host.Status, "hostId", host.Id)
 
 	return host, nil
 }
@@ -342,21 +346,17 @@ func ResyncHostById(ctx context.Context, hostId string) (*Host, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> ResyncHostById: ", "hostId", hostId)
 
-	host, err := DeleteHostById(ctx, hostId)
-	if err != nil {
-		newErr := fmt.Errorf("failed to resync host(delete): host [%s]: %w", hostId, err)
-		logger.Error(newErr, "failure: resync host: ignoring")
-		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
+	// query cache
+	host, ok := deviceCache.GetHostByIdOk(hostId)
+	if !ok || host == nil {
+		newErr := fmt.Errorf("failed to get host [%s]", hostId)
+		logger.Error(newErr, "failure: resync host by id")
+		return nil, &common.RequestError{StatusCode: common.StatusHostIdDoesNotExist, Err: newErr}
 	}
 
-	host, err = AddHost(ctx, host.creds)
-	if err != nil {
-		newErr := fmt.Errorf("failed to resync host(add): host [%s]: %w", hostId, err)
-		logger.Error(newErr, "failure: resync host")
-		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
-	}
+	host.UpdateConnectionStatusBackend(ctx)
 
-	logger.V(2).Info("success: resync host", "hostId", hostId)
+	logger.V(2).Info("success: resync host", "hostId", host.Id)
 
 	return host, nil
 }

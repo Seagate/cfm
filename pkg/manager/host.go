@@ -17,9 +17,9 @@ import (
 const ID_PREFIX_HOST_DFLT string = "host"
 
 type Host struct {
-	Id  string
-	Uri string
-	// Status     string	// Meaningless without async update
+	Id            string
+	Uri           string
+	Status        common.ConnectionStatus
 	Socket        SocketDetails
 	Ports         map[string]*CxlHostPort
 	MemoryDevices map[string]*HostMemoryDevice
@@ -39,6 +39,7 @@ type RequestNewHost struct {
 	HostId     string
 	Ip         string
 	Port       uint16
+	Status     common.ConnectionStatus
 	BackendOps backend.BackendOperations
 	Creds      *openapi.Credentials
 }
@@ -52,6 +53,7 @@ func NewHost(ctx context.Context, r *RequestNewHost) (*Host, error) {
 		Uri:           GetCfmUriHostId(r.HostId),
 		Socket:        *NewSocketDetails(r.Ip, r.Port),
 		Ports:         make(map[string]*CxlHostPort),
+		Status:        r.Status,
 		MemoryDevices: make(map[string]*HostMemoryDevice),
 		Memory:        make(map[string]*HostMemory),
 		backendOps:    r.BackendOps,
@@ -414,6 +416,22 @@ func (h *Host) InvalidateCache() {
 	for _, d := range h.MemoryDevices {
 		d.InvalidateCache()
 	}
+}
+
+// UpdateConnectionStatusBackend - Query the host root service to verify continued connection and update the object status accordingly.
+func (h *Host) UpdateConnectionStatusBackend(ctx context.Context) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info(">>>>>> GetConnectionsStatusBackend: ", "hostId", h.Id)
+
+	req := backend.GetRootServiceRequest{}
+	response, err := h.backendOps.GetRootService(ctx, &backend.ConfigurationSettings{}, &req)
+	if err != nil || response == nil {
+		h.Status = common.OFFLINE
+	} else {
+		h.Status = common.ONLINE
+	}
+
+	logger.V(2).Info("update host status(backend)", "status", h.Status, "hostId", h.Id)
 }
 
 type ResponseHostMemoryTotals struct {
