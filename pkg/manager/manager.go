@@ -266,7 +266,7 @@ func AddHost(ctx context.Context, c *openapi.Credentials) (*Host, error) {
 	deviceCache.AddHost(host)
 
 	// Add host to datastore
-	datastore.DStore().GetDataStore().AddHost(c)
+	datastore.DStore().GetDataStore().AddHostDatum(c)
 	datastore.DStore().Store()
 
 	logger.V(2).Info("success: add host", "hostId", host.Id)
@@ -301,7 +301,7 @@ func DeleteHostById(ctx context.Context, hostId string) (*Host, error) {
 		// Delete host from manager cache and datastore as well
 		logger.V(2).Info("force host deletion after backend delete session failure", "hostId", host.Id)
 		deviceCache.DeleteHostById(host.Id)
-		datastore.DStore().GetDataStore().DeleteHost(host.Id)
+		datastore.DStore().GetDataStore().DeleteHostDatumById(host.Id)
 		datastore.DStore().Store()
 
 		return nil, &common.RequestError{StatusCode: common.StatusHostDeleteSessionFailure, Err: newErr}
@@ -311,7 +311,7 @@ func DeleteHostById(ctx context.Context, hostId string) (*Host, error) {
 	h := deviceCache.DeleteHostById(host.Id)
 
 	// delete host from datastore
-	datastore.DStore().GetDataStore().DeleteHost(host.Id)
+	datastore.DStore().GetDataStore().DeleteHostDatumById(host.Id)
 	datastore.DStore().Store()
 
 	logger.V(2).Info("success: delete host by id", "hostId", h.Id)

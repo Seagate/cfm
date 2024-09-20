@@ -440,11 +440,8 @@ func (h *Host) UpdateConnectionStatusBackend(ctx context.Context) {
 	}
 
 	// Update datastore status
-	r := datastore.UpdateHostStatusRequest{
-		HostId: h.Id,
-		Status: common.ConnectionStatus(h.Status),
-	}
-	datastore.DStore().GetDataStore().UpdateHostStatus(ctx, &r)
+	hostDatum, _ := datastore.DStore().GetDataStore().GetHostDatumById(h.Id)
+	hostDatum.SetConnectionStatus(&h.Status)
 	datastore.DStore().Store()
 
 	logger.V(2).Info("update host status(backend)", "status", h.Status, "hostId", h.Id)

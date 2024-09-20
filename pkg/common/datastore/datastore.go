@@ -18,13 +18,13 @@ const (
 
 type DataStore struct {
 	SavedAppliances map[string]*ApplianceDataStore `json:"saved-appliances"`
-	SavedHosts      map[string]*HostDataStore      `json:"saved-hosts"`
+	HostData        map[string]*HostDatum          `json:"host-data"`
 }
 
 func NewDataStore() *DataStore {
 	return &DataStore{
 		SavedAppliances: make(map[string]*ApplianceDataStore),
-		SavedHosts:      make(map[string]*HostDataStore),
+		HostData:        make(map[string]*HostDatum),
 	}
 }
 
@@ -45,9 +45,9 @@ func (c *DataStore) AddBlade(creds *openapi.Credentials, applianceId string) err
 	return nil
 }
 
-// AddHost: Add a new host to the data store
-func (c *DataStore) AddHost(creds *openapi.Credentials) {
-	c.SavedHosts[creds.CustomId] = NewHostDataStore(creds)
+// AddHostDatum: Add a new host datum to the data store
+func (c *DataStore) AddHostDatum(creds *openapi.Credentials) {
+	c.HostData[creds.CustomId] = NewHostDatum(creds)
 }
 
 // ContainsAppliance: Checks to see if the supplied IDs represent a valid datastore Appliance
@@ -69,13 +69,6 @@ func (c *DataStore) ContainsBlade(bladeId, applianceId string) bool {
 	return exists
 }
 
-// ContainsHost: Checks to see if the supplied IDs represent a valid datastore Host
-func (c *DataStore) ContainsHost(hostId string) bool {
-	_, exists := c.SavedHosts[hostId]
-
-	return exists
-}
-
 // DeleteAppliance: Delete an appliance from the data store
 func (c *DataStore) DeleteAppliance(applianceId string) {
 	delete(c.SavedAppliances, applianceId)
@@ -93,9 +86,19 @@ func (c *DataStore) DeleteBlade(bladeId, applianceId string) error {
 	return nil
 }
 
-// DeleteHost: Delete a host from the data store
-func (c *DataStore) DeleteHost(hostId string) {
-	delete(c.SavedHosts, hostId)
+// DeleteHostDatumById: Delete a host datum from the data store
+func (c *DataStore) DeleteHostDatumById(hostId string) {
+	delete(c.HostData, hostId)
+}
+
+// GetHostDatumById: Retrieve a host datum from the data store
+func (c *DataStore) GetHostDatumById(hostId string) (*HostDatum, error) {
+	hostDatum, exists := c.HostData[hostId]
+	if !exists {
+		return nil, fmt.Errorf("host datum [%s] not found in data store", hostId)
+	}
+
+	return hostDatum, nil
 }
 
 // Init: initialize the data store using command line args, ENV, or a file
@@ -149,27 +152,6 @@ func (c *DataStore) UpdateBlade(ctx context.Context, r *BladeUpdateRequest) erro
 	return appliance.UpdateBlade(ctx, r)
 }
 
-type UpdateHostStatusRequest struct {
-	HostId string
-	Status common.ConnectionStatus
-}
-
-// UpdateHost: Update a host's status
-func (c *DataStore) UpdateHostStatus(ctx context.Context, r *UpdateHostStatusRequest) error {
-	logger := klog.FromContext(ctx)
-
-	host, exists := c.SavedHosts[r.HostId]
-	if !exists {
-		err := fmt.Errorf("host [%s] not found in data store during host status update", r.HostId)
-		logger.Error(err, "failure: update host status")
-		return err
-	}
-
-	host.ConnectionStatus = r.Status
-
-	return nil
-}
-
 type ApplianceDataStore struct {
 	Credentials      *openapi.Credentials       `json:"credentials"`
 	SavedBlades      map[string]*BladeDataStore `json:"saved-blades"`
@@ -221,16 +203,20 @@ func NewBladeDataStore(creds *openapi.Credentials) *BladeDataStore {
 	}
 }
 
-type HostDataStore struct {
+type HostDatum struct {
 	Credentials      *openapi.Credentials    `json:"credentials"`
 	ConnectionStatus common.ConnectionStatus `json:"connection-status"`
 }
 
-func NewHostDataStore(creds *openapi.Credentials) *HostDataStore {
-	return &HostDataStore{
+func NewHostDatum(creds *openapi.Credentials) *HostDatum {
+	return &HostDatum{
 		Credentials:      creds,
 		ConnectionStatus: common.ONLINE,
 	}
+}
+
+func (h *HostDatum) SetConnectionStatus(status *common.ConnectionStatus) {
+	h.ConnectionStatus = *status
 }
 
 ////////////////////////////////////////
@@ -271,11 +257,11 @@ func ReloadDataStore(ctx context.Context, s openapi.DefaultAPIServicer, c *DataS
 		delete(c.SavedAppliances, applianceId)
 	}
 
-	logger.V(2).Info("cfm-service: reloading saved hosts")
-	for hostId, host := range c.SavedHosts {
-		_, err = s.HostsPost(ctx, *host.Credentials)
+	logger.V(2).Info("cfm-service: restoring saved hosts")
+	for hostId, hostDatum := range c.HostData {
+		_, err = s.HostsPost(ctx, *hostDatum.Credentials)
 		if err != nil {
-			logger.V(2).Info("cfm-service: host reload failure", "hostId", hostId)
+			logger.V(2).Info("cfm-service: host datum restore failure", "hostId", hostId)
 			continue
 		}
 	}
