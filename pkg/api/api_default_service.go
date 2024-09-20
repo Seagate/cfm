@@ -48,7 +48,7 @@ func (cfm *CfmApiService) AppliancesDeleteById(ctx context.Context, applianceId 
 	}
 
 	// Update DataStore.
-	datastore.DStore().GetDataStore().DeleteAppliance(appliance.Id)
+	datastore.DStore().GetDataStore().DeleteApplianceDatumById(appliance.Id)
 	datastore.DStore().Store()
 
 	a := openapi.Appliance{
@@ -130,7 +130,7 @@ func (cfm *CfmApiService) AppliancesPost(ctx context.Context, credentials openap
 	}
 
 	// The user's purpose for "credentials" object is complete.  Now, reusing this object for DataStore.
-	datastore.DStore().GetDataStore().AddAppliance(&credentials)
+	datastore.DStore().GetDataStore().AddApplianceDatum(&credentials)
 	datastore.DStore().Store()
 
 	a := openapi.Appliance{
@@ -154,7 +154,8 @@ func (cfm *CfmApiService) AppliancesResyncById(ctx context.Context, applianceId 
 
 	for _, id := range *failedBladeIds {
 		// Update DataStore.
-		datastore.DStore().GetDataStore().DeleteBlade(id, applianceId)
+		applianceDatum, _ := datastore.DStore().GetDataStore().GetApplianceDatumById(applianceId)
+		applianceDatum.DeleteBladeDatumById(id)
 		datastore.DStore().Store()
 	}
 
@@ -276,13 +277,15 @@ func (cfm *CfmApiService) BladesDeleteById(ctx context.Context, applianceId stri
 	blade, err := appliance.DeleteBladeById(ctx, bladeId)
 	if err != nil {
 		// Force delete on failure since, currently, manager always removes blade from deviceCache, even on failure
-		datastore.DStore().GetDataStore().DeleteBlade(blade.Id, applianceId)
+		applianceDatum, _ := datastore.DStore().GetDataStore().GetApplianceDatumById(applianceId)
+		applianceDatum.DeleteBladeDatumById(bladeId)
 		datastore.DStore().Store()
 
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
-	datastore.DStore().GetDataStore().DeleteBlade(blade.Id, applianceId)
+	applianceDatum, _ := datastore.DStore().GetDataStore().GetApplianceDatumById(applianceId)
+	applianceDatum.DeleteBladeDatumById(bladeId)
 	datastore.DStore().Store()
 
 	b := openapi.Blade{
@@ -563,17 +566,17 @@ func (cfm *CfmApiService) BladesPost(ctx context.Context, applianceId string, cr
 
 	// Appliance can be empty but may include up to 8 blades
 	if len(appliance.Blades) == MAX_COUNT_BLADES {
-		if datastore.DStore().GetDataStore().ContainsBlade(credentials.CustomId, appliance.Id) {
+		// if datastore.DStore().GetDataStore().ContainsBlade(credentials.CustomId, appliance.Id) {
 
-			// If blade limit exceeded AND blade in datastore, set it offline
-			req := datastore.BladeUpdateRequest{
-				ApplianceId: appliance.Id,
-				BladeId:     credentials.CustomId,
-				Status:      common.OFFLINE,
-			}
-			datastore.DStore().GetDataStore().UpdateBlade(ctx, &req)
-			datastore.DStore().Store()
-		}
+		// 	// If blade limit exceeded AND blade in datastore, set it offline
+		// 	req := datastore.BladeUpdateRequest{
+		// 		ApplianceId: appliance.Id,
+		// 		BladeId:     credentials.CustomId,
+		// 		Status:      common.OFFLINE,
+		// 	}
+		// 	datastore.DStore().GetDataStore().UpdateBlade(ctx, &req)
+		// 	datastore.DStore().Store()
+		// }
 
 		err := common.RequestError{
 			StatusCode: common.StatusBladesExceedMaximum,
@@ -584,36 +587,36 @@ func (cfm *CfmApiService) BladesPost(ctx context.Context, applianceId string, cr
 
 	blade, err := appliance.AddBlade(ctx, &credentials)
 	if err != nil {
-		if datastore.DStore().GetDataStore().ContainsBlade(blade.Id, appliance.Id) {
+		// if datastore.DStore().GetDataStore().ContainsBlade(blade.Id, appliance.Id) {
 
-			// If blade add fails AND blade in datastore, set it offline
-			req := datastore.BladeUpdateRequest{
-				ApplianceId: appliance.Id,
-				BladeId:     blade.Id,
-				Status:      common.OFFLINE,
-			}
-			datastore.DStore().GetDataStore().UpdateBlade(ctx, &req)
-			datastore.DStore().Store()
-		}
+		// 	// If blade add fails AND blade in datastore, set it offline
+		// 	req := datastore.BladeUpdateRequest{
+		// 		ApplianceId: appliance.Id,
+		// 		BladeId:     blade.Id,
+		// 		Status:      common.OFFLINE,
+		// 	}
+		// 	datastore.DStore().GetDataStore().UpdateBlade(ctx, &req)
+		// 	datastore.DStore().Store()
+		// }
 
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
-	if datastore.DStore().GetDataStore().ContainsBlade(blade.Id, appliance.Id) {
+	// if datastore.DStore().GetDataStore().ContainsBlade(blade.Id, appliance.Id) {
 
-		// If blade add passes AND blade in datastore, set it online
-		req := datastore.BladeUpdateRequest{
-			ApplianceId: appliance.Id,
-			BladeId:     blade.Id,
-			Status:      common.ONLINE,
-		}
-		datastore.DStore().GetDataStore().UpdateBlade(ctx, &req)
-	} else {
-		// The original need for "credentials" object is fulfilled.  Now, reusing this object for DataStore.
-		datastore.DStore().GetDataStore().AddBlade(&credentials, appliance.Id)
-	}
+	// 	// If blade add passes AND blade in datastore, set it online
+	// 	req := datastore.BladeUpdateRequest{
+	// 		ApplianceId: appliance.Id,
+	// 		BladeId:     blade.Id,
+	// 		Status:      common.ONLINE,
+	// 	}
+	// 	datastore.DStore().GetDataStore().UpdateBlade(ctx, &req)
+	// } else {
+	// 	// The original need for "credentials" object is fulfilled.  Now, reusing this object for DataStore.
+	// 	datastore.DStore().GetDataStore().AddBlade(&credentials, appliance.Id)
+	// }
 
-	datastore.DStore().Store()
+	// datastore.DStore().Store()
 
 	totals, err := blade.GetResourceTotals(ctx)
 	if err != nil {
@@ -650,32 +653,32 @@ func (cfm *CfmApiService) BladesResyncById(ctx context.Context, applianceId stri
 
 	blade, err := appliance.ResyncBladeById(ctx, bladeId)
 	if err != nil {
-		if datastore.DStore().GetDataStore().ContainsBlade(bladeId, applianceId) {
+		// if datastore.DStore().GetDataStore().ContainsBlade(bladeId, applianceId) {
 
-			// If blade resync fails AND blade in datastore, just set it offline
-			req := datastore.BladeUpdateRequest{
-				ApplianceId: applianceId,
-				BladeId:     bladeId,
-				Status:      common.OFFLINE,
-			}
-			datastore.DStore().GetDataStore().UpdateBlade(ctx, &req)
-			datastore.DStore().Store()
-		}
+		// 	// If blade resync fails AND blade in datastore, just set it offline
+		// 	req := datastore.BladeUpdateRequest{
+		// 		ApplianceId: applianceId,
+		// 		BladeId:     bladeId,
+		// 		Status:      common.OFFLINE,
+		// 	}
+		// 	datastore.DStore().GetDataStore().UpdateBlade(ctx, &req)
+		// 	datastore.DStore().Store()
+		// }
 
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
-	if datastore.DStore().GetDataStore().ContainsBlade(bladeId, applianceId) {
+	// if datastore.DStore().GetDataStore().ContainsBlade(bladeId, applianceId) {
 
-		// If blade resync pass AND blade in datastore, set it online
-		req := datastore.BladeUpdateRequest{
-			ApplianceId: applianceId,
-			BladeId:     bladeId,
-			Status:      common.ONLINE,
-		}
-		datastore.DStore().GetDataStore().UpdateBlade(ctx, &req)
-		datastore.DStore().Store()
-	}
+	// 	// If blade resync pass AND blade in datastore, set it online
+	// 	req := datastore.BladeUpdateRequest{
+	// 		ApplianceId: applianceId,
+	// 		BladeId:     bladeId,
+	// 		Status:      common.ONLINE,
+	// 	}
+	// 	datastore.DStore().GetDataStore().UpdateBlade(ctx, &req)
+	// 	datastore.DStore().Store()
+	// }
 
 	totals, err := blade.GetResourceTotals(ctx)
 	if err != nil {

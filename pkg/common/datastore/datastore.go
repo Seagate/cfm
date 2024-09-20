@@ -17,32 +17,20 @@ const (
 )
 
 type DataStore struct {
-	SavedAppliances map[string]*ApplianceDataStore `json:"saved-appliances"`
-	HostData        map[string]*HostDatum          `json:"host-data"`
+	ApplianceData map[string]*ApplianceDatum `json:"appliance-data"`
+	HostData      map[string]*HostDatum      `json:"host-data"`
 }
 
 func NewDataStore() *DataStore {
 	return &DataStore{
-		SavedAppliances: make(map[string]*ApplianceDataStore),
-		HostData:        make(map[string]*HostDatum),
+		ApplianceData: make(map[string]*ApplianceDatum),
+		HostData:      make(map[string]*HostDatum),
 	}
 }
 
-// AddAppliance: Add a new appliance to the data store
-func (c *DataStore) AddAppliance(creds *openapi.Credentials) {
-	c.SavedAppliances[creds.CustomId] = NewApplianceDataStore(creds)
-}
-
-// AddBlade: Add a new blade to the data store
-func (c *DataStore) AddBlade(creds *openapi.Credentials, applianceId string) error {
-	appliance, exists := c.SavedAppliances[applianceId]
-	if !exists {
-		return fmt.Errorf("appliance [%s] not found in data store add", applianceId)
-	}
-
-	appliance.AddBlade(creds)
-
-	return nil
+// AddApplianceDatum: Add a new appliance datum to the data store
+func (c *DataStore) AddApplianceDatum(creds *openapi.Credentials) {
+	c.ApplianceData[creds.CustomId] = NewApplianceDatum(creds)
 }
 
 // AddHostDatum: Add a new host datum to the data store
@@ -50,40 +38,9 @@ func (c *DataStore) AddHostDatum(creds *openapi.Credentials) {
 	c.HostData[creds.CustomId] = NewHostDatum(creds)
 }
 
-// ContainsAppliance: Checks to see if the supplied IDs represent a valid datastore Appliance
-func (c *DataStore) ContainsAppliance(applianceId string) bool {
-	_, exists := c.SavedAppliances[applianceId]
-
-	return exists
-}
-
-// ContainsBlade: Checks to see if the supplied IDs represent a valid datastore Blade
-func (c *DataStore) ContainsBlade(bladeId, applianceId string) bool {
-	appliance, exists := c.SavedAppliances[applianceId]
-	if !exists {
-		return false
-	}
-
-	_, exists = appliance.SavedBlades[bladeId]
-
-	return exists
-}
-
-// DeleteAppliance: Delete an appliance from the data store
-func (c *DataStore) DeleteAppliance(applianceId string) {
-	delete(c.SavedAppliances, applianceId)
-}
-
-// DeleteBlade: Delete a blade from an appliance's data store
-func (c *DataStore) DeleteBlade(bladeId, applianceId string) error {
-	appliance, exists := c.SavedAppliances[applianceId]
-	if !exists {
-		return fmt.Errorf("appliance [%s] not found in data store delete", applianceId)
-	}
-
-	appliance.DeleteBlade(bladeId)
-
-	return nil
+// DeleteApplianceDatumById: Delete an appliance from the data store
+func (c *DataStore) DeleteApplianceDatumById(applianceId string) {
+	delete(c.ApplianceData, applianceId)
 }
 
 // DeleteHostDatumById: Delete a host datum from the data store
@@ -91,14 +48,24 @@ func (c *DataStore) DeleteHostDatumById(hostId string) {
 	delete(c.HostData, hostId)
 }
 
+// GetApplianceDatumById: Retrieve an appliance datum from the data store
+func (c *DataStore) GetApplianceDatumById(applianceId string) (*ApplianceDatum, error) {
+	datum, exists := c.ApplianceData[applianceId]
+	if !exists {
+		return nil, fmt.Errorf("appliance datum [%s] not found in data store", applianceId)
+	}
+
+	return datum, nil
+}
+
 // GetHostDatumById: Retrieve a host datum from the data store
 func (c *DataStore) GetHostDatumById(hostId string) (*HostDatum, error) {
-	hostDatum, exists := c.HostData[hostId]
+	datum, exists := c.HostData[hostId]
 	if !exists {
 		return nil, fmt.Errorf("host datum [%s] not found in data store", hostId)
 	}
 
-	return hostDatum, nil
+	return datum, nil
 }
 
 // Init: initialize the data store using command line args, ENV, or a file
@@ -109,98 +76,59 @@ func (c *DataStore) InitDataStore(ctx context.Context, args []string) error {
 	return nil
 }
 
-type ApplianceUpdateRequest struct {
-	ApplianceId string
-	Status      common.ConnectionStatus
+type ApplianceDatum struct {
+	Credentials      *openapi.Credentials    `json:"credentials"`
+	BladeData        map[string]*BladeDatum  `json:"blade-data"`
+	ConnectionStatus common.ConnectionStatus `json:"connection-status"`
 }
 
-// UpdateAppliance: Update an appliance's data
-func (c *DataStore) UpdateAppliance(ctx context.Context, r *ApplianceUpdateRequest) error {
-	logger := klog.FromContext(ctx)
-
-	appliance, exists := c.SavedAppliances[r.ApplianceId]
-	if !exists {
-		err := fmt.Errorf("appliance [%s] not found in data store during appliance update", r.ApplianceId)
-		logger.Error(err, "failure: update appliance")
-		return err
-	}
-
-	if r.Status != "" {
-		appliance.ConnectionStatus = r.Status
-	}
-
-	return nil
-}
-
-type BladeUpdateRequest struct {
-	ApplianceId string
-	BladeId     string
-	Status      common.ConnectionStatus
-}
-
-// UpdateBlade: Update an appliance's data
-func (c *DataStore) UpdateBlade(ctx context.Context, r *BladeUpdateRequest) error {
-	logger := klog.FromContext(ctx)
-
-	appliance, exists := c.SavedAppliances[r.ApplianceId]
-	if !exists {
-		err := fmt.Errorf("appliance [%s] not found in data store during blade update", r.ApplianceId)
-		logger.Error(err, "failure: update blade")
-		return err
-	}
-
-	return appliance.UpdateBlade(ctx, r)
-}
-
-type ApplianceDataStore struct {
-	Credentials      *openapi.Credentials       `json:"credentials"`
-	SavedBlades      map[string]*BladeDataStore `json:"saved-blades"`
-	ConnectionStatus common.ConnectionStatus    `json:"connection-status"`
-}
-
-func NewApplianceDataStore(creds *openapi.Credentials) *ApplianceDataStore {
-	return &ApplianceDataStore{
+func NewApplianceDatum(creds *openapi.Credentials) *ApplianceDatum {
+	return &ApplianceDatum{
 		Credentials:      creds,
-		SavedBlades:      make(map[string]*BladeDataStore),
-		ConnectionStatus: common.NOT_APPLICABLE,
+		BladeData:        make(map[string]*BladeDatum),
+		ConnectionStatus: common.NOT_APPLICABLE, // Will use for single-BMC appliance
 	}
 }
 
-func (a *ApplianceDataStore) AddBlade(creds *openapi.Credentials) {
-	a.SavedBlades[creds.CustomId] = NewBladeDataStore(creds)
+func (a *ApplianceDatum) AddBladeDatum(creds *openapi.Credentials) {
+	a.BladeData[creds.CustomId] = NewBladeDatum(creds)
 }
 
-func (a *ApplianceDataStore) DeleteBlade(bladeId string) {
-	delete(a.SavedBlades, bladeId)
+func (a *ApplianceDatum) DeleteBladeDatumById(bladeId string) {
+	delete(a.BladeData, bladeId)
 }
 
-func (a *ApplianceDataStore) UpdateBlade(ctx context.Context, r *BladeUpdateRequest) error {
+func (a *ApplianceDatum) GetBladeDatumById(ctx context.Context, bladeId string) (*BladeDatum, error) {
 	logger := klog.FromContext(ctx)
 
-	blade, exists := a.SavedBlades[r.BladeId]
+	blade, exists := a.BladeData[bladeId]
 	if !exists {
-		err := fmt.Errorf("blade [%s] not found in data store during blade update", r.BladeId)
+		err := fmt.Errorf("blade datum [%s] not found in appliance data [%s] in data store", bladeId, a.Credentials.CustomId)
 		logger.Error(err, "failure: update blade")
-		return err
+		return nil, err
 	}
 
-	if r.Status != "" {
-		blade.ConnectionStatus = r.Status
-	}
-
-	return nil
+	return blade, nil
 }
 
-type BladeDataStore struct {
+func (a *ApplianceDatum) SetConnectionStatus(status common.ConnectionStatus) {
+	a.ConnectionStatus = status
+}
+
+type BladeDatum struct {
 	Credentials      *openapi.Credentials    `json:"credentials"`
 	ConnectionStatus common.ConnectionStatus `json:"connection-status"`
 }
 
-func NewBladeDataStore(creds *openapi.Credentials) *BladeDataStore {
-	return &BladeDataStore{
+func NewBladeDatum(creds *openapi.Credentials) *BladeDatum {
+	return &BladeDatum{
 		Credentials:      creds,
 		ConnectionStatus: common.ONLINE,
 	}
+}
+
+func (b *BladeDatum) SetConnectionStatus(status *common.ConnectionStatus) {
+	b.ConnectionStatus = *status
 }
 
 type HostDatum struct {
@@ -231,8 +159,8 @@ func ReloadDataStore(ctx context.Context, s openapi.DefaultAPIServicer, c *DataS
 
 	logger.V(2).Info("cfm-service: restoring saved appliances")
 	var appliancesToDelete []string
-	for applianceId, appliance := range c.SavedAppliances {
-		_, err = s.AppliancesPost(ctx, *appliance.Credentials)
+	for applianceId, applianceDatum := range c.ApplianceData {
+		_, err = s.AppliancesPost(ctx, *applianceDatum.Credentials)
 		if err != nil {
 			logger.V(2).Info("cfm-service: appliance restore failure", "applianceId", applianceId)
 			appliancesToDelete = append(appliancesToDelete, applianceId)
@@ -240,8 +168,8 @@ func ReloadDataStore(ctx context.Context, s openapi.DefaultAPIServicer, c *DataS
 		}
 
 		bladesToDelete := make(map[string]string)
-		for bladeId, blade := range appliance.SavedBlades {
-			_, err = s.BladesPost(ctx, applianceId, *blade.Credentials)
+		for bladeId, bladeDatum := range applianceDatum.BladeData {
+			_, err = s.BladesPost(ctx, applianceId, *bladeDatum.Credentials)
 			if err != nil {
 				logger.V(2).Info("cfm-service: blade restore failure", "bladeId", bladeId, "applianceId", applianceId)
 				bladesToDelete[applianceId] = bladeId
@@ -249,12 +177,12 @@ func ReloadDataStore(ctx context.Context, s openapi.DefaultAPIServicer, c *DataS
 		}
 
 		for applianceId, bladeId := range bladesToDelete {
-			delete(c.SavedAppliances[applianceId].SavedBlades, bladeId)
+			delete(c.ApplianceData[applianceId].BladeData, bladeId)
 		}
 	}
 
 	for _, applianceId := range appliancesToDelete {
-		delete(c.SavedAppliances, applianceId)
+		delete(c.ApplianceData, applianceId)
 	}
 
 	logger.V(2).Info("cfm-service: restoring saved hosts")
