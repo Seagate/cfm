@@ -53,8 +53,8 @@ func NewHost(ctx context.Context, r *RequestNewHost) (*Host, error) {
 		Id:            r.HostId,
 		Uri:           GetCfmUriHostId(r.HostId),
 		Socket:        *NewSocketDetails(r.Ip, r.Port),
-		Ports:         make(map[string]*CxlHostPort),
 		Status:        r.Status,
+		Ports:         make(map[string]*CxlHostPort),
 		MemoryDevices: make(map[string]*HostMemoryDevice),
 		Memory:        make(map[string]*HostMemory),
 		backendOps:    r.BackendOps,
@@ -324,6 +324,11 @@ func (h *Host) GetMemoryDevicesBackend(ctx context.Context) (map[string][]string
 	return response.DeviceIdMap, nil
 }
 
+type ResponseHostMemoryTotals struct {
+	LocalMemoryMib  int32
+	RemoteMemoryMib int32
+}
+
 func (h *Host) GetMemoryTotals(ctx context.Context) (*ResponseHostMemoryTotals, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetMemoryTotals: ", "hostId", h.Id)
@@ -445,11 +450,6 @@ func (h *Host) UpdateConnectionStatusBackend(ctx context.Context) {
 	datastore.DStore().Store()
 
 	logger.V(2).Info("update host status(backend)", "status", h.Status, "hostId", h.Id)
-}
-
-type ResponseHostMemoryTotals struct {
-	LocalMemoryMib  int32
-	RemoteMemoryMib int32
 }
 
 /////////////////////////////////////

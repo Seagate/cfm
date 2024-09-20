@@ -17,7 +17,6 @@ import (
 	"sort"
 
 	"cfm/pkg/common"
-	"cfm/pkg/common/datastore"
 	"cfm/pkg/manager"
 	"cfm/pkg/openapi"
 )
@@ -42,25 +41,25 @@ func NewCfmApiService(version string) openapi.DefaultAPIServicer {
 
 // AppliancesDeleteById -
 func (cfm *CfmApiService) AppliancesDeleteById(ctx context.Context, applianceId string) (openapi.ImplResponse, error) {
+	var a openapi.Appliance
+
 	appliance, err := manager.DeleteApplianceById(ctx, applianceId)
 	if err != nil {
-		return formatErrorResp(ctx, err.(*common.RequestError))
-	}
+		a = openapi.Appliance{Id: applianceId}
 
-	// Update DataStore.
-	datastore.DStore().GetDataStore().DeleteApplianceDatumById(appliance.Id)
-	datastore.DStore().Store()
+	} else {
 
-	a := openapi.Appliance{
-		Id:        appliance.Id,
-		IpAddress: "", // Unused (May need for POC4)
-		Port:      0,  // Unused (May need for POC4)
-		Status:    "", // Unused
-		Blades: openapi.MemberItem{
-			Uri: manager.GetCfmUriBlades(appliance.Id),
-		},
-		TotalMemoryAvailableMiB: -1, // Not Implemented
-		TotalMemoryAllocatedMiB: -1, // Not Implemented
+		a = openapi.Appliance{
+			Id:        appliance.Id,
+			IpAddress: "", // Unused (May need for POC4)
+			Port:      0,  // Unused (May need for POC4)
+			Status:    "", // Unused
+			Blades: openapi.MemberItem{
+				Uri: manager.GetCfmUriBlades(appliance.Id),
+			},
+			TotalMemoryAvailableMiB: -1, // Not Implemented
+			TotalMemoryAllocatedMiB: -1, // Not Implemented
+		}
 	}
 
 	return openapi.Response(http.StatusOK, a), nil
@@ -129,10 +128,6 @@ func (cfm *CfmApiService) AppliancesPost(ctx context.Context, credentials openap
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
-	// The user's purpose for "credentials" object is complete.  Now, reusing this object for DataStore.
-	datastore.DStore().GetDataStore().AddApplianceDatum(&credentials)
-	datastore.DStore().Store()
-
 	a := openapi.Appliance{
 		Id:        appliance.Id,
 		IpAddress: "", // Unused
@@ -150,14 +145,7 @@ func (cfm *CfmApiService) AppliancesPost(ctx context.Context, credentials openap
 
 // AppliancesResync -
 func (cfm *CfmApiService) AppliancesResyncById(ctx context.Context, applianceId string) (openapi.ImplResponse, error) {
-	appliance, failedBladeIds, err := manager.ResyncApplianceById(ctx, applianceId)
-
-	for _, id := range *failedBladeIds {
-		// Update DataStore.
-		applianceDatum, _ := datastore.DStore().GetDataStore().GetApplianceDatumById(applianceId)
-		applianceDatum.DeleteBladeDatumById(id)
-		datastore.DStore().Store()
-	}
+	appliance, err := manager.ResyncApplianceById(ctx, applianceId)
 
 	if err != nil {
 		if appliance != nil {
@@ -267,8 +255,10 @@ func (cfm *CfmApiService) BladesComposeMemoryByResource(ctx context.Context, app
 	return openapi.Response(http.StatusCreated, memory), nil
 }
 
-// BladesDeleteById -
+// BladesDeleteById - As long as the appliance id is valid, guarenteed blade deletion from service
 func (cfm *CfmApiService) BladesDeleteById(ctx context.Context, applianceId string, bladeId string) (openapi.ImplResponse, error) {
+	var b openapi.Blade
+
 	appliance, err := manager.GetApplianceById(ctx, applianceId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -276,34 +266,27 @@ func (cfm *CfmApiService) BladesDeleteById(ctx context.Context, applianceId stri
 
 	blade, err := appliance.DeleteBladeById(ctx, bladeId)
 	if err != nil {
-		// Force delete on failure since, currently, manager always removes blade from deviceCache, even on failure
-		applianceDatum, _ := datastore.DStore().GetDataStore().GetApplianceDatumById(applianceId)
-		applianceDatum.DeleteBladeDatumById(bladeId)
-		datastore.DStore().Store()
+		b = openapi.Blade{Id: bladeId}
 
-		return formatErrorResp(ctx, err.(*common.RequestError))
-	}
+	} else {
 
-	applianceDatum, _ := datastore.DStore().GetDataStore().GetApplianceDatumById(applianceId)
-	applianceDatum.DeleteBladeDatumById(bladeId)
-	datastore.DStore().Store()
-
-	b := openapi.Blade{
-		Id:        blade.Id,
-		IpAddress: blade.GetNetIp(),
-		Port:      int32(blade.GetNetPort()),
-		Status:    "", // Unused
-		Ports: openapi.MemberItem{
-			Uri: manager.GetCfmUriBladePorts(appliance.Id, blade.Id),
-		},
-		Resources: openapi.MemberItem{
-			Uri: manager.GetCfmUriBladeResources(appliance.Id, blade.Id),
-		},
-		Memory: openapi.MemberItem{
-			Uri: manager.GetCfmUriBladeMemory(appliance.Id, blade.Id),
-		},
-		TotalMemoryAvailableMiB: -1, // Not Implemented
-		TotalMemoryAllocatedMiB: -1, // Not Implemented
+		b = openapi.Blade{
+			Id:        blade.Id,
+			IpAddress: blade.GetNetIp(),
+			Port:      int32(blade.GetNetPort()),
+			Status:    string(blade.Status),
+			Ports: openapi.MemberItem{
+				Uri: manager.GetCfmUriBladePorts(appliance.Id, blade.Id),
+			},
+			Resources: openapi.MemberItem{
+				Uri: manager.GetCfmUriBladeResources(appliance.Id, blade.Id),
+			},
+			Memory: openapi.MemberItem{
+				Uri: manager.GetCfmUriBladeMemory(appliance.Id, blade.Id),
+			},
+			TotalMemoryAvailableMiB: -1, // Not Implemented
+			TotalMemoryAllocatedMiB: -1, // Not Implemented
+		}
 	}
 
 	return openapi.Response(http.StatusOK, b), nil
@@ -375,7 +358,7 @@ func (cfm *CfmApiService) BladesGetById(ctx context.Context, applianceId string,
 		Id:        blade.Id,
 		IpAddress: blade.GetNetIp(),
 		Port:      int32(blade.GetNetPort()),
-		Status:    "", // Unused
+		Status:    string(blade.Status),
 		Ports: openapi.MemberItem{
 			Uri: manager.GetCfmUriBladePorts(appliance.Id, blade.Id),
 		},
@@ -564,59 +547,18 @@ func (cfm *CfmApiService) BladesPost(ctx context.Context, applianceId string, cr
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
-	// Appliance can be empty but may include up to 8 blades
 	if len(appliance.Blades) == MAX_COUNT_BLADES {
-		// if datastore.DStore().GetDataStore().ContainsBlade(credentials.CustomId, appliance.Id) {
-
-		// 	// If blade limit exceeded AND blade in datastore, set it offline
-		// 	req := datastore.BladeUpdateRequest{
-		// 		ApplianceId: appliance.Id,
-		// 		BladeId:     credentials.CustomId,
-		// 		Status:      common.OFFLINE,
-		// 	}
-		// 	datastore.DStore().GetDataStore().UpdateBlade(ctx, &req)
-		// 	datastore.DStore().Store()
-		// }
-
 		err := common.RequestError{
 			StatusCode: common.StatusBladesExceedMaximum,
-			Err:        fmt.Errorf("no more blades can be associated with this appliance (%s)", applianceId),
+			Err:        fmt.Errorf("cfm-service at maximum blade capacity (%d) for this appliance (%s)", MAX_COUNT_BLADES, applianceId),
 		}
 		return formatErrorResp(ctx, &err)
 	}
 
 	blade, err := appliance.AddBlade(ctx, &credentials)
 	if err != nil {
-		// if datastore.DStore().GetDataStore().ContainsBlade(blade.Id, appliance.Id) {
-
-		// 	// If blade add fails AND blade in datastore, set it offline
-		// 	req := datastore.BladeUpdateRequest{
-		// 		ApplianceId: appliance.Id,
-		// 		BladeId:     blade.Id,
-		// 		Status:      common.OFFLINE,
-		// 	}
-		// 	datastore.DStore().GetDataStore().UpdateBlade(ctx, &req)
-		// 	datastore.DStore().Store()
-		// }
-
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
-
-	// if datastore.DStore().GetDataStore().ContainsBlade(blade.Id, appliance.Id) {
-
-	// 	// If blade add passes AND blade in datastore, set it online
-	// 	req := datastore.BladeUpdateRequest{
-	// 		ApplianceId: appliance.Id,
-	// 		BladeId:     blade.Id,
-	// 		Status:      common.ONLINE,
-	// 	}
-	// 	datastore.DStore().GetDataStore().UpdateBlade(ctx, &req)
-	// } else {
-	// 	// The original need for "credentials" object is fulfilled.  Now, reusing this object for DataStore.
-	// 	datastore.DStore().GetDataStore().AddBlade(&credentials, appliance.Id)
-	// }
-
-	// datastore.DStore().Store()
 
 	totals, err := blade.GetResourceTotals(ctx)
 	if err != nil {
@@ -627,7 +569,7 @@ func (cfm *CfmApiService) BladesPost(ctx context.Context, applianceId string, cr
 		Id:        blade.Id,
 		IpAddress: blade.GetNetIp(),
 		Port:      int32(blade.GetNetPort()),
-		Status:    "", // Unused
+		Status:    string(blade.Status),
 		Ports: openapi.MemberItem{
 			Uri: manager.GetCfmUriBladePorts(appliance.Id, blade.Id),
 		},
@@ -653,32 +595,8 @@ func (cfm *CfmApiService) BladesResyncById(ctx context.Context, applianceId stri
 
 	blade, err := appliance.ResyncBladeById(ctx, bladeId)
 	if err != nil {
-		// if datastore.DStore().GetDataStore().ContainsBlade(bladeId, applianceId) {
-
-		// 	// If blade resync fails AND blade in datastore, just set it offline
-		// 	req := datastore.BladeUpdateRequest{
-		// 		ApplianceId: applianceId,
-		// 		BladeId:     bladeId,
-		// 		Status:      common.OFFLINE,
-		// 	}
-		// 	datastore.DStore().GetDataStore().UpdateBlade(ctx, &req)
-		// 	datastore.DStore().Store()
-		// }
-
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
-
-	// if datastore.DStore().GetDataStore().ContainsBlade(bladeId, applianceId) {
-
-	// 	// If blade resync pass AND blade in datastore, set it online
-	// 	req := datastore.BladeUpdateRequest{
-	// 		ApplianceId: applianceId,
-	// 		BladeId:     bladeId,
-	// 		Status:      common.ONLINE,
-	// 	}
-	// 	datastore.DStore().GetDataStore().UpdateBlade(ctx, &req)
-	// 	datastore.DStore().Store()
-	// }
 
 	totals, err := blade.GetResourceTotals(ctx)
 	if err != nil {
@@ -689,7 +607,7 @@ func (cfm *CfmApiService) BladesResyncById(ctx context.Context, applianceId stri
 		Id:        blade.Id,
 		IpAddress: blade.GetNetIp(),
 		Port:      int32(blade.GetNetPort()),
-		Status:    "", // Unused
+		Status:    string(blade.Status),
 		Ports: openapi.MemberItem{
 			Uri: manager.GetCfmUriBladePorts(appliance.Id, blade.Id),
 		},
@@ -757,7 +675,7 @@ func (cfm *CfmApiService) HostsDeleteById(ctx context.Context, hostId string) (o
 	var h openapi.Host
 
 	host, err := manager.DeleteHostById(ctx, hostId)
-	if err != nil {
+	if err != nil && host == nil {
 		h = openapi.Host{Id: hostId}
 
 	} else {
@@ -966,12 +884,10 @@ func (cfm *CfmApiService) HostsGetPorts(ctx context.Context, hostId string) (ope
 func (cfm *CfmApiService) HostsPost(ctx context.Context, credentials openapi.Credentials) (openapi.ImplResponse, error) {
 	hosts := manager.GetHosts(ctx)
 	if len(hosts) >= MAX_COUNT_HOSTS {
-
 		err := common.RequestError{
 			StatusCode: common.StatusHostsExceedMaximum,
 			Err:        fmt.Errorf("cfm-service at maximum host capacity (%d)", MAX_COUNT_HOSTS),
 		}
-
 		return formatErrorResp(ctx, &err)
 	}
 

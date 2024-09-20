@@ -11,6 +11,7 @@ import (
 
 	"cfm/pkg/backend"
 	"cfm/pkg/common"
+	"cfm/pkg/common/datastore"
 	"cfm/pkg/openapi"
 
 	"k8s.io/klog/v2"
@@ -19,9 +20,9 @@ import (
 const ID_PREFIX_BLADE_DFLT string = "blade"
 
 type Blade struct {
-	Id  string
-	Uri string
-	// Status     string	// Meaningless without async update
+	Id          string
+	Uri         string
+	Status      common.ConnectionStatus
 	Socket      SocketDetails
 	ApplianceId string
 	Memory      map[string]*BladeMemory
@@ -42,6 +43,7 @@ type RequestNewBlade struct {
 	Ip          string
 	Port        uint16
 	ApplianceId string
+	Status      common.ConnectionStatus
 	BackendOps  backend.BackendOperations
 	Creds       *openapi.Credentials
 }
@@ -55,6 +57,7 @@ func NewBlade(ctx context.Context, r *RequestNewBlade) (*Blade, error) {
 		Uri:         GetCfmUriBladeId(r.ApplianceId, r.BladeId),
 		Socket:      *NewSocketDetails(r.Ip, r.Port),
 		ApplianceId: r.ApplianceId,
+		Status:      r.Status,
 		Ports:       make(map[string]*CxlBladePort),
 		Resources:   make(map[string]*BladeResource),
 		Memory:      make(map[string]*BladeMemory),
@@ -546,6 +549,15 @@ func (b *Blade) GetResourceTotals(ctx context.Context) (*ResponseResourceTotals,
 
 	var totalAvail, totalAlloc int32
 
+	response := ResponseResourceTotals{
+		TotalMemoryAvailableMiB: 0,
+		TotalMemoryAllocatedMiB: 0,
+	}
+
+	if b.Status == common.OFFLINE {
+		return &response, nil
+	}
+
 	resources := b.GetResources(ctx)
 	for _, resource := range resources {
 		totals, err := resource.GetTotals(ctx)
@@ -559,10 +571,8 @@ func (b *Blade) GetResourceTotals(ctx context.Context) (*ResponseResourceTotals,
 		totalAlloc += totals.TotalMemoryAllocatedMiB
 	}
 
-	response := ResponseResourceTotals{
-		TotalMemoryAvailableMiB: totalAvail,
-		TotalMemoryAllocatedMiB: totalAlloc,
-	}
+	response.TotalMemoryAvailableMiB = totalAvail
+	response.TotalMemoryAllocatedMiB = totalAlloc
 
 	logger.V(2).Info("success: get resource totals", "bladeId", b.Id, "applianceId", b.ApplianceId)
 
@@ -581,6 +591,28 @@ func (b *Blade) InvalidateCache() {
 	for _, r := range b.Resources {
 		r.InvalidateCache()
 	}
+}
+
+// UpdateConnectionStatusBackend - Query the blade root service to verify continued connection and update the object status accordingly.
+func (b *Blade) UpdateConnectionStatusBackend(ctx context.Context) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info(">>>>>> GetConnectionsStatusBackend: ", "bladeId", b.Id)
+
+	req := backend.GetRootServiceRequest{}
+	response, err := b.backendOps.GetRootService(ctx, &backend.ConfigurationSettings{}, &req)
+	if err != nil || response == nil {
+		b.Status = common.OFFLINE
+	} else {
+		b.Status = common.ONLINE
+	}
+
+	// Update datastore status
+	applianceDatum, _ := datastore.DStore().GetDataStore().GetApplianceDatumById(b.ApplianceId)
+	bladeDatum, _ := applianceDatum.GetBladeDatumById(ctx, b.Id)
+	bladeDatum.SetConnectionStatus(&b.Status)
+	datastore.DStore().Store()
+
+	logger.V(2).Info("update blade status(backend)", "status", b.Status, "bladeId", b.Id)
 }
 
 /////////////////////////////////////

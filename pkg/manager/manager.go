@@ -50,13 +50,12 @@ func AddAppliance(ctx context.Context, c *openapi.Credentials) (*Appliance, erro
 		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
-	// Cache it
-	err = deviceCache.AddAppliance(appliance)
-	if err != nil {
-		newErr := fmt.Errorf("add appliance [%s] failure: %w", appliance.Id, err)
-		logger.Error(newErr, "failure: add appliance")
-		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
-	}
+	// Add appliance to device cache
+	deviceCache.AddAppliance(appliance) // ignore error, duplicate check done above
+
+	// Add appliance to datastore
+	datastore.DStore().GetDataStore().AddApplianceDatum(c)
+	datastore.DStore().Store()
 
 	logger.V(2).Info("success: add appliance", "applianceId", appliance.Id)
 
@@ -75,24 +74,18 @@ func DeleteApplianceById(ctx context.Context, applianceId string) (*Appliance, e
 		return nil, &common.RequestError{StatusCode: common.StatusApplianceIdDoesNotExist, Err: newErr}
 	}
 
-	err := appliance.DeleteAllBlades(ctx) // cache and hardware interactions here
-	if err != nil {
-		newErr := fmt.Errorf("failed to delete all appliance [%s] blades: %w", appliance.Id, err)
-		logger.Error(newErr, "failure: delete appliance by id")
-		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
-	}
+	appliance.DeleteAllBlades(ctx)
 
 	// delete appliance from cache
-	a := deviceCache.DeleteApplianceById(appliance.Id)
-	if a == nil {
-		newErr := fmt.Errorf("appliance [%s] cache delete failed", appliance.Id)
-		logger.Error(newErr, "failure: delete appliance by id")
-		return nil, &common.RequestError{StatusCode: common.StatusApplianceDeleteSessionFailure, Err: newErr}
-	}
+	deviceCache.DeleteApplianceById(appliance.Id)
 
-	logger.V(2).Info("success: delete appliance by id", "applianceId", a.Id)
+	// delete appliance from datastore
+	datastore.DStore().GetDataStore().DeleteApplianceDatumById(appliance.Id)
+	datastore.DStore().Store()
 
-	return a, nil
+	logger.V(2).Info("success: delete appliance by id", "applianceId", appliance.Id)
+
+	return appliance, nil
 }
 
 func GetAllApplianceIds() []string {
@@ -126,7 +119,7 @@ func GetAppliances(ctx context.Context) map[string]*Appliance {
 	return appliances
 }
 
-func ResyncApplianceById(ctx context.Context, applianceId string) (*Appliance, *[]string, error) {
+func ResyncApplianceById(ctx context.Context, applianceId string) (*Appliance, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> ResyncApplianceById: ", "applianceId", applianceId)
 
@@ -136,7 +129,7 @@ func ResyncApplianceById(ctx context.Context, applianceId string) (*Appliance, *
 	if err != nil {
 		newErr := fmt.Errorf("get appliance by id [%s] failure: %w", appliance.Id, err)
 		logger.Error(newErr, "failure: resync appliance by id")
-		return nil, &failedBladeIds, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
+		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
 	bladeIds := appliance.GetAllBladeIds()
@@ -152,15 +145,15 @@ func ResyncApplianceById(ctx context.Context, applianceId string) (*Appliance, *
 
 	if len(failedBladeIds) == 0 {
 		logger.V(2).Info("success: resync appliance", "applianceId", applianceId, "bladeIds", bladeIds)
-		return appliance, &failedBladeIds, nil
+		return appliance, nil
 	} else if len(failedBladeIds) < len(bladeIds) {
 		newErr := fmt.Errorf("resync appliance by id [%s]: some failure(s): blade(s) [%s]: %w", appliance.Id, failedBladeIds, err)
 		logger.Error(newErr, "partial success: resync appliance by id")
-		return appliance, &failedBladeIds, &common.RequestError{StatusCode: common.StatusApplianceResyncPartialSuccess, Err: newErr}
+		return appliance, &common.RequestError{StatusCode: common.StatusApplianceResyncPartialSuccess, Err: newErr}
 	} else {
 		newErr := fmt.Errorf("resync appliance by id [%s] failure: %w", appliance.Id, err)
 		logger.Error(newErr, "failure: resync appliance by id")
-		return nil, &failedBladeIds, &common.RequestError{StatusCode: common.StatusApplianceResyncFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: common.StatusApplianceResyncFailure, Err: newErr}
 	}
 }
 
@@ -263,7 +256,7 @@ func AddHost(ctx context.Context, c *openapi.Credentials) (*Host, error) {
 	}
 
 	// Add host to device cache
-	deviceCache.AddHost(host)
+	deviceCache.AddHost(host) // ignore error, duplicate check done above
 
 	// Add host to datastore
 	datastore.DStore().GetDataStore().AddHostDatum(c)
@@ -300,23 +293,17 @@ func DeleteHostById(ctx context.Context, hostId string) (*Host, error) {
 		// Currently, backend ALWAYS deletes the host session from the backend map.
 		// Delete host from manager cache and datastore as well
 		logger.V(2).Info("force host deletion after backend delete session failure", "hostId", host.Id)
-		deviceCache.DeleteHostById(host.Id)
-		datastore.DStore().GetDataStore().DeleteHostDatumById(host.Id)
-		datastore.DStore().Store()
 
-		return nil, &common.RequestError{StatusCode: common.StatusHostDeleteSessionFailure, Err: newErr}
+		deleteHost(host.Id)
+
+		return host, &common.RequestError{StatusCode: common.StatusHostDeleteSessionFailure, Err: newErr}
 	}
 
-	// delete host from manager cache
-	h := deviceCache.DeleteHostById(host.Id)
+	deleteHost(host.Id)
 
-	// delete host from datastore
-	datastore.DStore().GetDataStore().DeleteHostDatumById(host.Id)
-	datastore.DStore().Store()
+	logger.V(2).Info("success: delete host by id", "hostId", host.Id)
 
-	logger.V(2).Info("success: delete host by id", "hostId", h.Id)
-
-	return h, nil
+	return host, nil
 }
 
 func GetAllHostIds() []string {
@@ -357,7 +344,7 @@ func ResyncHostById(ctx context.Context, hostId string) (*Host, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> ResyncHostById: ", "hostId", hostId)
 
-	// query cache
+	// query device cache
 	host, ok := deviceCache.GetHostByIdOk(hostId)
 	if !ok || host == nil {
 		newErr := fmt.Errorf("failed to get host [%s]", hostId)
@@ -367,7 +354,22 @@ func ResyncHostById(ctx context.Context, hostId string) (*Host, error) {
 
 	host.UpdateConnectionStatusBackend(ctx)
 
-	logger.V(2).Info("success: resync host", "hostId", host.Id)
+	logger.V(2).Info("success: resync host", "status", host.Status, "hostId", host.Id)
 
 	return host, nil
+}
+
+////////////////////////////////////
+//////// Helper Functions //////////
+////////////////////////////////////
+
+func deleteHost(hostId string) *Host {
+	// delete host from manager cache
+	h := deviceCache.DeleteHostById(hostId)
+
+	// delete host from datastore
+	datastore.DStore().GetDataStore().DeleteHostDatumById(hostId)
+	datastore.DStore().Store()
+
+	return h
 }
