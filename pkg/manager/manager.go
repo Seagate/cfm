@@ -8,6 +8,7 @@ import (
 
 	"cfm/pkg/backend"
 	"cfm/pkg/common"
+	"cfm/pkg/common/datastore"
 	"cfm/pkg/openapi"
 
 	"k8s.io/klog/v2"
@@ -261,8 +262,12 @@ func AddHost(ctx context.Context, c *openapi.Credentials) (*Host, error) {
 		return nil, &common.RequestError{StatusCode: common.StatusManagerInitializationFailure, Err: newErr}
 	}
 
-	// Cache it
+	// Add host to device cache
 	deviceCache.AddHost(host)
+
+	// Add host to datastore
+	datastore.DStore().GetDataStore().AddHost(c)
+	datastore.DStore().Store()
 
 	logger.V(2).Info("success: add host", "hostId", host.Id)
 
@@ -293,15 +298,21 @@ func DeleteHostById(ctx context.Context, hostId string) (*Host, error) {
 		logger.Error(newErr, "failure: delete host by id")
 
 		// Currently, backend ALWAYS deletes the host session from the backend map.
-		// Delete host from manager map as well.
-		logger.V(2).Info("force host deletion after backend session failure", "hostId", host.Id)
+		// Delete host from manager cache and datastore as well
+		logger.V(2).Info("force host deletion after backend delete session failure", "hostId", host.Id)
 		deviceCache.DeleteHostById(host.Id)
+		datastore.DStore().GetDataStore().DeleteHost(host.Id)
+		datastore.DStore().Store()
 
 		return nil, &common.RequestError{StatusCode: common.StatusHostDeleteSessionFailure, Err: newErr}
 	}
 
-	// delete host from cache
+	// delete host from manager cache
 	h := deviceCache.DeleteHostById(host.Id)
+
+	// delete host from datastore
+	datastore.DStore().GetDataStore().DeleteHost(host.Id)
+	datastore.DStore().Store()
 
 	logger.V(2).Info("success: delete host by id", "hostId", h.Id)
 

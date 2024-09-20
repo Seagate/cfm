@@ -149,25 +149,23 @@ func (c *DataStore) UpdateBlade(ctx context.Context, r *BladeUpdateRequest) erro
 	return appliance.UpdateBlade(ctx, r)
 }
 
-type UpdateHostRequest struct {
+type UpdateHostStatusRequest struct {
 	HostId string
 	Status common.ConnectionStatus
 }
 
-// UpdateHost: Update a host's data
-func (c *DataStore) UpdateHost(ctx context.Context, r *UpdateHostRequest) error {
+// UpdateHost: Update a host's status
+func (c *DataStore) UpdateHostStatus(ctx context.Context, r *UpdateHostStatusRequest) error {
 	logger := klog.FromContext(ctx)
 
 	host, exists := c.SavedHosts[r.HostId]
 	if !exists {
-		err := fmt.Errorf("host [%s] not found in data store during host update", r.HostId)
-		logger.Error(err, "failure: update host")
+		err := fmt.Errorf("host [%s] not found in data store during host status update", r.HostId)
+		logger.Error(err, "failure: update host status")
 		return err
 	}
 
-	if r.Status != "" {
-		host.ConnectionStatus = r.Status
-	}
+	host.ConnectionStatus = r.Status
 
 	return nil
 }

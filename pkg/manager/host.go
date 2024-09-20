@@ -9,6 +9,7 @@ import (
 
 	"cfm/pkg/backend"
 	"cfm/pkg/common"
+	"cfm/pkg/common/datastore"
 	"cfm/pkg/openapi"
 
 	"k8s.io/klog/v2"
@@ -329,6 +330,15 @@ func (h *Host) GetMemoryTotals(ctx context.Context) (*ResponseHostMemoryTotals, 
 
 	var local, remote int32
 
+	response := ResponseHostMemoryTotals{
+		LocalMemoryMib:  0,
+		RemoteMemoryMib: 0,
+	}
+
+	if h.Status == common.OFFLINE {
+		return &response, nil
+	}
+
 	for _, memory := range h.Memory {
 		totals, err := memory.GetTotals(ctx)
 		if err != nil || totals == nil {
@@ -341,10 +351,8 @@ func (h *Host) GetMemoryTotals(ctx context.Context) (*ResponseHostMemoryTotals, 
 		remote += totals.RemoteMemoryMib
 	}
 
-	response := ResponseHostMemoryTotals{
-		LocalMemoryMib:  local,
-		RemoteMemoryMib: remote,
-	}
+	response.LocalMemoryMib = local
+	response.RemoteMemoryMib = remote
 
 	logger.V(2).Info("success: get memory totals", "hostId", h.Id)
 
@@ -430,6 +438,14 @@ func (h *Host) UpdateConnectionStatusBackend(ctx context.Context) {
 	} else {
 		h.Status = common.ONLINE
 	}
+
+	// Update datastore status
+	r := datastore.UpdateHostStatusRequest{
+		HostId: h.Id,
+		Status: common.ConnectionStatus(h.Status),
+	}
+	datastore.DStore().GetDataStore().UpdateHostStatus(ctx, &r)
+	datastore.DStore().Store()
 
 	logger.V(2).Info("update host status(backend)", "status", h.Status, "hostId", h.Id)
 }
