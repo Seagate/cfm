@@ -388,7 +388,7 @@ func (cfm *CfmApiService) BladesGetMemory(ctx context.Context, applianceId strin
 	}
 
 	// order returned uris by memory id
-	memoryIds := blade.GetAllMemoryIds()
+	memoryIds := blade.GetAllMemoryIds(ctx)
 	sort.Strings(memoryIds)
 
 	memory := blade.GetMemory(ctx)
@@ -422,12 +422,17 @@ func (cfm *CfmApiService) BladesGetMemoryById(ctx context.Context, applianceId s
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
-	details, err := memory.GetDetails(ctx)
-	if err != nil {
-		return formatErrorResp(ctx, err.(*common.RequestError))
-	}
+	if memory != nil {
+		details, err := memory.GetDetails(ctx)
+		if err != nil {
+			return formatErrorResp(ctx, err.(*common.RequestError))
+		}
 
-	return openapi.Response(http.StatusOK, details), nil
+		return openapi.Response(http.StatusOK, details), nil
+
+	} else {
+		return openapi.Response(http.StatusOK, openapi.MemoryRegion{}), nil
+	}
 }
 
 // BladesGetPortById -
@@ -447,12 +452,17 @@ func (cfm *CfmApiService) BladesGetPortById(ctx context.Context, applianceId str
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
-	details, err := port.GetDetails(ctx)
-	if err != nil {
-		return formatErrorResp(ctx, err.(*common.RequestError))
-	}
+	if port != nil {
+		details, err := port.GetDetails(ctx)
+		if err != nil {
+			return formatErrorResp(ctx, err.(*common.RequestError))
+		}
 
-	return openapi.Response(http.StatusOK, details), nil
+		return openapi.Response(http.StatusOK, details), nil
+
+	} else {
+		return openapi.Response(http.StatusOK, openapi.PortInformation{}), nil
+	}
 }
 
 // BladesGetPorts -
@@ -468,7 +478,7 @@ func (cfm *CfmApiService) BladesGetPorts(ctx context.Context, applianceId string
 	}
 
 	// order returned uris by port id
-	portIds := blade.GetAllPortIds()
+	portIds := blade.GetAllPortIds(ctx)
 	sort.Strings(portIds)
 
 	ports := blade.GetPorts(ctx)
@@ -502,12 +512,17 @@ func (cfm *CfmApiService) BladesGetResourceById(ctx context.Context, applianceId
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
-	details, err := resource.GetDetails(ctx)
-	if err != nil {
-		return formatErrorResp(ctx, err.(*common.RequestError))
-	}
+	if resource != nil {
+		details, err := resource.GetDetails(ctx)
+		if err != nil {
+			return formatErrorResp(ctx, err.(*common.RequestError))
+		}
 
-	return openapi.Response(http.StatusOK, details), nil
+		return openapi.Response(http.StatusOK, details), nil
+
+	} else {
+		return openapi.Response(http.StatusOK, openapi.MemoryResourceBlock{}), nil
+	}
 }
 
 // BladesGetResources -
@@ -523,7 +538,7 @@ func (cfm *CfmApiService) BladesGetResources(ctx context.Context, applianceId st
 	}
 
 	// order returned uris by resourse id
-	resourceIds := blade.GetAllResourceIds()
+	resourceIds := blade.GetAllResourceIds(ctx)
 	sort.Strings(resourceIds)
 
 	resources := blade.GetResources(ctx)
@@ -632,7 +647,7 @@ func (cfm *CfmApiService) HostGetMemory(ctx context.Context, hostId string) (ope
 	}
 
 	// order returned uris by memory id
-	memoryIds := host.GetAllMemoryIds()
+	memoryIds := host.GetAllMemoryIds(ctx)
 	sort.Strings(memoryIds)
 
 	memory := host.GetMemory(ctx)
@@ -818,7 +833,7 @@ func (cfm *CfmApiService) HostsGetMemoryDevices(ctx context.Context, hostId stri
 	}
 
 	// order returned uris by memory device id
-	memdevIds := host.GetAllMemoryDeviceIds()
+	memdevIds := host.GetAllMemoryDeviceIds(ctx)
 	sort.Strings(memdevIds)
 
 	memdevs := host.GetMemoryDevices(ctx)
@@ -863,7 +878,7 @@ func (cfm *CfmApiService) HostsGetPorts(ctx context.Context, hostId string) (ope
 	}
 
 	// order returned uris by port id
-	portIds := host.GetAllPortIds()
+	portIds := host.GetAllPortIds(ctx)
 	sort.Strings(portIds)
 
 	ports := host.GetPorts(ctx)

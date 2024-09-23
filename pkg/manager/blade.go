@@ -128,7 +128,7 @@ func (b *Blade) AssignMemory(ctx context.Context, r *RequestAssignMemory) (*open
 	if len(memory.resourceIds) != 0 {
 		resourcesToUpdate = memory.resourceIds
 	} else {
-		resourcesToUpdate = b.GetAllResourceIds()
+		resourcesToUpdate = b.GetAllResourceIds(ctx)
 	}
 	for _, resourceId := range resourcesToUpdate {
 		resource, err := b.GetResourceById(ctx, resourceId)
@@ -333,7 +333,7 @@ func (b *Blade) FreeMemoryById(ctx context.Context, memoryId string) (*openapi.M
 	if len(memory.resourceIds) != 0 {
 		resourcesToUpdate = memory.resourceIds
 	} else {
-		resourcesToUpdate = b.GetAllResourceIds()
+		resourcesToUpdate = b.GetAllResourceIds(ctx)
 	}
 	for _, resourceId := range resourcesToUpdate {
 		resource, err := b.GetResourceById(ctx, resourceId)
@@ -365,33 +365,30 @@ func (b *Blade) FreeMemoryById(ctx context.Context, memoryId string) (*openapi.M
 	return &memoryRegion, nil
 }
 
-func (b *Blade) GetAllMemoryIds() []string {
+func (b *Blade) GetAllMemoryIds(ctx context.Context) []string {
 	var ids []string
 
-	// CACHE: Get
-	for id := range b.Memory {
+	for id := range b.GetMemory(ctx) {
 		ids = append(ids, id)
 	}
 
 	return ids
 }
 
-func (b *Blade) GetAllPortIds() []string {
+func (b *Blade) GetAllPortIds(ctx context.Context) []string {
 	var ids []string
 
-	// CACHE: Get
-	for id := range b.Ports {
+	for id := range b.GetPorts(ctx) {
 		ids = append(ids, id)
 	}
 
 	return ids
 }
 
-func (b *Blade) GetAllResourceIds() []string {
+func (b *Blade) GetAllResourceIds(ctx context.Context) []string {
 	var ids []string
 
-	// CACHE: Get
-	for id := range b.Resources {
+	for id := range b.GetResources(ctx) {
 		ids = append(ids, id)
 	}
 
@@ -401,6 +398,11 @@ func (b *Blade) GetAllResourceIds() []string {
 func (b *Blade) GetMemoryById(ctx context.Context, memoryId string) (*BladeMemory, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetMemoryById: ", "memoryId", memoryId, "bladeId", b.Id, "applianceId", b.ApplianceId)
+
+	if !b.IsOnline(ctx) {
+		// If blade offline, not an error.  Just no information to return.
+		return nil, nil
+	}
 
 	memory, ok := b.Memory[memoryId]
 	if !ok {
@@ -418,6 +420,11 @@ func (b *Blade) GetMemory(ctx context.Context) map[string]*BladeMemory {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetMemory: ", "bladeId", b.Id, "applianceId", b.ApplianceId)
 
+	if !b.IsOnline(ctx) {
+		// If blade offline, not an error.  Just no information to return.
+		return make(map[string]*BladeMemory)
+	}
+
 	memory := b.Memory
 
 	logger.V(2).Info("success: get memory", "count", len(memory), "bladeId", b.Id, "applianceId", b.ApplianceId)
@@ -430,9 +437,12 @@ func (b *Blade) GetMemoryBackend(ctx context.Context) ([]string, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetMemoryBackend: ", "bladeId", b.Id, "applianceId", b.ApplianceId)
 
-	// HARDWARE: Get
+	if !b.IsOnline(ctx) {
+		// If blade offline, not an error.  Just no information to return.
+		return make([]string, 0), nil
+	}
+
 	req := backend.GetMemoryRequest{}
-	// get memory ids from backend
 	response, err := b.backendOps.GetMemory(ctx, &backend.ConfigurationSettings{}, &req)
 	if err != nil || response == nil {
 		newErr := fmt.Errorf("get memory (backend) [%s] failure on blade [%s]: %w", b.backendOps.GetBackendInfo(ctx).BackendName, b.Id, err)
@@ -457,6 +467,11 @@ func (b *Blade) GetPortById(ctx context.Context, portId string) (*CxlBladePort, 
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetPortById: ", "portId", portId, "bladeId", b.Id, "applianceId", b.ApplianceId)
 
+	if !b.IsOnline(ctx) {
+		// If blade offline, not an error.  Just no information to return.
+		return nil, nil
+	}
+
 	port, ok := b.Ports[portId]
 	if !ok {
 		newErr := fmt.Errorf("port [%s] not found on appliance [%s] blade [%s] ", portId, b.ApplianceId, b.Id)
@@ -473,6 +488,11 @@ func (b *Blade) GetPorts(ctx context.Context) map[string]*CxlBladePort {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetPorts: ", "bladeId", b.Id, "applianceId", b.ApplianceId)
 
+	if !b.IsOnline(ctx) {
+		// If blade offline, not an error.  Just no information to return.
+		return make(map[string]*CxlBladePort)
+	}
+
 	ports := b.Ports
 
 	logger.V(2).Info("success: get ports(blade) (cache)", "count", len(ports), "bladeId", b.Id, "applianceId", b.ApplianceId)
@@ -484,6 +504,11 @@ func (b *Blade) GetPorts(ctx context.Context) map[string]*CxlBladePort {
 func (b *Blade) GetPortsBackend(ctx context.Context) ([]string, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetPortsBackend: ", "bladeId", b.Id, "applianceId", b.ApplianceId)
+
+	if !b.IsOnline(ctx) {
+		// If blade offline, not an error.  Just no information to return.
+		return make([]string, 0), nil
+	}
 
 	req := backend.GetPortsRequest{}
 	response, err := b.backendOps.GetPorts(ctx, &backend.ConfigurationSettings{}, &req)
@@ -502,6 +527,11 @@ func (b *Blade) GetResourceById(ctx context.Context, resourceId string) (*BladeR
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetResourceById: ", "resourceId", resourceId, "bladeId", b.Id, "applianceId", b.ApplianceId)
 
+	if !b.IsOnline(ctx) {
+		// If blade offline, not an error.  Just no information to return.
+		return nil, nil
+	}
+
 	resource, ok := b.Resources[resourceId]
 	if !ok {
 		newErr := fmt.Errorf("resource [%s] not found on appliance [%s] blade [%s] ", resourceId, b.ApplianceId, b.Id)
@@ -518,6 +548,11 @@ func (b *Blade) GetResources(ctx context.Context) map[string]*BladeResource {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetResources: ", "bladeId", b.Id, "applianceId", b.ApplianceId)
 
+	if !b.IsOnline(ctx) {
+		// If blade offline, not an error.  Just no information to return.
+		return make(map[string]*BladeResource)
+	}
+
 	resources := b.Resources
 
 	logger.V(2).Info("success: get resources(cache)", "count", len(resources), "bladeId", b.Id, "applianceId", b.ApplianceId)
@@ -529,6 +564,11 @@ func (b *Blade) GetResources(ctx context.Context) map[string]*BladeResource {
 func (b *Blade) GetResourcesBackend(ctx context.Context) ([]string, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetResourcesBackend: ", "bladeId", b.Id, "applianceId", b.ApplianceId)
+
+	if !b.IsOnline(ctx) {
+		// If blade offline, not an error.  Just no information to return.
+		return make([]string, 0), nil
+	}
 
 	req := backend.MemoryResourceBlocksRequest{}
 	response, err := b.backendOps.GetMemoryResourceBlocks(ctx, &backend.ConfigurationSettings{}, &req)
@@ -554,12 +594,7 @@ func (b *Blade) GetResourceTotals(ctx context.Context) (*ResponseResourceTotals,
 		TotalMemoryAllocatedMiB: 0,
 	}
 
-	if b.Status == common.OFFLINE {
-		return &response, nil
-	}
-
-	resources := b.GetResources(ctx)
-	for _, resource := range resources {
+	for _, resource := range b.GetResources(ctx) {
 		totals, err := resource.GetTotals(ctx)
 		if err != nil || totals == nil {
 			newErr := fmt.Errorf("failed to get resource totals: appliance [%s] blade [%s] resource [%s]: %w", b.ApplianceId, b.Id, resource.Id, err)
@@ -574,7 +609,7 @@ func (b *Blade) GetResourceTotals(ctx context.Context) (*ResponseResourceTotals,
 	response.TotalMemoryAvailableMiB = totalAvail
 	response.TotalMemoryAllocatedMiB = totalAlloc
 
-	logger.V(2).Info("success: get resource totals", "bladeId", b.Id, "applianceId", b.ApplianceId)
+	logger.V(2).Info("success: get resource totals", "totals", response, "bladeId", b.Id, "applianceId", b.ApplianceId)
 
 	return &response, nil
 }
@@ -593,10 +628,14 @@ func (b *Blade) InvalidateCache() {
 	}
 }
 
+func (b *Blade) IsOnline(ctx context.Context) bool {
+	return b.Status == common.ONLINE
+}
+
 // UpdateConnectionStatusBackend - Query the blade root service to verify continued connection and update the object status accordingly.
 func (b *Blade) UpdateConnectionStatusBackend(ctx context.Context) {
 	logger := klog.FromContext(ctx)
-	logger.V(4).Info(">>>>>> GetConnectionsStatusBackend: ", "bladeId", b.Id)
+	logger.V(4).Info(">>>>>> UpdateConnectionStatusBackend: ", "bladeId", b.Id)
 
 	req := backend.GetRootServiceRequest{}
 	response, err := b.backendOps.GetRootService(ctx, &backend.ConfigurationSettings{}, &req)
