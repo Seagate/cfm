@@ -35,7 +35,7 @@ type CxlBladePort struct {
 	backendOps backend.BackendOperations
 }
 
-func NewCxlBladePortById(ctx context.Context, applianceId, bladeId, portId string, ops backend.BackendOperations) (*CxlBladePort) {
+func NewCxlBladePortById(ctx context.Context, applianceId, bladeId, portId string, ops backend.BackendOperations) *CxlBladePort {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> NewCxlBladePortById: ", "portId", portId, "bladeId", bladeId, "applianceId", applianceId, "backend", ops.GetBackendInfo(ctx).BackendName)
 

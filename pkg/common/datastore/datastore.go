@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 
+	"cfm/pkg/common"
 	"cfm/pkg/openapi"
 
 	"k8s.io/klog/v2"
@@ -16,59 +17,55 @@ const (
 )
 
 type DataStore struct {
-	SavedAppliances map[string]*ApplianceDataStore `json:"saved-appliances"`
-	SavedHosts      map[string]*HostDataStore      `json:"saved-hosts"`
+	ApplianceData map[string]*ApplianceDatum `json:"appliance-data"`
+	HostData      map[string]*HostDatum      `json:"host-data"`
 }
 
 func NewDataStore() *DataStore {
 	return &DataStore{
-		SavedAppliances: make(map[string]*ApplianceDataStore),
-		SavedHosts:      make(map[string]*HostDataStore),
+		ApplianceData: make(map[string]*ApplianceDatum),
+		HostData:      make(map[string]*HostDatum),
 	}
 }
 
-// AddAppliance: Add a new appliance to the data store
-func (c *DataStore) AddAppliance(creds *openapi.Credentials) {
-	c.SavedAppliances[creds.CustomId] = NewApplianceDataStore(creds)
+// AddApplianceDatum: Add a new appliance datum to the data store
+func (c *DataStore) AddApplianceDatum(creds *openapi.Credentials) {
+	c.ApplianceData[creds.CustomId] = NewApplianceDatum(creds)
 }
 
-// AddBlade: Add a new blade to the data store
-func (c *DataStore) AddBlade(creds *openapi.Credentials, applianceId string) error {
-	appliance, exists := c.SavedAppliances[applianceId]
+// AddHostDatum: Add a new host datum to the data store
+func (c *DataStore) AddHostDatum(creds *openapi.Credentials) {
+	c.HostData[creds.CustomId] = NewHostDatum(creds)
+}
+
+// DeleteApplianceDatumById: Delete an appliance from the data store
+func (c *DataStore) DeleteApplianceDatumById(applianceId string) {
+	delete(c.ApplianceData, applianceId)
+}
+
+// DeleteHostDatumById: Delete a host datum from the data store
+func (c *DataStore) DeleteHostDatumById(hostId string) {
+	delete(c.HostData, hostId)
+}
+
+// GetApplianceDatumById: Retrieve an appliance datum from the data store
+func (c *DataStore) GetApplianceDatumById(applianceId string) (*ApplianceDatum, error) {
+	datum, exists := c.ApplianceData[applianceId]
 	if !exists {
-		return fmt.Errorf("appliance [%s] not found in data store add", applianceId)
+		return nil, fmt.Errorf("appliance datum [%s] not found in data store", applianceId)
 	}
 
-	appliance.AddBlade(creds)
-
-	return nil
+	return datum, nil
 }
 
-// AddHost: Add a new host to the data store
-func (c *DataStore) AddHost(creds *openapi.Credentials) {
-	c.SavedHosts[creds.CustomId] = NewHostDataStore(creds)
-}
-
-// DeleteAppliance: Delete an appliance from the data store
-func (c *DataStore) DeleteAppliance(applianceId string) {
-	delete(c.SavedAppliances, applianceId)
-}
-
-// DeleteBlade: Delete a blade from an appliance's data store
-func (c *DataStore) DeleteBlade(bladeId, applianceId string) error {
-	appliance, exists := c.SavedAppliances[applianceId]
+// GetHostDatumById: Retrieve a host datum from the data store
+func (c *DataStore) GetHostDatumById(hostId string) (*HostDatum, error) {
+	datum, exists := c.HostData[hostId]
 	if !exists {
-		return fmt.Errorf("appliance [%s] not found in data store delete", applianceId)
+		return nil, fmt.Errorf("host datum [%s] not found in data store", hostId)
 	}
 
-	appliance.DeleteBlade(bladeId)
-
-	return nil
-}
-
-// DeleteHost: Delete an host from the data store
-func (c *DataStore) DeleteHost(hostId string) {
-	delete(c.SavedHosts, hostId)
+	return datum, nil
 }
 
 // Init: initialize the data store using command line args, ENV, or a file
@@ -79,44 +76,75 @@ func (c *DataStore) InitDataStore(ctx context.Context, args []string) error {
 	return nil
 }
 
-type ApplianceDataStore struct {
-	Credentials *openapi.Credentials       `json:"credentials"`
-	SavedBlades map[string]*BladeDataStore `json:"saved-blades"`
+type ApplianceDatum struct {
+	Credentials      *openapi.Credentials    `json:"credentials"`
+	BladeData        map[string]*BladeDatum  `json:"blade-data"`
+	ConnectionStatus common.ConnectionStatus `json:"connection-status"`
 }
 
-func NewApplianceDataStore(creds *openapi.Credentials) *ApplianceDataStore {
-	return &ApplianceDataStore{
-		Credentials: creds,
-		SavedBlades: make(map[string]*BladeDataStore),
+func NewApplianceDatum(creds *openapi.Credentials) *ApplianceDatum {
+	return &ApplianceDatum{
+		Credentials:      creds,
+		BladeData:        make(map[string]*BladeDatum),
+		ConnectionStatus: common.NOT_APPLICABLE, // Will use for single-BMC appliance
 	}
 }
 
-func (c *ApplianceDataStore) AddBlade(creds *openapi.Credentials) {
-	c.SavedBlades[creds.CustomId] = NewBladeDataStore(creds)
+func (a *ApplianceDatum) AddBladeDatum(creds *openapi.Credentials) {
+	a.BladeData[creds.CustomId] = NewBladeDatum(creds)
 }
 
-func (c *ApplianceDataStore) DeleteBlade(bladeId string) {
-	delete(c.SavedBlades, bladeId)
+func (a *ApplianceDatum) DeleteBladeDatumById(bladeId string) {
+	delete(a.BladeData, bladeId)
 }
 
-type BladeDataStore struct {
-	Credentials *openapi.Credentials `json:"credentials"`
+func (a *ApplianceDatum) GetBladeDatumById(ctx context.Context, bladeId string) (*BladeDatum, error) {
+	logger := klog.FromContext(ctx)
+
+	blade, exists := a.BladeData[bladeId]
+	if !exists {
+		err := fmt.Errorf("blade datum [%s] not found in appliance data [%s] in data store", bladeId, a.Credentials.CustomId)
+		logger.Error(err, "failure: update blade")
+		return nil, err
+	}
+
+	return blade, nil
 }
 
-func NewBladeDataStore(creds *openapi.Credentials) *BladeDataStore {
-	return &BladeDataStore{
-		Credentials: creds,
+func (a *ApplianceDatum) SetConnectionStatus(status common.ConnectionStatus) {
+	a.ConnectionStatus = status
+}
+
+type BladeDatum struct {
+	Credentials      *openapi.Credentials    `json:"credentials"`
+	ConnectionStatus common.ConnectionStatus `json:"connection-status"`
+}
+
+func NewBladeDatum(creds *openapi.Credentials) *BladeDatum {
+	return &BladeDatum{
+		Credentials:      creds,
+		ConnectionStatus: common.ONLINE,
 	}
 }
 
-type HostDataStore struct {
-	Credentials *openapi.Credentials `json:"credentials"`
+func (b *BladeDatum) SetConnectionStatus(status *common.ConnectionStatus) {
+	b.ConnectionStatus = *status
 }
 
-func NewHostDataStore(creds *openapi.Credentials) *HostDataStore {
-	return &HostDataStore{
-		Credentials: creds,
+type HostDatum struct {
+	Credentials      *openapi.Credentials    `json:"credentials"`
+	ConnectionStatus common.ConnectionStatus `json:"connection-status"`
+}
+
+func NewHostDatum(creds *openapi.Credentials) *HostDatum {
+	return &HostDatum{
+		Credentials:      creds,
+		ConnectionStatus: common.ONLINE,
 	}
+}
+
+func (h *HostDatum) SetConnectionStatus(status *common.ConnectionStatus) {
+	h.ConnectionStatus = *status
 }
 
 ////////////////////////////////////////
@@ -131,9 +159,8 @@ func ReloadDataStore(ctx context.Context, s openapi.DefaultAPIServicer, c *DataS
 
 	logger.V(2).Info("cfm-service: restoring saved appliances")
 	var appliancesToDelete []string
-	for applianceId, appliance := range c.SavedAppliances {
-		appliance.Credentials.CustomId = applianceId
-		_, err = s.AppliancesPost(ctx, *appliance.Credentials)
+	for applianceId, applianceDatum := range c.ApplianceData {
+		_, err = s.AppliancesPost(ctx, *applianceDatum.Credentials)
 		if err != nil {
 			logger.V(2).Info("cfm-service: appliance restore failure", "applianceId", applianceId)
 			appliancesToDelete = append(appliancesToDelete, applianceId)
@@ -141,9 +168,8 @@ func ReloadDataStore(ctx context.Context, s openapi.DefaultAPIServicer, c *DataS
 		}
 
 		bladesToDelete := make(map[string]string)
-		for bladeId, blade := range appliance.SavedBlades {
-			blade.Credentials.CustomId = bladeId
-			_, err = s.BladesPost(ctx, applianceId, *blade.Credentials)
+		for bladeId, bladeDatum := range applianceDatum.BladeData {
+			_, err = s.BladesPost(ctx, applianceId, *bladeDatum.Credentials)
 			if err != nil {
 				logger.V(2).Info("cfm-service: blade restore failure", "bladeId", bladeId, "applianceId", applianceId)
 				bladesToDelete[applianceId] = bladeId
@@ -151,27 +177,20 @@ func ReloadDataStore(ctx context.Context, s openapi.DefaultAPIServicer, c *DataS
 		}
 
 		for applianceId, bladeId := range bladesToDelete {
-			delete(c.SavedAppliances[applianceId].SavedBlades, bladeId)
+			delete(c.ApplianceData[applianceId].BladeData, bladeId)
 		}
 	}
 
 	for _, applianceId := range appliancesToDelete {
-		delete(c.SavedAppliances, applianceId)
+		delete(c.ApplianceData, applianceId)
 	}
 
 	logger.V(2).Info("cfm-service: restoring saved hosts")
-	var hostsToDelete []string
-	for hostId, host := range c.SavedHosts {
-		host.Credentials.CustomId = hostId
-		_, err = s.HostsPost(ctx, *host.Credentials)
+	for hostId, hostDatum := range c.HostData {
+		_, err = s.HostsPost(ctx, *hostDatum.Credentials)
 		if err != nil {
-			logger.V(2).Info("cfm-service: host restore failure", "hostId", hostId)
-			hostsToDelete = append(hostsToDelete, hostId)
+			logger.V(2).Info("cfm-service: host datum restore failure", "hostId", hostId)
 			continue
 		}
-	}
-
-	for _, hostId := range hostsToDelete {
-		delete(c.SavedHosts, hostId)
 	}
 }

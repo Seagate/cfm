@@ -490,6 +490,21 @@ func (session *Session) auth() error {
 	return response.err
 }
 
+// GetRootService: Retrieve root service from endpoint
+func (service *httpfishService) GetRootService(ctx context.Context, settings *ConfigurationSettings, req *GetRootServiceRequest) (*GetRootServiceResponse, error) {
+	session := service.service.session.(*Session)
+
+	response := session.query(HTTPOperation.GET, redfish_serviceroot)
+	if response.err != nil {
+		return nil, fmt.Errorf("failed to get root service: %w", response.err)
+	}
+
+	name, _ := response.stringFromJSON("Name")
+	uuid, _ := response.stringFromJSON("UUID")
+
+	return &GetRootServiceResponse{Name: name, Uuid: uuid}, nil
+}
+
 // CreateSession: Create a new session with an endpoint service
 func (service *httpfishService) CreateSession(ctx context.Context, settings *ConfigurationSettings, req *CreateSessionRequest) (*CreateSessionResponse, error) {
 	logger := klog.FromContext(ctx)

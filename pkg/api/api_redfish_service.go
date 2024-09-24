@@ -287,7 +287,7 @@ func (cfm *CfmApiService) RedfishV1ChassisChassisIdPCIeDevicesGet(ctx context.Co
 	}
 
 	// order returned uris by memory device id
-	memdevIds := host.GetAllMemoryDeviceIds()
+	memdevIds := host.GetAllMemoryDeviceIds(ctx)
 	sort.Strings(memdevIds)
 
 	members := []redfishapi.OdataV4IdRef{}
@@ -588,7 +588,7 @@ func (cfm *CfmApiService) RedfishV1FabricsFabricIdConnectionsGet(ctx context.Con
 		if err != nil {
 			return formatRedfishErrorResp(ctx, err.(*common.RequestError))
 		}
-		memoryIds := blade.GetAllMemoryIds()
+		memoryIds := blade.GetAllMemoryIds(ctx)
 		sort.Strings(memoryIds)
 
 		for _, memId := range memoryIds {
@@ -652,7 +652,7 @@ func (cfm *CfmApiService) RedfishV1FabricsFabricIdConnectionsPost(ctx context.Co
 	endpointOdataId := connectionV131Connection.Links.TargetEndpoints[0].OdataId
 
 	for bladeId, blade := range appliance.GetBlades(ctx) {
-		for _, memoryId := range blade.GetAllMemoryIds() {
+		for _, memoryId := range blade.GetAllMemoryIds(ctx) {
 			if fmt.Sprintf("/redfish/v1/Systems/%s/MemoryDomains/%s/MemoryChunks/%s", fabricId, bladeId, memoryId) == memoryChunkOdataId {
 				targetBladeId = bladeId
 				r.MemoryId = memoryId
@@ -662,7 +662,7 @@ func (cfm *CfmApiService) RedfishV1FabricsFabricIdConnectionsPost(ctx context.Co
 		if r.MemoryId == "" {
 			continue
 		}
-		for _, portid := range blade.GetAllPortIds() {
+		for _, portid := range blade.GetAllPortIds(ctx) {
 			if fmt.Sprintf("/redfish/v1/Fabrics/%s/Endpoints/%s", fabricId, bladeId+strings.Replace(portid, "port", "up", 1)) == endpointOdataId {
 				r.PortId = portid
 				break
@@ -784,7 +784,7 @@ func (cfm *CfmApiService) RedfishV1FabricsFabricIdEndpointsGet(ctx context.Conte
 	members := []redfishapi.OdataV4IdRef{}
 	for _, bladeId := range bladeIds {
 		blade, _ := appliance.GetBladeById(ctx, bladeId)
-		for _, portid := range blade.GetAllPortIds() {
+		for _, portid := range blade.GetAllPortIds(ctx) {
 			members = append(members, redfishapi.OdataV4IdRef{
 				OdataId: fmt.Sprintf("/redfish/v1/Fabrics/%s/Endpoints/%s", fabricId, bladeId+strings.Replace(portid, "port", "up", 1))})
 		}
@@ -943,7 +943,7 @@ func (cfm *CfmApiService) RedfishV1FabricsFabricIdSwitchesSwitchIdPortsGet(ctx c
 	}
 
 	// order returned uris by port id
-	portIds := blade.GetAllPortIds()
+	portIds := blade.GetAllPortIds(ctx)
 	sort.Strings(portIds)
 	members := []redfishapi.OdataV4IdRef{}
 	for _, member := range portIds {
@@ -1377,7 +1377,7 @@ func (cfm *CfmApiService) RedfishV1SystemsComputerSystemIdMemoryDomainsMemoryDom
 	}
 
 	// order returned uris by memory id
-	memoryIds := blade.GetAllMemoryIds()
+	memoryIds := blade.GetAllMemoryIds(ctx)
 	sort.Strings(memoryIds)
 	members := []redfishapi.OdataV4IdRef{}
 	for _, member := range memoryIds {
