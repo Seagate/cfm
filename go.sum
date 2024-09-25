@@ -2,6 +2,8 @@ github.com/Seagate/cxl-lib v1.3.2 h1:HcoT4XSCm/tAn/Fo7IW/BY8etVuL7udCOjXToByTcWY
 github.com/Seagate/cxl-lib v1.3.2/go.mod h1:hFfwklF68YS2y1RVgxGMQ6gNoXeof4jHEH4MNUmMYYQ=
 github.com/Seagate/cxl-lib v1.3.3 h1:uiyi/1eOhKEbt4yO9wVZ/ieslOhe1xXgm4HPBN5Ko1g=
 github.com/Seagate/cxl-lib v1.3.3/go.mod h1:hFfwklF68YS2y1RVgxGMQ6gNoXeof4jHEH4MNUmMYYQ=
+github.com/Seagate/cxl-lib v1.3.4 h1:Poo3FLbsgtPuQchCIHK1CtyMeLTLiJO53cvKSOMaY0Q=
+github.com/Seagate/cxl-lib v1.3.4/go.mod h1:hFfwklF68YS2y1RVgxGMQ6gNoXeof4jHEH4MNUmMYYQ=
 github.com/cpuguy83/go-md2man/v2 v2.0.3/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

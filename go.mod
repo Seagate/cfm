@@ -3,7 +3,7 @@ module cfm
 go 1.22.1
 
 require (
-	github.com/Seagate/cxl-lib v1.3.3
+	github.com/Seagate/cxl-lib v1.3.4
 	github.com/facette/natsort v0.0.0-20181210072756-2cd4dd1e2dcb
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
