@@ -38,13 +38,18 @@ docker restart <user-defined-container-name>
 
 ## Excute CLI tool
 
-The user can start a cfm docker container to use the cli tool to interact with the running cfm-service.
+The user can interact with the running cfm docker container (running cfm-service) to utilize the cli tool.
 
 ```bash
-docker run --network=host --entrypoint "/cfm/cfm-cli"  cfm <args>
+docker exec -it <user-defined-container-name> ./cfm-cli <args>
 ```
 
-NOTE: Use \<args\> = "-h" for help
+NOTE: cfm-cli \<args\> usage examples:
+
+```bash
+docker exec -it cfm-container ./cfm-cli -h
+docker exec -it cfm-container ./cfm-cli list appliances
+```
 
 ## Customization
 
