@@ -4,6 +4,7 @@ package serviceWrap
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	service "cfm/pkg/client"
@@ -26,13 +27,23 @@ func BladesAssignMemory(client *service.APIClient, applianceId, bladeId, memoryI
 	// Execute ApiBladesAssignMemoryByIdRequest
 	region, response, err := bladeRequest.Execute()
 	if err != nil {
-		newErr := fmt.Errorf("failure: blade %s memory: %w", operation, err)
-		msg := fmt.Sprintf("%T: Execute FAILURE", bladeRequest)
-		klog.ErrorS(newErr, msg, "response", response, "bladeRequest", bladeRequest)
-		return nil, newErr
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", bladeRequest, err)
+			klog.ErrorS(newErr, "failure: BladesAssignMemory")
+
+			return nil, fmt.Errorf("failure: BladesAssignMemory: %s", newErr)
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			bladeRequest, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.ErrorS(newErr, "failure: BladesAssignMemory")
+
+		return nil, fmt.Errorf("failure: BladesAssignMemory: %s (%s)", status.Status.Message, err)
 	}
 
-	klog.V(3).InfoS("BladesAssignMemory success", "operation", operation, "memoryId", region.GetId(), "portId", region.GetMemoryAppliancePort(), "size", region.GetSizeMiB(), "applId", region.GetMemoryApplianceId(), "bladeId", region.GetMemoryBladeId())
+	klog.V(3).InfoS("sucess: BladesAssignMemory", "operation", operation, "memoryId", region.GetId(), "portId", region.GetMemoryAppliancePort(), "size", region.GetSizeMiB(), "applId", region.GetMemoryApplianceId(), "bladeId", region.GetMemoryBladeId())
 
 	return region, nil
 }

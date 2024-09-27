@@ -4,6 +4,7 @@ package serviceWrap
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	service "cfm/pkg/client"
@@ -12,64 +13,108 @@ import (
 )
 
 func AddHost(client *service.APIClient, creds *service.Credentials) (*service.Host, error) {
-	newReqAddHost := client.DefaultAPI.HostsPost(context.Background())
-	newReqAddHost = newReqAddHost.Credentials(*creds)
-	addedHost, response, err := newReqAddHost.Execute()
+	request := client.DefaultAPI.HostsPost(context.Background())
+	request = request.Credentials(*creds)
+	host, response, err := request.Execute()
 	if err != nil {
-		msg := fmt.Sprintf("%T: Execute FAILURE", newReqAddHost)
-		klog.ErrorS(err, msg, "response", response)
-		return nil, fmt.Errorf("failure: hosts post: %s", err)
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
+			klog.ErrorS(newErr, "failure: AddHost")
+
+			return nil, fmt.Errorf("failure: AddHost: %s", newErr)
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.ErrorS(newErr, "failure: AddHost")
+
+		return nil, fmt.Errorf("failure: AddHost: %s (%s)", status.Status.Message, err)
 	}
 
-	klog.V(3).InfoS("HostsPost success", "hostId", addedHost.GetId())
+	klog.V(3).InfoS("success: AddHost", "hostId", host.GetId())
 
-	return addedHost, nil
+	return host, nil
 }
 
 func DeleteHostById(client *service.APIClient, hostId string) (*service.Host, error) {
-	newReqDelHostById := client.DefaultAPI.HostsDeleteById(context.Background(), hostId)
-	deletedHost, response, err := newReqDelHostById.Execute()
+	request := client.DefaultAPI.HostsDeleteById(context.Background(), hostId)
+	host, response, err := request.Execute()
 	if err != nil {
-		msg := fmt.Sprintf("%T: Execute FAILURE", newReqDelHostById)
-		klog.ErrorS(err, msg, "response", response)
-		return nil, fmt.Errorf("failure: delete host by id failure")
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
+			klog.ErrorS(newErr, "failure: DeleteHostById")
+
+			return nil, fmt.Errorf("failure: DeleteHostById: %s", newErr)
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.ErrorS(newErr, "failure: DeleteHostById")
+
+		return nil, fmt.Errorf("failure: DeleteHostById: %s (%s)", status.Status.Message, err)
 	}
 
-	klog.V(3).InfoS("HostsDeleteById success", "hostId", deletedHost.GetId())
+	klog.V(3).InfoS("success: DeleteHostById", "hostId", host.GetId())
 
-	return deletedHost, nil
+	return host, nil
 }
 
 func GetAllHosts(client *service.APIClient) (*[]*service.Host, error) {
 	var hosts []*service.Host
 
 	//Get existing hosts
-	newReqGetHosts := client.DefaultAPI.HostsGet(context.Background())
-	collection, response, err := newReqGetHosts.Execute()
+	requestGetHosts := client.DefaultAPI.HostsGet(context.Background())
+	collection, response, err := requestGetHosts.Execute()
 	if err != nil {
-		msg := fmt.Sprintf("%T: Execute FAILURE", newReqGetHosts)
-		klog.ErrorS(err, msg, "response", response)
-		return nil, fmt.Errorf("failure: hosts get: %s", err)
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestGetHosts, err)
+			klog.ErrorS(newErr, "failure: GetAllHosts")
+
+			return nil, fmt.Errorf("failure: GetAllHosts: %s", newErr)
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			requestGetHosts, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.ErrorS(newErr, "failure: GetAllHosts")
+
+		return nil, fmt.Errorf("failure: GetAllHosts: %s (%s)", status.Status.Message, err)
 	}
 
-	klog.V(3).InfoS("HostsGet success", "count", collection.GetMemberCount())
+	klog.V(4).InfoS("success: HostsGet", "count", collection.GetMemberCount())
 
 	for _, member := range collection.GetMembers() {
 		id := ReadLastItemFromUri(member.GetUri())
-		newReqGetHostById := client.DefaultAPI.HostsGetById(context.Background(), id)
-		host, response, err := newReqGetHostById.Execute()
+		requestGetHostById := client.DefaultAPI.HostsGetById(context.Background(), id)
+		host, response, err := requestGetHostById.Execute()
 		if err != nil {
-			msg := fmt.Sprintf("%T: Execute FAILURE", newReqGetHostById)
-			klog.ErrorS(err, msg, "response", response)
-			return nil, fmt.Errorf("failure: hosts get by id: %s", err)
+			// Decode the JSON response into a struct
+			var status service.StatusMessage
+			if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+				newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestGetHostById, err)
+				klog.ErrorS(newErr, "failure: GetAllHosts")
+
+				return nil, fmt.Errorf("failure: GetAllHosts: %s", newErr)
+			}
+
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+				requestGetHostById, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+			klog.ErrorS(newErr, "failure: GetAllHosts")
+
+			return nil, fmt.Errorf("failure: GetAllHosts: %s (%s)", status.Status.Message, err)
 		}
 
-		klog.V(3).InfoS("HostsGetById success", "hostId", host.GetId())
+		klog.V(4).InfoS("success: HostsGetById", "hostId", host.GetId())
 
 		hosts = append(hosts, host)
 	}
 
-	klog.V(3).InfoS("Discovered hosts", "count", len(hosts))
+	klog.V(3).InfoS("success: GetAllHosts", "Host Count", len(hosts))
 
 	return &hosts, nil
 }
@@ -78,12 +123,23 @@ func ResyncHostById(client *service.APIClient, hostId string) (*service.Host, er
 	request := client.DefaultAPI.HostsResyncById(context.Background(), hostId)
 	host, response, err := request.Execute()
 	if err != nil {
-		msg := fmt.Sprintf("%T: Execute FAILURE", host)
-		klog.ErrorS(err, msg, "response", response)
-		return nil, fmt.Errorf("failure: resync host by id failure")
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
+			klog.ErrorS(newErr, "failure: ResyncHostById")
+
+			return nil, fmt.Errorf("failure: ResyncHostById: %s", newErr)
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.ErrorS(newErr, "failure: ResyncHostById")
+
+		return nil, fmt.Errorf("failure: ResyncHostById: %s (%s)", status.Status.Message, err)
 	}
 
-	klog.V(3).InfoS("BladesResyncById success", "hostID", host.GetId())
+	klog.V(3).InfoS("success: ResyncHostById", "hostID", host.GetId())
 
 	return host, nil
 }

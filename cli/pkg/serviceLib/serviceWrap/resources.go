@@ -4,6 +4,7 @@ package serviceWrap
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	service "cfm/pkg/client"
@@ -53,15 +54,26 @@ func (s *ResourceBlockSummary) AddResourceSlice(applId, bladeId string, resource
 func FindResourceBlockOnBlade(client *service.APIClient, applId, bladeId, resourceId string) (*service.MemoryResourceBlock, error) {
 	var resourceBlock *service.MemoryResourceBlock
 
-	requestResourceById := client.DefaultAPI.BladesGetResourceById(context.Background(), applId, bladeId, resourceId)
-	resourceBlock, response, err := requestResourceById.Execute()
+	request := client.DefaultAPI.BladesGetResourceById(context.Background(), applId, bladeId, resourceId)
+	resourceBlock, response, err := request.Execute()
 	if err != nil {
-		msg := fmt.Sprintf("%T: Execute FAILURE", requestResourceById)
-		klog.ErrorS(err, msg, "response", response)
-		return nil, fmt.Errorf("failure: get appliance blade resource by id: %s", err)
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
+			klog.ErrorS(newErr, "failure: FindResourceBlockOnBlade")
+
+			return nil, fmt.Errorf("failure: FindResourceBlockOnBlade: %s", newErr)
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.ErrorS(newErr, "failure: FindResourceBlockOnBlade")
+
+		return nil, fmt.Errorf("failure: FindResourceBlockOnBlade: %s (%s)", status.Status.Message, err)
 	}
 
-	klog.V(3).InfoS("BladesGetResourceById success", "applId", applId, "bladeId", bladeId, "resourceId", resourceBlock.GetId())
+	klog.V(3).InfoS("FindResourceBlockOnBlade success", "applId", applId, "bladeId", bladeId, "resourceId", resourceBlock.GetId())
 
 	return resourceBlock, nil
 }
@@ -72,26 +84,48 @@ func GetAllResourceBlocksForBlade(client *service.APIClient, applId, bladeId str
 	requestResources := client.DefaultAPI.BladesGetResources(context.Background(), applId, bladeId)
 	resourceColl, response, err := requestResources.Execute()
 	if err != nil {
-		msg := fmt.Sprintf("%T: Execute FAILURE", requestResources)
-		klog.ErrorS(err, msg, "response", response)
-		// return nil, fmt.Errorf("failure: get appliance blade resources: %s", err)
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestResources, err)
+			klog.ErrorS(newErr, "failure: GetAllResourceBlocksForBlade")
+
+			return nil, fmt.Errorf("failure: GetAllResourceBlocksForBlade: %s", newErr)
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			requestResources, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.ErrorS(newErr, "failure: GetAllResourceBlocksForBlade")
+
+		// return nil, fmt.Errorf("failure: GetAllResourceBlocksForBlade: %s (%s)", status.Status.Message, err)
 		return &resources, nil //TODO: Error here instead?
 	}
 
-	klog.V(3).InfoS("BladesGetResources success", "applId", applId, "bladeId", bladeId, "resourceColl", resourceColl.GetMemberCount())
+	klog.V(4).InfoS("BladesGetResources success", "applId", applId, "bladeId", bladeId, "resourceColl", resourceColl.GetMemberCount())
 
 	for _, res := range resourceColl.GetMembers() {
 		resourceId := ReadLastItemFromUri(res.GetUri())
 		requestResourceById := client.DefaultAPI.BladesGetResourceById(context.Background(), applId, bladeId, resourceId)
 		resourceBlock, response, err := requestResourceById.Execute()
 		if err != nil {
-			msg := fmt.Sprintf("%T: Execute FAILURE", requestResourceById)
-			klog.ErrorS(err, msg, "response", response)
-			// return nil, fmt.Errorf("failure: get appliance blade resource by id: %s", err)
+			// Decode the JSON response into a struct
+			var status service.StatusMessage
+			if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+				newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestResourceById, err)
+				klog.ErrorS(newErr, "failure: GetAllResourceBlocksForBlade")
+
+				return nil, fmt.Errorf("failure: GetAllResourceBlocksForBlade: %s", newErr)
+			}
+
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+				requestResourceById, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+			klog.ErrorS(newErr, "failure: GetAllResourceBlocksForBlade")
+
+			// return nil, fmt.Errorf("failure: GetAllResourceBlocksForBlade: %s (%s)", status.Status.Message, err)
 			continue //TODO: Error here instead?
 		}
 
-		klog.V(3).InfoS("BladesGetResourceById success", "applId", applId, "bladeId", bladeId, "resourceId", resourceBlock.GetId())
+		klog.V(4).InfoS("BladesGetResourceById success", "applId", applId, "bladeId", bladeId, "resourceId", resourceBlock.GetId())
 
 		resources = append(resources, resourceBlock)
 	}

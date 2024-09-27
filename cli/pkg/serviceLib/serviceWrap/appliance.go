@@ -4,6 +4,7 @@ package serviceWrap
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	service "cfm/pkg/client"
@@ -12,64 +13,108 @@ import (
 )
 
 func AddAppliance(client *service.APIClient, creds *service.Credentials) (*service.Appliance, error) {
-	newReqAddAppl := client.DefaultAPI.AppliancesPost(context.Background())
-	newReqAddAppl = newReqAddAppl.Credentials(*creds)
-	addedAppl, response, err := newReqAddAppl.Execute()
+	request := client.DefaultAPI.AppliancesPost(context.Background())
+	request = request.Credentials(*creds)
+	appliance, response, err := request.Execute()
 	if err != nil {
-		msg := fmt.Sprintf("%T: Execute FAILURE", newReqAddAppl)
-		klog.ErrorS(err, msg, "response", response)
-		return nil, fmt.Errorf("failure: appliances post: %s", err)
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
+			klog.ErrorS(newErr, "failure: AddAppliance")
+
+			return nil, fmt.Errorf("failure: AddAppliance: %s", newErr)
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.ErrorS(newErr, "failure: AddAppliance")
+
+		return nil, fmt.Errorf("failure: AddAppliance: %s (%s)", status.Status.Message, err)
 	}
 
-	klog.V(3).InfoS("AppliancesPost success", "ID", addedAppl.GetId())
+	klog.V(3).InfoS("success: AddAppliance", "applianceId", appliance.GetId())
 
-	return addedAppl, nil
+	return appliance, nil
 }
 
 func DeleteApplianceById(client *service.APIClient, applId string) (*service.Appliance, error) {
-	newReqDelApplById := client.DefaultAPI.AppliancesDeleteById(context.Background(), applId)
-	deletedAppl, response, err := newReqDelApplById.Execute()
+	request := client.DefaultAPI.AppliancesDeleteById(context.Background(), applId)
+	appliance, response, err := request.Execute()
 	if err != nil {
-		msg := fmt.Sprintf("%T: Execute FAILURE", newReqDelApplById)
-		klog.ErrorS(err, msg, "response", response)
-		return nil, fmt.Errorf("failure: delete appliance by id failure")
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
+			klog.ErrorS(newErr, "failure: DeleteApplianceById")
+
+			return nil, fmt.Errorf("failure: DeleteApplianceById: %s", newErr)
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.ErrorS(newErr, "failure: DeleteApplianceById")
+
+		return nil, fmt.Errorf("failure: DeleteApplianceById: %s (%s)", status.Status.Message, err)
 	}
 
-	klog.V(3).InfoS("AppliancesDeleteById success", "ID", deletedAppl.GetId())
+	klog.V(3).InfoS("success: DeleteApplianceById", "applianceId", appliance.GetId())
 
-	return deletedAppl, nil
+	return appliance, nil
 }
 
 func GetAllAppliances(client *service.APIClient) (*[]*service.Appliance, error) {
 	var appliances []*service.Appliance
 
 	//Get existing appliances
-	newReqGetAppls := client.DefaultAPI.AppliancesGet(context.Background())
-	collection, response, err := newReqGetAppls.Execute()
+	requestGetAppls := client.DefaultAPI.AppliancesGet(context.Background())
+	collection, response, err := requestGetAppls.Execute()
 	if err != nil {
-		msg := fmt.Sprintf("%T: Execute FAILURE", newReqGetAppls)
-		klog.ErrorS(err, msg, "response", response)
-		return nil, fmt.Errorf("failure: appliances get: %s", err)
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestGetAppls, err)
+			klog.ErrorS(newErr, "failure: GetAllAppliances")
+
+			return nil, fmt.Errorf("failure: GetAllAppliances: %s", newErr)
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			requestGetAppls, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.ErrorS(newErr, "failure: GetAllAppliances")
+
+		return nil, fmt.Errorf("failure: GetAllAppliances: %s (%s)", status.Status.Message, err)
 	}
 
-	klog.V(3).InfoS("AppliancesGet success", "count", collection.GetMemberCount())
+	klog.V(4).InfoS("success: AppliancesGet", "count", collection.GetMemberCount())
 
 	for _, member := range collection.GetMembers() {
 		id := ReadLastItemFromUri(member.GetUri())
-		newReqGetApplById := client.DefaultAPI.AppliancesGetById(context.Background(), id)
-		appliance, response, err := newReqGetApplById.Execute()
+		requestGetApplById := client.DefaultAPI.AppliancesGetById(context.Background(), id)
+		appliance, response, err := requestGetApplById.Execute()
 		if err != nil {
-			msg := fmt.Sprintf("%T: Execute FAILURE", newReqGetApplById)
-			klog.ErrorS(err, msg, "response", response)
-			return nil, fmt.Errorf("failure: appliances get by id: %s", err)
+			// Decode the JSON response into a struct
+			var status service.StatusMessage
+			if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+				newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestGetApplById, err)
+				klog.ErrorS(newErr, "failure: GetAllAppliances")
+
+				return nil, fmt.Errorf("failure: GetAllAppliances: %s", newErr)
+			}
+
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+				requestGetApplById, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+			klog.ErrorS(newErr, "failure: GetAllAppliances")
+
+			return nil, fmt.Errorf("failure: GetAllAppliances: %s (%s)", status.Status.Message, err)
 		}
 
-		klog.V(3).InfoS("AppliancesGetById success", "ID", appliance.GetId())
+		klog.V(4).InfoS("success: AppliancesGetById", "applianceId", appliance.GetId())
 
 		appliances = append(appliances, appliance)
 	}
 
-	klog.V(4).InfoS("Discovered appliances", "count", len(appliances))
+	klog.V(3).InfoS("success: GetAllAppliances", "count", len(appliances))
 
 	return &appliances, nil
 }
@@ -78,12 +123,23 @@ func ResyncApplianceById(client *service.APIClient, applianceId string) (*servic
 	request := client.DefaultAPI.AppliancesResyncById(context.Background(), applianceId)
 	appliance, response, err := request.Execute()
 	if err != nil {
-		msg := fmt.Sprintf("%T: Execute FAILURE", appliance)
-		klog.ErrorS(err, msg, "response", response)
-		return nil, fmt.Errorf("failure: resync appliance by id failure")
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
+			klog.ErrorS(newErr, "failure: ResyncApplianceById")
+
+			return nil, fmt.Errorf("failure: ResyncApplianceById: %s", newErr)
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.ErrorS(newErr, "failure: ResyncApplianceById")
+
+		return nil, fmt.Errorf("failure: ResyncApplianceById: %s (%s)", status.Status.Message, err)
 	}
 
-	klog.V(3).InfoS("BladesResyncById success", "applianceId", appliance.GetId())
+	klog.V(3).InfoS("success: ResyncApplianceById", "applianceId", appliance.GetId())
 
 	return appliance, nil
 }
