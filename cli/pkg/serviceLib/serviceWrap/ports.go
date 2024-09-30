@@ -61,16 +61,14 @@ func FindPortOnBlade(client *service.APIClient, applId, bladeId, portId string) 
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.ErrorS(newErr, "failure: FindPortOnBlade")
-
-			return nil, fmt.Errorf("failure: FindPortOnBlade: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: FindPortOnBlade")
-
-		return nil, fmt.Errorf("failure: FindPortOnBlade: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
 	klog.V(3).InfoS("success: FindPortOnBlade", "applId", applId, "bladeId", bladeId, "portId", port.GetId())
@@ -88,16 +86,14 @@ func GetAllPortsForBlade(client *service.APIClient, applId, bladeId string) (*[]
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestPorts, err)
-			klog.ErrorS(newErr, "failure: GetAllPortsForBlade")
-
-			return nil, fmt.Errorf("failure: GetAllPortsForBlade: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			requestPorts, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: GetAllPortsForBlade")
-
-		// return nil, fmt.Errorf("failure: GetAllPortsForBlade: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		// return nil, newErr
 		return &ports, nil //TODO: Error here instead?
 	}
 
@@ -112,16 +108,14 @@ func GetAllPortsForBlade(client *service.APIClient, applId, bladeId string) (*[]
 			var status service.StatusMessage
 			if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 				newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestPortById, err)
-				klog.ErrorS(newErr, "failure: GetAllPortsForBlade")
-
-				return nil, fmt.Errorf("failure: GetAllPortsForBlade: %s", newErr)
+				klog.V(4).Info(newErr)
+				return nil, newErr
 			}
 
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 				requestPortById, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-			klog.ErrorS(newErr, "failure: GetAllPortsForBlade")
-
-			// return nil, fmt.Errorf("failure: GetAllPortsForBlade: %s (%s)", status.Status.Message, err)
+			klog.V(4).Info(newErr)
+			// return nil, newErr
 			continue //TODO: Error here instead?
 		}
 
@@ -364,16 +358,14 @@ func FindPortById_SingleHost(client *service.APIClient, hostId, portId string) (
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.ErrorS(newErr, "failure: FindPortById_SingleHost")
-
-			return nil, fmt.Errorf("failure: FindPortById_SingleHost: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: FindPortById_SingleHost")
-
-		return nil, fmt.Errorf("failure: FindPortById_SingleHost: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
 	klog.V(3).InfoS("success: HostsGetPortById", "hostId", hostId, "portId", port.GetId())
@@ -393,16 +385,14 @@ func FindPortById_AllHosts(client *service.APIClient, portId string) (*HostPortS
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestHosts, err)
-			klog.ErrorS(newErr, "failure: FindPortById_AllHosts")
-
-			return nil, fmt.Errorf("failure: FindPortById_AllHosts: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			requestHosts, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: FindPortById_AllHosts")
-
-		return nil, fmt.Errorf("failure: FindPortById_AllHosts: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
 	klog.V(4).InfoS("success: HostsGet", "hostsColl", hostsColl.GetMemberCount())
@@ -438,16 +428,14 @@ func GetAllPorts_SingleHost(client *service.APIClient, hostId string) (*[]*servi
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestPorts, err)
-			klog.ErrorS(newErr, "failure: GetAllPorts_SingleHost")
-
-			return nil, fmt.Errorf("failure: GetAllPorts_SingleHost: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			requestPorts, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: GetAllPorts_SingleHost")
-
-		return nil, fmt.Errorf("failure: GetAllPorts_SingleHost: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
 	klog.V(4).InfoS("success: PortsGet", "hostId", hostId, "portsColl", portsColl.GetMemberCount())
@@ -478,16 +466,14 @@ func GetAllPorts_AllHosts(client *service.APIClient) (*HostPortSummary, error) {
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestHosts, err)
-			klog.ErrorS(newErr, "failure: GetAllPorts_AllHosts")
-
-			return nil, fmt.Errorf("failure: GetAllPorts_AllHosts: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			requestHosts, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: GetAllPorts_AllHosts")
-
-		return nil, fmt.Errorf("failure: GetAllPorts_AllHosts: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
 	klog.V(4).InfoS("success: HostsGet", "hostColl", hostColl.GetMemberCount())

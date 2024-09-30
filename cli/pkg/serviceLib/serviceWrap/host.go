@@ -21,16 +21,14 @@ func AddHost(client *service.APIClient, creds *service.Credentials) (*service.Ho
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.ErrorS(newErr, "failure: AddHost")
-
-			return nil, fmt.Errorf("failure: AddHost: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: AddHost")
-
-		return nil, fmt.Errorf("failure: AddHost: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
 	klog.V(3).InfoS("success: AddHost", "hostId", host.GetId())
@@ -46,16 +44,14 @@ func DeleteHostById(client *service.APIClient, hostId string) (*service.Host, er
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.ErrorS(newErr, "failure: DeleteHostById")
-
-			return nil, fmt.Errorf("failure: DeleteHostById: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: DeleteHostById")
-
-		return nil, fmt.Errorf("failure: DeleteHostById: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
 	klog.V(3).InfoS("success: DeleteHostById", "hostId", host.GetId())
@@ -74,16 +70,14 @@ func GetAllHosts(client *service.APIClient) (*[]*service.Host, error) {
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestGetHosts, err)
-			klog.ErrorS(newErr, "failure: GetAllHosts")
-
-			return nil, fmt.Errorf("failure: GetAllHosts: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			requestGetHosts, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: GetAllHosts")
-
-		return nil, fmt.Errorf("failure: GetAllHosts: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
 	klog.V(4).InfoS("success: HostsGet", "count", collection.GetMemberCount())
@@ -97,16 +91,14 @@ func GetAllHosts(client *service.APIClient) (*[]*service.Host, error) {
 			var status service.StatusMessage
 			if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 				newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestGetHostById, err)
-				klog.ErrorS(newErr, "failure: GetAllHosts")
-
-				return nil, fmt.Errorf("failure: GetAllHosts: %s", newErr)
+				klog.V(4).Info(newErr)
+				return nil, newErr
 			}
 
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 				requestGetHostById, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-			klog.ErrorS(newErr, "failure: GetAllHosts")
-
-			return nil, fmt.Errorf("failure: GetAllHosts: %s (%s)", status.Status.Message, err)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		klog.V(4).InfoS("success: HostsGetById", "hostId", host.GetId())
@@ -127,16 +119,14 @@ func ResyncHostById(client *service.APIClient, hostId string) (*service.Host, er
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.ErrorS(newErr, "failure: ResyncHostById")
-
-			return nil, fmt.Errorf("failure: ResyncHostById: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: ResyncHostById")
-
-		return nil, fmt.Errorf("failure: ResyncHostById: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
 	klog.V(3).InfoS("success: ResyncHostById", "hostID", host.GetId())

@@ -61,16 +61,14 @@ func FindResourceBlockOnBlade(client *service.APIClient, applId, bladeId, resour
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.ErrorS(newErr, "failure: FindResourceBlockOnBlade")
-
-			return nil, fmt.Errorf("failure: FindResourceBlockOnBlade: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: FindResourceBlockOnBlade")
-
-		return nil, fmt.Errorf("failure: FindResourceBlockOnBlade: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
 	klog.V(3).InfoS("FindResourceBlockOnBlade success", "applId", applId, "bladeId", bladeId, "resourceId", resourceBlock.GetId())
@@ -88,16 +86,14 @@ func GetAllResourceBlocksForBlade(client *service.APIClient, applId, bladeId str
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestResources, err)
-			klog.ErrorS(newErr, "failure: GetAllResourceBlocksForBlade")
-
-			return nil, fmt.Errorf("failure: GetAllResourceBlocksForBlade: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			requestResources, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: GetAllResourceBlocksForBlade")
-
-		// return nil, fmt.Errorf("failure: GetAllResourceBlocksForBlade: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		// return nil, newErr
 		return &resources, nil //TODO: Error here instead?
 	}
 
@@ -112,16 +108,14 @@ func GetAllResourceBlocksForBlade(client *service.APIClient, applId, bladeId str
 			var status service.StatusMessage
 			if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 				newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestResourceById, err)
-				klog.ErrorS(newErr, "failure: GetAllResourceBlocksForBlade")
-
-				return nil, fmt.Errorf("failure: GetAllResourceBlocksForBlade: %s", newErr)
+				klog.V(4).Info(newErr)
+				return nil, newErr
 			}
 
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 				requestResourceById, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-			klog.ErrorS(newErr, "failure: GetAllResourceBlocksForBlade")
-
-			// return nil, fmt.Errorf("failure: GetAllResourceBlocksForBlade: %s (%s)", status.Status.Message, err)
+			klog.V(4).Info(newErr)
+			// return nil, newErr
 			continue //TODO: Error here instead?
 		}
 

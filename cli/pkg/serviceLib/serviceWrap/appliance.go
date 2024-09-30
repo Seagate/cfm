@@ -21,16 +21,14 @@ func AddAppliance(client *service.APIClient, creds *service.Credentials) (*servi
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.ErrorS(newErr, "failure: AddAppliance")
-
-			return nil, fmt.Errorf("failure: AddAppliance: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: AddAppliance")
-
-		return nil, fmt.Errorf("failure: AddAppliance: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
 	klog.V(3).InfoS("success: AddAppliance", "applianceId", appliance.GetId())
@@ -46,16 +44,14 @@ func DeleteApplianceById(client *service.APIClient, applId string) (*service.App
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.ErrorS(newErr, "failure: DeleteApplianceById")
-
-			return nil, fmt.Errorf("failure: DeleteApplianceById: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: DeleteApplianceById")
-
-		return nil, fmt.Errorf("failure: DeleteApplianceById: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
 	klog.V(3).InfoS("success: DeleteApplianceById", "applianceId", appliance.GetId())
@@ -74,16 +70,14 @@ func GetAllAppliances(client *service.APIClient) (*[]*service.Appliance, error) 
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestGetAppls, err)
-			klog.ErrorS(newErr, "failure: GetAllAppliances")
-
-			return nil, fmt.Errorf("failure: GetAllAppliances: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			requestGetAppls, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: GetAllAppliances")
-
-		return nil, fmt.Errorf("failure: GetAllAppliances: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
 	klog.V(4).InfoS("success: AppliancesGet", "count", collection.GetMemberCount())
@@ -97,16 +91,14 @@ func GetAllAppliances(client *service.APIClient) (*[]*service.Appliance, error) 
 			var status service.StatusMessage
 			if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 				newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestGetApplById, err)
-				klog.ErrorS(newErr, "failure: GetAllAppliances")
-
-				return nil, fmt.Errorf("failure: GetAllAppliances: %s", newErr)
+				klog.V(4).Info(newErr)
+				return nil, newErr
 			}
 
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 				requestGetApplById, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-			klog.ErrorS(newErr, "failure: GetAllAppliances")
-
-			return nil, fmt.Errorf("failure: GetAllAppliances: %s (%s)", status.Status.Message, err)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		klog.V(4).InfoS("success: AppliancesGetById", "applianceId", appliance.GetId())
@@ -127,16 +119,14 @@ func ResyncApplianceById(client *service.APIClient, applianceId string) (*servic
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.ErrorS(newErr, "failure: ResyncApplianceById")
-
-			return nil, fmt.Errorf("failure: ResyncApplianceById: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: ResyncApplianceById")
-
-		return nil, fmt.Errorf("failure: ResyncApplianceById: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
 	klog.V(3).InfoS("success: ResyncApplianceById", "applianceId", appliance.GetId())

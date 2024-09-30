@@ -59,16 +59,14 @@ func AddBlade(client *service.APIClient, applianceId string, bladeCreds *service
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.ErrorS(newErr, "failure: AddBlade")
-
-			return nil, fmt.Errorf("failure: AddBlade: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: AddBlade")
-
-		return nil, fmt.Errorf("failure: AddBlade: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
 	klog.V(3).InfoS("success: AddBlade", "bladeId", blade.GetId(), "applianceId", applianceId)
@@ -84,16 +82,14 @@ func DeleteBladeById(client *service.APIClient, applId, bladeId string) (*servic
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.ErrorS(newErr, "failure: DeleteBladeById")
-
-			return nil, fmt.Errorf("failure: DeleteBladeById: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: DeleteBladeById")
-
-		return nil, fmt.Errorf("failure: DeleteBladeById: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
 	klog.V(3).InfoS("success: DeleteBladeById", "applianceId", applId, "bladeID", blade.GetId())
@@ -112,16 +108,14 @@ func FindBladeById_SingleAppl(client *service.APIClient, applId, bladeId string)
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.ErrorS(newErr, "failure: FindBladeById_SingleAppl")
-
-			return nil, fmt.Errorf("failure: FindBladeById_SingleAppl: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: FindBladeById_SingleAppl")
-
-		return nil, fmt.Errorf("failure: FindBladeById_SingleAppl: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
 	klog.V(3).InfoS("success: FindBladeById_SingleAppl", "applianceId", applId, "bladeId", blade.GetId())
@@ -141,16 +135,14 @@ func FindBladeById_AllAppls(client *service.APIClient, bladeId string) (*Applian
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.ErrorS(newErr, "failure: FindBladeById_AllAppls")
-
-			return nil, fmt.Errorf("failure: FindBladeById_AllAppls: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: FindBladeById_AllAppls")
-
-		return nil, fmt.Errorf("failure: FindBladeById_AllAppls: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
 	klog.V(4).InfoS("success: AppliancesGet", "applCount", applColl.GetMemberCount())
@@ -186,16 +178,14 @@ func GetAllBlades_SingleAppl(client *service.APIClient, applId string) (*[]*serv
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.ErrorS(newErr, "failure: GetAllBlades_SingleAppl")
-
-			return nil, fmt.Errorf("failure: GetAllBlades_SingleAppl: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: GetAllBlades_SingleAppl")
-
-		return nil, fmt.Errorf("failure: GetAllBlades_SingleAppl: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
 	klog.V(4).InfoS("success: BladesGet", "applianceId", applId, "bladeCount", bladeColl.GetMemberCount())
@@ -226,16 +216,14 @@ func GetAllBlades_AllAppls(client *service.APIClient) (*ApplianceBladeSummary, e
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.ErrorS(newErr, "failure: GetAllBlades_AllAppls")
-
-			return nil, fmt.Errorf("failure: GetAllBlades_AllAppls: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: GetAllBlades_AllAppls")
-
-		return nil, fmt.Errorf("failure: GetAllBlades_AllAppls: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
 	klog.V(4).InfoS("success: AppliancesGet", "applCount", applColl.GetMemberCount())
@@ -263,16 +251,14 @@ func ResyncBladeById(client *service.APIClient, applId, bladeId string) (*servic
 		var status service.StatusMessage
 		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
 			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.ErrorS(newErr, "failure: ResyncBladeById")
-
-			return nil, fmt.Errorf("failure: ResyncBladeById: %s", newErr)
+			klog.V(4).Info(newErr)
+			return nil, newErr
 		}
 
 		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
 			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.ErrorS(newErr, "failure: ResyncBladeById")
-
-		return nil, fmt.Errorf("failure: ResyncBladeById: %s (%s)", status.Status.Message, err)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
 	klog.V(3).InfoS("success: ResyncBladeById", "applianceId", applId, "bladeID", blade.GetId())
