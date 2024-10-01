@@ -60,6 +60,8 @@ const (
 	StatusBladeResyncFailure     //409
 	StatusHostResyncFailure      //409
 
+	StatusApplianceRenameFailure //409
+
 	StatusApplianceIdDuplicate //409
 	StatusBladeIdDuplicate     //409
 	StatusMemoryIdDuplicate    //409
@@ -176,6 +178,8 @@ func (e StatusCodeType) String() string {
 		return "Port Id Already Exist"
 	case StatusHostIdDuplicate:
 		return "Host Id Already Exist"
+	case StatusApplianceRenameFailure:
+		return "Rename Appliance Failure"
 	}
 	return "Unknown"
 
@@ -220,7 +224,8 @@ func (e StatusCodeType) HttpStatusCode() int {
 		StatusApplianceIdDuplicate,
 		StatusBladeIdDuplicate,
 		StatusPortIdDuplicate,
-		StatusHostIdDuplicate:
+		StatusHostIdDuplicate,
+		StatusApplianceRenameFailure:
 		return http.StatusConflict // 409
 	case StatusBackendInterfaceFailure,
 		StatusBladeCreateSessionFailure,

@@ -143,6 +143,33 @@ func (cfm *CfmApiService) AppliancesPost(ctx context.Context, credentials openap
 	return openapi.Response(http.StatusCreated, a), nil
 }
 
+// AppliancesRenameById -
+func (cfm *CfmApiService) AppliancesRenameById(ctx context.Context, applianceId string, newApplianceId string) (openapi.ImplResponse, error) {
+	// Make sure the newApplianceId doesn't exist
+	_, exist := manager.GetApplianceById(ctx, newApplianceId)
+	if exist == nil {
+		err := common.RequestError{
+			StatusCode: common.StatusApplianceIdDuplicate,
+			Err:        fmt.Errorf("the new name (%s) already exists", newApplianceId),
+		}
+		return formatErrorResp(ctx, &err)
+	}
+
+	// Make sure the appliance exists
+	appliance, err := manager.GetApplianceById(ctx, applianceId)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	//Rename the appliance with the new id
+	newAppliance, err := manager.RenameAppliance(ctx, appliance, newApplianceId)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	return openapi.Response(http.StatusOK, newAppliance), nil
+}
+
 // AppliancesResync -
 func (cfm *CfmApiService) AppliancesResyncById(ctx context.Context, applianceId string) (openapi.ImplResponse, error) {
 	appliance, err := manager.ResyncApplianceById(ctx, applianceId)

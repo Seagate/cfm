@@ -188,6 +188,44 @@ paths:
               schema:
                 $ref: "#/components/schemas/statusMessage"
 
+  # Rename Memory Appliance
+  /cfm/v1/appliances/{applianceId}/rename:
+    post:
+      description: Rename the appliance ID.
+      operationId: appliancesRenameById
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      - name: newApplianceId
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/appliance'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+
   # Memory Appliance Blades
   /cfm/v1/appliances/{applianceId}/blades:
     get:

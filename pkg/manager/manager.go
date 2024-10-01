@@ -119,6 +119,69 @@ func GetAppliances(ctx context.Context) map[string]*Appliance {
 	return appliances
 }
 
+func RenameAppliance(ctx context.Context, appliance *Appliance, newApplianceId string) (*Appliance, error) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info(">>>>>> RenameApplianceById: ", "applianceId", appliance.Id)
+
+	// query cache
+	existingAppliance, ok := deviceCache.GetApplianceByIdOk(appliance.Id)
+	if !ok {
+		newErr := fmt.Errorf("failed to get appliance [%s]", appliance.Id)
+		logger.Error(newErr, "failure: delete appliance by id")
+		return nil, &common.RequestError{StatusCode: common.StatusApplianceIdDoesNotExist, Err: newErr}
+	}
+
+	// Store the associated blades information locally, which is needed when adding back the blades
+	bladesInfo := make(map[string]*Blade)
+	for _, id := range existingAppliance.GetAllBladeIds() {
+		bladesInfo[id] = existingAppliance.Blades[id]
+	}
+
+	// delete appliance and the associated blades
+	_, err := DeleteApplianceById(ctx, appliance.Id)
+	if err != nil {
+		newErr := fmt.Errorf("failed to delete appliance [%s]: %w", appliance.Id, err)
+		logger.Error(newErr, "failure: delete appliance by id")
+		return nil, &common.RequestError{StatusCode: common.StatusApplianceDeleteSessionFailure, Err: newErr}
+	}
+
+	// add appliance back with the new id
+	c := openapi.Credentials{
+		CustomId: newApplianceId,
+	}
+	newAppliance, err := AddAppliance(ctx, &c)
+	if err != nil {
+		newErr := fmt.Errorf("failed to add appliance [%s]: %w", newApplianceId, err)
+		logger.Error(newErr, "failure: add appliance with new id")
+		return nil, &common.RequestError{StatusCode: common.StatusApplianceCreateSessionFailure, Err: newErr}
+	}
+
+	var failedBladeIds []string
+
+	// Add blades back to the new appliance
+	for id, blade := range bladesInfo {
+		_, err := newAppliance.AddBladeBack(ctx, blade.creds)
+		if err != nil {
+			newErr := fmt.Errorf("add blade by id [%s] failure: appliance [%s]: %w", id, newApplianceId, err)
+			logger.Error(newErr, "failure: add blade to new appliance: handle and continue")
+			failedBladeIds = append(failedBladeIds, id)
+		}
+	}
+
+	if len(failedBladeIds) == 0 {
+		logger.V(2).Info("success: rename appliance", "applianceId", newApplianceId, "blades", bladesInfo)
+		return newAppliance, nil
+	} else if len(failedBladeIds) < len(bladesInfo) {
+		newErr := fmt.Errorf("rename appliance by id [%s]: some failure(s): blade(s) [%s]", newApplianceId, failedBladeIds)
+		logger.Error(newErr, "partial success: rename appliance by id")
+		return newAppliance, &common.RequestError{StatusCode: common.StatusApplianceRenameFailure, Err: newErr}
+	} else {
+		newErr := fmt.Errorf("rename appliance by id [%s] failure", newApplianceId)
+		logger.Error(newErr, "failure: rename appliance by id")
+		return nil, &common.RequestError{StatusCode: common.StatusApplianceRenameFailure, Err: newErr}
+	}
+}
+
 func ResyncApplianceById(ctx context.Context, applianceId string) (*Appliance, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> ResyncApplianceById: ", "applianceId", applianceId)
