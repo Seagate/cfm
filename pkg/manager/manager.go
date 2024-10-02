@@ -127,7 +127,7 @@ func RenameAppliance(ctx context.Context, appliance *Appliance, newApplianceId s
 	existingAppliance, ok := deviceCache.GetApplianceByIdOk(appliance.Id)
 	if !ok {
 		newErr := fmt.Errorf("failed to get appliance [%s]", appliance.Id)
-		logger.Error(newErr, "failure: delete appliance by id")
+		logger.Error(newErr, "failure: get appliance by id")
 		return nil, &common.RequestError{StatusCode: common.StatusApplianceIdDoesNotExist, Err: newErr}
 	}
 
@@ -180,6 +180,46 @@ func RenameAppliance(ctx context.Context, appliance *Appliance, newApplianceId s
 		logger.Error(newErr, "failure: rename appliance by id")
 		return nil, &common.RequestError{StatusCode: common.StatusApplianceRenameFailure, Err: newErr}
 	}
+}
+
+func RenameBlade(ctx context.Context, blade *Blade, newBladeId string) (*Blade, error) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info(">>>>>> RenameBladeById: ", "bladeId", blade.Id)
+
+	// query cache
+	appliance, ok := deviceCache.GetApplianceByIdOk(blade.ApplianceId)
+	if !ok {
+		newErr := fmt.Errorf("failed to get appliance [%s]", blade.ApplianceId)
+		logger.Error(newErr, "failure: get appliance by id")
+		return nil, &common.RequestError{StatusCode: common.StatusApplianceIdDoesNotExist, Err: newErr}
+	}
+
+	// Save the blade credentials for adding back with the new name
+	c := &openapi.Credentials{
+		Username:  blade.creds.Username,
+		Password:  blade.creds.Password,
+		IpAddress: blade.creds.IpAddress,
+		Port:      blade.creds.Port,
+		Insecure:  blade.creds.Insecure,
+		Protocol:  blade.creds.Protocol,
+		CustomId:  newBladeId,
+	}
+
+	// delete blade
+	_, err := appliance.DeleteBladeById(ctx, blade.Id)
+	if err != nil {
+		newErr := fmt.Errorf("failed to delete blade [%s]: %w", blade.Id, err)
+		logger.Error(newErr, "failure: delete blade by id")
+		return nil, &common.RequestError{StatusCode: common.StatusBladeDeleteSessionFailure, Err: newErr}
+	}
+	// Add the balde back with the new name
+	newBlade, err := appliance.AddBlade(ctx, c)
+	if err != nil {
+		newErr := fmt.Errorf("failed to add blade [%s]: %w", newBladeId, err)
+		logger.Error(newErr, "failure: add blade with new id")
+		return nil, &common.RequestError{StatusCode: common.StatusBladeCreateSessionFailure, Err: newErr}
+	}
+	return newBlade, nil
 }
 
 func ResyncApplianceById(ctx context.Context, applianceId string) (*Appliance, error) {

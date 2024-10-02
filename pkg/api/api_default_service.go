@@ -522,6 +522,41 @@ func (cfm *CfmApiService) BladesGetPorts(ctx context.Context, applianceId string
 	return openapi.Response(http.StatusOK, response), nil
 }
 
+// BladesRenameById -
+func (s *CfmApiService) BladesRenameById(ctx context.Context, applianceId string, bladeId string, newBladeId string) (openapi.ImplResponse, error) {
+	appliance, err := manager.GetApplianceById(ctx, applianceId)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	// Make sure the bladeId exists
+	// Get the blade information from the manager level and is used for renaming
+	blade, err := appliance.GetBladeById(ctx, bladeId)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	// Make sure the newBladeId doesn't exist
+	existBladeIds := appliance.GetAllBladeIds()
+	for _, id := range existBladeIds {
+		if newBladeId == id {
+			err := common.RequestError{
+				StatusCode: common.StatusBladeIdDuplicate,
+				Err:        fmt.Errorf("the new name (%s) already exists", newBladeId),
+			}
+			return formatErrorResp(ctx, &err)
+		}
+	}
+
+	//Rename the appliance with the new id
+	newBlade, err := manager.RenameBlade(ctx, blade, newBladeId)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	return openapi.Response(http.StatusOK, newBlade), nil
+}
+
 // BladesGetResourceById -
 func (cfm *CfmApiService) BladesGetResourceById(ctx context.Context, applianceId string, bladeId string, resourceId string) (openapi.ImplResponse, error) {
 	appliance, err := manager.GetApplianceById(ctx, applianceId)

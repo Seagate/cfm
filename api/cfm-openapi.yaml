@@ -367,6 +367,45 @@ paths:
               schema:
                 $ref: "#/components/schemas/statusMessage"
 
+  # Rename Blade
+  /cfm/v1/appliances/{applianceId}/blades/{bladeId}/rename:
+    post:
+      description: Rename a memory blade by id.
+      operationId: bladesRenameById
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      - $ref: "#/components/parameters/bladeId"
+      - name: newBladeId
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/blade'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
   # Memory Blade Memory Resource Blocks
   /cfm/v1/appliances/{applianceId}/blades/{bladeId}/resources:
     get:
