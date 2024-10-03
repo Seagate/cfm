@@ -370,7 +370,7 @@ paths:
   # Rename Blade
   /cfm/v1/appliances/{applianceId}/blades/{bladeId}/rename:
     post:
-      description: Rename a memory blade by id.
+      description: Rename a blade by id.
       operationId: bladesRenameById
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -885,6 +885,45 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/statusMessage"
+
+  # Rename CXL Host
+  /cfm/v1/hosts/{hostId}/rename:
+    post:
+      description: Rename a CXL Host by id.
+      operationId: hostsRenameById
+      parameters:
+      - $ref: "#/components/parameters/hostId"
+      - name: newHostId
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/blade'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
   # CXL Host Ports
   /cfm/v1/hosts/{hostId}/ports:
     get:

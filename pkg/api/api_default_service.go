@@ -523,7 +523,7 @@ func (cfm *CfmApiService) BladesGetPorts(ctx context.Context, applianceId string
 }
 
 // BladesRenameById -
-func (s *CfmApiService) BladesRenameById(ctx context.Context, applianceId string, bladeId string, newBladeId string) (openapi.ImplResponse, error) {
+func (cfm *CfmApiService) BladesRenameById(ctx context.Context, applianceId string, bladeId string, newBladeId string) (openapi.ImplResponse, error) {
 	appliance, err := manager.GetApplianceById(ctx, applianceId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -992,6 +992,30 @@ func (cfm *CfmApiService) HostsPost(ctx context.Context, credentials openapi.Cre
 	}
 
 	return openapi.Response(http.StatusCreated, h), nil
+}
+
+// HostsRenameById -
+func (cfm *CfmApiService) HostsRenameById(ctx context.Context, hostId string, newHostId string) (openapi.ImplResponse, error) {
+	// Make sure the hostId exists
+	// Get the host information from the manager level and is used for renaming
+	host, err := manager.GetHostById(ctx, hostId)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	// Make sure the newHostId doesn't exist
+	existHost, err := manager.GetHostById(ctx, newHostId)
+	if existHost != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	//Rename the cxl host with the new id
+	newHost, err := manager.RenameHost(ctx, host, newHostId)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	return openapi.Response(http.StatusOK, newHost), nil
 }
 
 // HostsResync -

@@ -370,6 +370,34 @@ func AddHost(ctx context.Context, c *openapi.Credentials) (*Host, error) {
 	return host, nil
 }
 
+func RenameHost(ctx context.Context, host *Host, newHostId string) (*Host, error) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info(">>>>>> RenameHostById: ", "hostId", host.Id)
+	// Save the host credentials for adding back with the new name
+	c := &openapi.Credentials{
+		Username:  host.creds.Username,
+		Password:  host.creds.Password,
+		IpAddress: host.creds.IpAddress,
+		Port:      host.creds.Port,
+		Insecure:  host.creds.Insecure,
+		Protocol:  host.creds.Protocol,
+		CustomId:  newHostId,
+	}
+
+	// delete host
+	_, err := DeleteHostById(ctx, host.Id)
+	if err != nil {
+		return nil, err.(*common.RequestError)
+	}
+
+	// Add the host back with the new name
+	newHost, err := AddHost(ctx, c)
+	if err != nil {
+		return nil, err.(*common.RequestError)
+	}
+	return newHost, nil
+}
+
 func DeleteHostById(ctx context.Context, hostId string) (*Host, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> DeleteHostById: ", "hostId", hostId)
