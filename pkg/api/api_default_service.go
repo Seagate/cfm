@@ -1004,9 +1004,13 @@ func (cfm *CfmApiService) HostsRenameById(ctx context.Context, hostId string, ne
 	}
 
 	// Make sure the newHostId doesn't exist
-	existHost, err := manager.GetHostById(ctx, newHostId)
-	if existHost != nil {
-		return formatErrorResp(ctx, err.(*common.RequestError))
+	_, exist := manager.GetHostById(ctx, newHostId)
+	if exist == nil {
+		err := common.RequestError{
+			StatusCode: common.StatusHostIdDuplicate,
+			Err:        fmt.Errorf("the new name (%s) already exists", newHostId),
+		}
+		return formatErrorResp(ctx, &err)
 	}
 
 	//Rename the cxl host with the new id

@@ -140,9 +140,7 @@ func RenameAppliance(ctx context.Context, appliance *Appliance, newApplianceId s
 	// delete appliance and the associated blades
 	_, err := DeleteApplianceById(ctx, appliance.Id)
 	if err != nil {
-		newErr := fmt.Errorf("failed to delete appliance [%s]: %w", appliance.Id, err)
-		logger.Error(newErr, "failure: delete appliance by id")
-		return nil, &common.RequestError{StatusCode: common.StatusApplianceDeleteSessionFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: common.StatusApplianceDeleteSessionFailure, Err: err}
 	}
 
 	// add appliance back with the new id
@@ -151,9 +149,7 @@ func RenameAppliance(ctx context.Context, appliance *Appliance, newApplianceId s
 	}
 	newAppliance, err := AddAppliance(ctx, &c)
 	if err != nil {
-		newErr := fmt.Errorf("failed to add appliance [%s]: %w", newApplianceId, err)
-		logger.Error(newErr, "failure: add appliance with new id")
-		return nil, &common.RequestError{StatusCode: common.StatusApplianceCreateSessionFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: common.StatusApplianceCreateSessionFailure, Err: err}
 	}
 
 	var failedBladeIds []string
@@ -208,16 +204,12 @@ func RenameBlade(ctx context.Context, blade *Blade, newBladeId string) (*Blade, 
 	// delete blade
 	_, err := appliance.DeleteBladeById(ctx, blade.Id)
 	if err != nil {
-		newErr := fmt.Errorf("failed to delete blade [%s]: %w", blade.Id, err)
-		logger.Error(newErr, "failure: delete blade by id")
-		return nil, &common.RequestError{StatusCode: common.StatusBladeDeleteSessionFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: common.StatusBladeRenameFailure, Err: err}
 	}
 	// Add the balde back with the new name
 	newBlade, err := appliance.AddBlade(ctx, c)
 	if err != nil {
-		newErr := fmt.Errorf("failed to add blade [%s]: %w", newBladeId, err)
-		logger.Error(newErr, "failure: add blade with new id")
-		return nil, &common.RequestError{StatusCode: common.StatusBladeCreateSessionFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: common.StatusBladeRenameFailure, Err: err}
 	}
 	return newBlade, nil
 }
@@ -387,13 +379,13 @@ func RenameHost(ctx context.Context, host *Host, newHostId string) (*Host, error
 	// delete host
 	_, err := DeleteHostById(ctx, host.Id)
 	if err != nil {
-		return nil, err.(*common.RequestError)
+		return nil, &common.RequestError{StatusCode: common.StatusBladeRenameFailure, Err: err}
 	}
 
 	// Add the host back with the new name
 	newHost, err := AddHost(ctx, c)
 	if err != nil {
-		return nil, err.(*common.RequestError)
+		return nil, &common.RequestError{StatusCode: common.StatusBladeRenameFailure, Err: err}
 	}
 	return newHost, nil
 }
