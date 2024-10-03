@@ -187,11 +187,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/statusMessage"
-
-  # Rename Memory Appliance
-  /cfm/v1/appliances/{applianceId}/rename:
-    post:
-      description: Rename the appliance ID.
+    put:
+      description: Rename an appliance by new id.
       operationId: appliancesRenameById
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -366,11 +363,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/statusMessage"
-
-  # Rename Blade
-  /cfm/v1/appliances/{applianceId}/blades/{bladeId}/rename:
-    post:
-      description: Rename a blade by id.
+    put:
+      description: Rename a blade by new id.
       operationId: bladesRenameById
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -885,11 +879,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/statusMessage"
-
-  # Rename CXL Host
-  /cfm/v1/hosts/{hostId}/rename:
-    post:
-      description: Rename a CXL Host by id.
+    put:
+      description: Rename a CXL host by new id.
       operationId: hostsRenameById
       parameters:
       - $ref: "#/components/parameters/hostId"
@@ -904,7 +895,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/blade'
+                $ref: '#/components/schemas/host'
         "400":
           description: Bad Request
           content:
