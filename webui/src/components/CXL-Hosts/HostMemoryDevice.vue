@@ -4,7 +4,7 @@
     <v-data-table
       :headers="headers"
       fixed-header
-      height="240"
+      height="300"
       :items="hostMemoryDevices"
     >
     </v-data-table>

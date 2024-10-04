@@ -14,6 +14,7 @@ export const useHostStore = defineStore('host', {
         selectedHostIp: null as unknown as string,
         selectedHostPortNum: null as unknown as number,
         selectedHostLocalMemory: null as unknown as number | undefined,
+        selectedHostStatus: null as unknown as string,
         addHostError: null as unknown,
         deleteHostError: null as unknown,
         resyncHostError: null as unknown,
@@ -123,11 +124,12 @@ export const useHostStore = defineStore('host', {
             }
         },
 
-        selectHost(selectedHostId: string, selectedHostIp: string, selectedHostPortNum: number, selectedHostLocalMemory: number | undefined) {
+        selectHost(selectedHostId: string, selectedHostIp: string, selectedHostPortNum: number, selectedHostLocalMemory: number | undefined, status: string) {
             this.selectedHostId = selectedHostId;
             this.selectedHostIp = selectedHostIp;
             this.selectedHostPortNum = selectedHostPortNum;
             this.selectedHostLocalMemory = selectedHostLocalMemory;
+            this.selectedHostStatus = status
         },
     }
 })

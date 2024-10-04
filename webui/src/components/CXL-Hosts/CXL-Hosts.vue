@@ -31,7 +31,13 @@
           :key="host.id"
           :id="host.id"
           @click="
-            selectHost(host.id, host.ipAddress, host.port, host.localMemoryMiB)
+            selectHost(
+              host.id,
+              host.ipAddress,
+              host.port,
+              host.localMemoryMiB,
+              host.status
+            )
           "
         >
           <v-row justify="space-between" align="center">
@@ -69,13 +75,9 @@
           <!---First Row -->
           <!-- ---------------------------------------------- -->
           <v-row class="flex-0" dense>
-            <v-col cols="12" sm="12" md="12" lg="4">
+            <v-col cols="12" sm="6" md="6" lg="4">
               <!-- Basic Information -->
-              <v-card
-                class="card-shadow"
-                height="350"
-                color="rgba(110, 190, 74, 0.1)"
-              >
+              <v-card class="h-100" color="rgba(110, 190, 74, 0.1)">
                 <v-toolbar height="45">
                   <v-toolbar-title style="cursor: pointer"
                     >Basic Information</v-toolbar-title
@@ -101,16 +103,37 @@
                 </v-card-text>
                 <v-list lines="one">
                   <v-list-item>
+                    <v-list-item-title>Status</v-list-item-title>
+                    <v-list-item-subtitle>{{
+                      selectedHostStatus
+                    }}</v-list-item-subtitle>
+                    <template v-slot:prepend>
+                      <v-avatar>
+                        <v-icon :color="statusColor">{{ statusIcon }}</v-icon>
+                      </v-avatar>
+                    </template>
+                  </v-list-item>
+                  <v-list-item>
                     <v-list-item-title>CXL-Host Id</v-list-item-title>
                     <v-list-item-subtitle>
                       {{ host.id }}
                     </v-list-item-subtitle>
+                    <template v-slot:prepend>
+                      <v-avatar>
+                        <v-icon color="#6ebe4a">mdi-account-circle</v-icon>
+                      </v-avatar>
+                    </template>
                   </v-list-item>
                   <v-list-item>
                     <v-list-item-title>IpAddress</v-list-item-title>
                     <v-list-item-subtitle>
                       {{ host.ipAddress + ":" + host.port }}
                     </v-list-item-subtitle>
+                    <template v-slot:prepend>
+                      <v-avatar>
+                        <v-icon color="#6ebe4a">mdi-ip</v-icon>
+                      </v-avatar>
+                    </template>
                   </v-list-item>
                   <v-list-item>
                     <v-list-item-title>LocalMemoryGiB</v-list-item-title>
@@ -121,13 +144,18 @@
                           : "N/A"
                       }}
                     </v-list-item-subtitle>
+                    <template v-slot:prepend>
+                      <v-avatar>
+                        <v-icon color="#6ebe4a">mdi-memory</v-icon>
+                      </v-avatar>
+                    </template>
                   </v-list-item>
                 </v-list>
               </v-card>
             </v-col>
-            <v-col cols="12" sm="12" md="12" lg="8">
+            <v-col cols="12" sm="6" md="6" lg="8">
               <!-- Ports-->
-              <v-card class="card-shadow h-full" height="350">
+              <v-card class="h-100">
                 <v-toolbar height="45">
                   <v-toolbar-title style="cursor: pointer"
                     >Ports Information</v-toolbar-title
@@ -144,10 +172,10 @@
           <!-- ---------------------------------------------- -->
           <!---Second Row -->
           <!-- ---------------------------------------------- -->
-          <v-row class="card-shadow flex-grow-0" dense>
-            <v-col cols="12" sm="12" md="12" lg="6">
+          <v-row class="flex-0" dense>
+            <v-col cols="12" sm="6" md="6" lg="6">
               <!-- Memory Devices -->
-              <v-card class="card-shadow h-full" height="350">
+              <v-card class="h-100">
                 <v-toolbar height="45">
                   <v-toolbar-title style="cursor: pointer"
                     >Memory Devices</v-toolbar-title
@@ -160,9 +188,9 @@
                 </v-card-text>
               </v-card>
             </v-col>
-            <v-col cols="12" sm="12" md="12" lg="6">
+            <v-col cols="12" sm="12" md="6" lg="6">
               <!-- Memory -->
-              <v-card class="card-shadow h-full" height="350">
+              <v-card class="h-100">
                 <v-toolbar height="45">
                   <v-toolbar-title style="cursor: pointer"
                     >Memory</v-toolbar-title
@@ -687,7 +715,8 @@ export default {
             newHost?.id + "",
             newHost?.ipAddress + "",
             Number(newHost?.port),
-            newHost?.localMemoryMiB
+            newHost?.localMemoryMiB,
+            newHost?.status
           );
         }
         this.dialogAddHostWait = false;
@@ -730,7 +759,8 @@ export default {
             selectedHost.id,
             selectedHost.ipAddress,
             selectedHost.port,
-            selectedHost.localMemoryMiB
+            selectedHost.localMemoryMiB,
+            selectedHost.selectedBladeStatus
           );
         }
 
@@ -847,7 +877,8 @@ export default {
           selectedHost?.id + "",
           selectedHost?.ipAddress + "",
           Number(selectedHost?.port),
-          selectedHost?.localMemoryMiB
+          selectedHost?.localMemoryMiB,
+          selectedHost?.status
         );
       }
 
@@ -881,15 +912,33 @@ export default {
     const selectedHostId = computed(() => hostStore.selectedHostId);
     const selectedHostIp = computed(() => hostStore.selectedHostIp);
     const selectedHostPort = computed(() => hostStore.selectedHostPortNum);
+    const selectedHostStatus = computed(() => hostStore.selectedHostStatus);
+
+    const statusColor = computed(() => {
+      return selectedHostStatus.value === "online" ? "#6ebe4a" : "warning";
+    });
+
+    const statusIcon = computed(() => {
+      return selectedHostStatus.value === "online"
+        ? "mdi-check-circle"
+        : "mdi-close-circle";
+    });
 
     // Methods to update state
     const selectHost = (
       hostId: string,
       hostIp: string,
       hostPort: number,
-      hostLocalMemory: number | undefined
+      hostLocalMemory: number | undefined,
+      hostStatus: string
     ) => {
-      hostStore.selectHost(hostId, hostIp, hostPort, hostLocalMemory);
+      hostStore.selectHost(
+        hostId,
+        hostIp,
+        hostPort,
+        hostLocalMemory,
+        hostStatus
+      );
     };
 
     return {
@@ -897,6 +946,9 @@ export default {
       selectedHostId,
       selectedHostPort,
       selectedHostIp,
+      selectedHostStatus,
+      statusColor,
+      statusIcon,
       selectHost,
       loading,
     };
