@@ -176,9 +176,9 @@
                         }}</v-list-item-subtitle>
                         <template v-slot:prepend>
                           <v-avatar>
-                            <v-icon :color="statusColor"
-                              >{{statusIcon}}</v-icon
-                            >
+                            <v-icon :color="statusColor">{{
+                              statusIcon
+                            }}</v-icon>
                           </v-avatar>
                         </template>
                       </v-list-item>
@@ -191,9 +191,7 @@
                         </v-list-item-subtitle>
                         <template v-slot:prepend>
                           <v-avatar>
-                            <v-icon color="#6ebe4a"
-                              >mdi-account-circle</v-icon
-                            >
+                            <v-icon color="#6ebe4a">mdi-account-circle</v-icon>
                           </v-avatar>
                         </template>
                       </v-list-item>
@@ -204,9 +202,7 @@
                         </v-list-item-subtitle>
                         <template v-slot:prepend>
                           <v-avatar>
-                            <v-icon color="#6ebe4a"
-                              >mdi-shield-account</v-icon
-                            >
+                            <v-icon color="#6ebe4a">mdi-shield-account</v-icon>
                           </v-avatar>
                         </template>
                       </v-list-item>
@@ -1533,11 +1529,9 @@ export default {
     const selectedBladeIp = computed(() => bladeStore.selectedBladeIp);
     const selectedBladePort = computed(() => bladeStore.selectedBladePortNum);
     const selectedBladeStatus = computed(() => bladeStore.selectedBladeStatus);
-    
+
     const statusColor = computed(() => {
-      return selectedBladeStatus.value === "online"
-        ? "#6ebe4a"
-        : "warning";
+      return selectedBladeStatus.value === "online" ? "#6ebe4a" : "warning";
     });
 
     const statusIcon = computed(() => {
@@ -1556,7 +1550,7 @@ export default {
       bladePort: number,
       bladeMemoryAvailable: number,
       bladeMemoryAllocated: number,
-      bladeStatus: string
+      bladeStatus: string | undefined
     ) => {
       bladeStore.selectBlade(
         bladeId,

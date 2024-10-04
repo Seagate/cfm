@@ -760,7 +760,7 @@ export default {
             selectedHost.ipAddress,
             selectedHost.port,
             selectedHost.localMemoryMiB,
-            selectedHost.selectedBladeStatus
+            selectedHost.status
           );
         }
 
@@ -930,7 +930,7 @@ export default {
       hostIp: string,
       hostPort: number,
       hostLocalMemory: number | undefined,
-      hostStatus: string
+      hostStatus: string | undefined
     ) => {
       hostStore.selectHost(
         hostId,
