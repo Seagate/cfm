@@ -97,7 +97,8 @@
                   blade.ipAddress,
                   blade.port,
                   Number(blade.totalMemoryAvailableMiB),
-                  Number(blade.totalMemoryAllocatedMiB)
+                  Number(blade.totalMemoryAllocatedMiB),
+                  blade.status
                 )
               "
             >
@@ -169,24 +170,56 @@
                     </v-card-text>
                     <v-list lines="one">
                       <v-list-item>
+                        <v-list-item-title>Status</v-list-item-title>
+                        <v-list-item-subtitle>{{
+                          selectedBladeStatus
+                        }}</v-list-item-subtitle>
+                        <template v-slot:prepend>
+                          <v-avatar>
+                            <v-icon :color="statusColor"
+                              >{{statusIcon}}</v-icon
+                            >
+                          </v-avatar>
+                        </template>
+                      </v-list-item>
+                      <v-list-item>
                         <v-list-item-title prepend-icon="mdi-account-circle"
                           >Appliance Id</v-list-item-title
                         >
                         <v-list-item-subtitle>
                           {{ selectedApplianceId }}
                         </v-list-item-subtitle>
+                        <template v-slot:prepend>
+                          <v-avatar>
+                            <v-icon color="#6ebe4a"
+                              >mdi-account-circle</v-icon
+                            >
+                          </v-avatar>
+                        </template>
                       </v-list-item>
                       <v-list-item>
                         <v-list-item-title>Blade Id</v-list-item-title>
                         <v-list-item-subtitle>
                           {{ selectedBladeId }}
                         </v-list-item-subtitle>
+                        <template v-slot:prepend>
+                          <v-avatar>
+                            <v-icon color="#6ebe4a"
+                              >mdi-shield-account</v-icon
+                            >
+                          </v-avatar>
+                        </template>
                       </v-list-item>
                       <v-list-item>
                         <v-list-item-title>Ip Address</v-list-item-title>
                         <v-list-item-subtitle>
                           {{ selectedBladeIp + ":" + selectedBladePort }}
                         </v-list-item-subtitle>
+                        <template v-slot:prepend>
+                          <v-avatar>
+                            <v-icon color="#6ebe4a">mdi-ip</v-icon>
+                          </v-avatar>
+                        </template>
                       </v-list-item>
                     </v-list>
                   </v-card>
@@ -1224,7 +1257,8 @@ export default {
             defaultBlade!.ipAddress,
             defaultBlade!.port,
             Number(defaultBlade!.totalMemoryAvailableMiB),
-            Number(defaultBlade!.totalMemoryAllocatedMiB)
+            Number(defaultBlade!.totalMemoryAllocatedMiB),
+            defaultBlade!.status
           );
         }
         this.dialogAddBladeWait = false;
@@ -1281,7 +1315,8 @@ export default {
             defaultBlade.ipAddress,
             defaultBlade.port,
             Number(defaultBlade.totalMemoryAvailableMiB),
-            Number(defaultBlade.totalMemoryAllocatedMiB)
+            Number(defaultBlade.totalMemoryAllocatedMiB),
+            defaultBlade.status
           );
         }
         this.dialogDeleteBladeWait = false;
@@ -1444,7 +1479,8 @@ export default {
               selectedBlade.ipAddress,
               selectedBlade.port,
               Number(selectedBlade.totalMemoryAvailableMiB),
-              Number(selectedBlade.totalMemoryAllocatedMiB)
+              Number(selectedBlade.totalMemoryAllocatedMiB),
+              selectedBlade.status
             );
             // Update the URL with the first blade's ID
             updateUrlWithBladeId(newVal, selectedBlade.id);
@@ -1496,6 +1532,19 @@ export default {
     const selectedBladeId = computed(() => bladeStore.selectedBladeId);
     const selectedBladeIp = computed(() => bladeStore.selectedBladeIp);
     const selectedBladePort = computed(() => bladeStore.selectedBladePortNum);
+    const selectedBladeStatus = computed(() => bladeStore.selectedBladeStatus);
+    
+    const statusColor = computed(() => {
+      return selectedBladeStatus.value === "online"
+        ? "#6ebe4a"
+        : "warning";
+    });
+
+    const statusIcon = computed(() => {
+      return selectedBladeStatus.value === "online"
+        ? "mdi-check-circle"
+        : "mdi-close-circle";
+    });
 
     // Methods to update state
     const selectAppliance = (applianceId: string) => {
@@ -1506,14 +1555,16 @@ export default {
       bladeIp: string,
       bladePort: number,
       bladeMemoryAvailable: number,
-      bladeMemoryAllocated: number
+      bladeMemoryAllocated: number,
+      bladeStatus: string
     ) => {
       bladeStore.selectBlade(
         bladeId,
         bladeIp,
         bladePort,
         bladeMemoryAvailable,
-        bladeMemoryAllocated
+        bladeMemoryAllocated,
+        bladeStatus
       );
     };
 
@@ -1524,6 +1575,9 @@ export default {
       selectedBladeId,
       selectedBladePort,
       selectedBladeIp,
+      selectedBladeStatus,
+      statusColor,
+      statusIcon,
       selectAppliance,
       selectBlade,
       loading,
