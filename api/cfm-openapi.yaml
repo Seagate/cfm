@@ -188,8 +188,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/statusMessage"
     put:
-      description: Rename an appliance by new id.
-      operationId: appliancesRenameById
+      description: Update an appliance with a new id.
+      operationId: appliancesUpdateById
       parameters:
       - $ref: "#/components/parameters/applianceId"
       - name: newApplianceId
@@ -364,8 +364,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/statusMessage"
     put:
-      description: Rename a blade by new id.
-      operationId: bladesRenameById
+      description: Update a blade with a new id.
+      operationId: bladesUpdateById
       parameters:
       - $ref: "#/components/parameters/applianceId"
       - $ref: "#/components/parameters/bladeId"
@@ -880,8 +880,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/statusMessage"
     put:
-      description: Rename a CXL host by new id.
-      operationId: hostsRenameById
+      description: Update a CXL host with a new id.
+      operationId: hostsUpdateById
       parameters:
       - $ref: "#/components/parameters/hostId"
       - name: newHostId
