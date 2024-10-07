@@ -119,6 +119,85 @@ func GetAppliances(ctx context.Context) map[string]*Appliance {
 	return appliances
 }
 
+func RenameAppliance(ctx context.Context, appliance *Appliance, newApplianceId string) (*Appliance, error) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info(">>>>>> RenameApplianceById: ", "applianceId", appliance.Id)
+
+	// Store the associated blades information locally, which is needed when adding back the blades
+	bladesInfo := make(map[string]*Blade)
+	for _, id := range appliance.GetAllBladeIds() {
+		bladesInfo[id] = appliance.Blades[id]
+	}
+
+	// delete appliance and the associated blades
+	_, err := DeleteApplianceById(ctx, appliance.Id)
+	if err != nil {
+		return nil, &common.RequestError{StatusCode: common.StatusApplianceDeleteSessionFailure, Err: err}
+	}
+
+	// add appliance back with the new id
+	c := openapi.Credentials{
+		CustomId: newApplianceId,
+	}
+	newAppliance, err := AddAppliance(ctx, &c)
+	if err != nil {
+		return nil, &common.RequestError{StatusCode: common.StatusApplianceCreateSessionFailure, Err: err}
+	}
+
+	var failedBladeIds []string
+
+	// Add blades back to the new appliance
+	for id, blade := range bladesInfo {
+		_, err := newAppliance.AddBladeBack(ctx, blade.creds)
+		if err != nil {
+			newErr := fmt.Errorf("add blade by id [%s] failure: appliance [%s]: %w", id, newApplianceId, err)
+			logger.Error(newErr, "failure: add blade to new appliance: handle and continue")
+			failedBladeIds = append(failedBladeIds, id)
+		}
+	}
+
+	if len(failedBladeIds) == 0 {
+		logger.V(2).Info("success: rename appliance", "applianceId", newApplianceId, "blades", bladesInfo)
+		return newAppliance, nil
+	} else if len(failedBladeIds) < len(bladesInfo) {
+		newErr := fmt.Errorf("rename appliance by id [%s]: some failure(s): blade(s) [%s]", newApplianceId, failedBladeIds)
+		logger.Error(newErr, "partial success: rename appliance by id")
+		return newAppliance, &common.RequestError{StatusCode: common.StatusApplianceRenameFailure, Err: newErr}
+	} else {
+		newErr := fmt.Errorf("rename appliance by id [%s] failure", newApplianceId)
+		logger.Error(newErr, "failure: rename appliance by id")
+		return nil, &common.RequestError{StatusCode: common.StatusApplianceRenameFailure, Err: newErr}
+	}
+}
+
+func RenameBlade(ctx context.Context, appliance *Appliance, blade *Blade, newBladeId string) (*Blade, error) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info(">>>>>> RenameBladeById: ", "bladeId", blade.Id)
+
+	// Save the blade credentials for adding back with the new name
+	c := &openapi.Credentials{
+		Username:  blade.creds.Username,
+		Password:  blade.creds.Password,
+		IpAddress: blade.creds.IpAddress,
+		Port:      blade.creds.Port,
+		Insecure:  blade.creds.Insecure,
+		Protocol:  blade.creds.Protocol,
+		CustomId:  newBladeId,
+	}
+
+	// delete blade
+	_, err := appliance.DeleteBladeById(ctx, blade.Id)
+	if err != nil {
+		return nil, &common.RequestError{StatusCode: common.StatusBladeRenameFailure, Err: err}
+	}
+	// Add the balde back with the new name
+	newBlade, err := appliance.AddBlade(ctx, c)
+	if err != nil {
+		return nil, &common.RequestError{StatusCode: common.StatusBladeRenameFailure, Err: err}
+	}
+	return newBlade, nil
+}
+
 func ResyncApplianceById(ctx context.Context, applianceId string) (*Appliance, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> ResyncApplianceById: ", "applianceId", applianceId)
@@ -265,6 +344,34 @@ func AddHost(ctx context.Context, c *openapi.Credentials) (*Host, error) {
 	logger.V(2).Info("success: add host", "hostId", host.Id)
 
 	return host, nil
+}
+
+func RenameHost(ctx context.Context, host *Host, newHostId string) (*Host, error) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info(">>>>>> RenameHostById: ", "hostId", host.Id)
+	// Save the host credentials for adding back with the new name
+	c := &openapi.Credentials{
+		Username:  host.creds.Username,
+		Password:  host.creds.Password,
+		IpAddress: host.creds.IpAddress,
+		Port:      host.creds.Port,
+		Insecure:  host.creds.Insecure,
+		Protocol:  host.creds.Protocol,
+		CustomId:  newHostId,
+	}
+
+	// delete host
+	_, err := DeleteHostById(ctx, host.Id)
+	if err != nil {
+		return nil, &common.RequestError{StatusCode: common.StatusBladeRenameFailure, Err: err}
+	}
+
+	// Add the host back with the new name
+	newHost, err := AddHost(ctx, c)
+	if err != nil {
+		return nil, &common.RequestError{StatusCode: common.StatusBladeRenameFailure, Err: err}
+	}
+	return newHost, nil
 }
 
 func DeleteHostById(ctx context.Context, hostId string) (*Host, error) {

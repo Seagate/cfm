@@ -187,6 +187,41 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/statusMessage"
+    put:
+      description: Update an appliance with a new id.
+      operationId: appliancesUpdateById
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      - name: newApplianceId
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/appliance'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
 
   # Memory Appliance Blades
   /cfm/v1/appliances/{applianceId}/blades:
@@ -316,6 +351,42 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/blade'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+    put:
+      description: Update a blade with a new id.
+      operationId: bladesUpdateById
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      - $ref: "#/components/parameters/bladeId"
+      - name: newBladeId
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/blade'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
         "404":
           description: Not Found
           content:
@@ -808,6 +879,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/statusMessage"
+    put:
+      description: Update a CXL host with a new id.
+      operationId: hostsUpdateById
+      parameters:
+      - $ref: "#/components/parameters/hostId"
+      - name: newHostId
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/host'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
   # CXL Host Ports
   /cfm/v1/hosts/{hostId}/ports:
     get:

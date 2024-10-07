@@ -296,6 +296,25 @@ func (a *Appliance) InvalidateCache() {
 	}
 }
 
+func (a *Appliance) AddBladeBack(ctx context.Context, c *openapi.Credentials) (*Blade, error) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info(">>>>>> Add Blade Back: ", "bladeId", c.CustomId, "applianceId", a.Id)
+
+	// add blade back
+	blade, err := a.AddBlade(ctx, c)
+	if err != nil {
+		newErr := fmt.Errorf("failed to add blade [%s] back", c.CustomId)
+		logger.Error(newErr, "failure: add blade back")
+		return nil, &common.RequestError{StatusCode: common.StatusBladeCreateSessionFailure, Err: newErr}
+	}
+
+	blade.UpdateConnectionStatusBackend(ctx)
+
+	logger.V(2).Info("success: add blade back", "status", blade.Status, "bladeId", blade.Id, "applianceId", a.Id)
+
+	return blade, nil
+}
+
 func (a *Appliance) ResyncBladeById(ctx context.Context, bladeId string) (*Blade, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> ResyncBladeById: ", "bladeId", bladeId, "applianceId", a.Id)
@@ -305,7 +324,7 @@ func (a *Appliance) ResyncBladeById(ctx context.Context, bladeId string) (*Blade
 	if !ok || blade == nil {
 		newErr := fmt.Errorf("failed to get blade [%s]", bladeId)
 		logger.Error(newErr, "failure: resync blade by id")
-		return nil, &common.RequestError{StatusCode: common.StatusHostIdDoesNotExist, Err: newErr}
+		return nil, &common.RequestError{StatusCode: common.StatusBladeIdDoesNotExist, Err: newErr}
 	}
 
 	blade.UpdateConnectionStatusBackend(ctx)

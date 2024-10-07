@@ -143,6 +143,33 @@ func (cfm *CfmApiService) AppliancesPost(ctx context.Context, credentials openap
 	return openapi.Response(http.StatusCreated, a), nil
 }
 
+// AppliancesUpdateById -
+func (cfm *CfmApiService) AppliancesUpdateById(ctx context.Context, applianceId string, newApplianceId string) (openapi.ImplResponse, error) {
+	// Make sure the newApplianceId doesn't exist
+	_, exist := manager.GetApplianceById(ctx, newApplianceId)
+	if exist == nil {
+		err := common.RequestError{
+			StatusCode: common.StatusApplianceIdDuplicate,
+			Err:        fmt.Errorf("the new name (%s) already exists", newApplianceId),
+		}
+		return formatErrorResp(ctx, &err)
+	}
+
+	// Make sure the appliance exists
+	appliance, err := manager.GetApplianceById(ctx, applianceId)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	//Rename the appliance with the new id
+	newAppliance, err := manager.RenameAppliance(ctx, appliance, newApplianceId)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	return openapi.Response(http.StatusOK, newAppliance), nil
+}
+
 // AppliancesResync -
 func (cfm *CfmApiService) AppliancesResyncById(ctx context.Context, applianceId string) (openapi.ImplResponse, error) {
 	appliance, err := manager.ResyncApplianceById(ctx, applianceId)
@@ -493,6 +520,41 @@ func (cfm *CfmApiService) BladesGetPorts(ctx context.Context, applianceId string
 	}
 
 	return openapi.Response(http.StatusOK, response), nil
+}
+
+// BladesUpdateById -
+func (cfm *CfmApiService) BladesUpdateById(ctx context.Context, applianceId string, bladeId string, newBladeId string) (openapi.ImplResponse, error) {
+	appliance, err := manager.GetApplianceById(ctx, applianceId)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	// Make sure the bladeId exists
+	// Get the blade information from the manager level and is used for renaming
+	blade, err := appliance.GetBladeById(ctx, bladeId)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	// Make sure the newBladeId doesn't exist
+	existBladeIds := appliance.GetAllBladeIds()
+	for _, id := range existBladeIds {
+		if newBladeId == id {
+			err := common.RequestError{
+				StatusCode: common.StatusBladeIdDuplicate,
+				Err:        fmt.Errorf("the new name (%s) already exists", newBladeId),
+			}
+			return formatErrorResp(ctx, &err)
+		}
+	}
+
+	//Rename the appliance with the new id
+	newBlade, err := manager.RenameBlade(ctx, appliance, blade, newBladeId)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	return openapi.Response(http.StatusOK, newBlade), nil
 }
 
 // BladesGetResourceById -
@@ -930,6 +992,34 @@ func (cfm *CfmApiService) HostsPost(ctx context.Context, credentials openapi.Cre
 	}
 
 	return openapi.Response(http.StatusCreated, h), nil
+}
+
+// HostsUpdateById -
+func (cfm *CfmApiService) HostsUpdateById(ctx context.Context, hostId string, newHostId string) (openapi.ImplResponse, error) {
+	// Make sure the hostId exists
+	// Get the host information from the manager level and is used for renaming
+	host, err := manager.GetHostById(ctx, hostId)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	// Make sure the newHostId doesn't exist
+	_, exist := manager.GetHostById(ctx, newHostId)
+	if exist == nil {
+		err := common.RequestError{
+			StatusCode: common.StatusHostIdDuplicate,
+			Err:        fmt.Errorf("the new name (%s) already exists", newHostId),
+		}
+		return formatErrorResp(ctx, &err)
+	}
+
+	//Rename the cxl host with the new id
+	newHost, err := manager.RenameHost(ctx, host, newHostId)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	return openapi.Response(http.StatusOK, newHost), nil
 }
 
 // HostsResync -
