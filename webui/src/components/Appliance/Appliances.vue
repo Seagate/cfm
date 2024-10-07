@@ -171,9 +171,10 @@
                     <v-list lines="one">
                       <v-list-item>
                         <v-list-item-title>Status</v-list-item-title>
-                        <v-list-item-subtitle>{{
-                          selectedBladeStatus
-                        }}</v-list-item-subtitle>
+                        <v-list-item-subtitle
+                          :style="{ fontWeight: 'bold', color: statusColor }"
+                          >{{ selectedBladeStatus }}</v-list-item-subtitle
+                        >
                         <template v-slot:prepend>
                           <v-avatar>
                             <v-icon :color="statusColor">{{
@@ -1531,7 +1532,7 @@ export default {
     const selectedBladeStatus = computed(() => bladeStore.selectedBladeStatus);
 
     const statusColor = computed(() => {
-      return selectedBladeStatus.value === "online" ? "#6ebe4a" : "warning";
+      return selectedBladeStatus.value === "online" ? "#6ebe4a" : "#ff9f40";
     });
 
     const statusIcon = computed(() => {

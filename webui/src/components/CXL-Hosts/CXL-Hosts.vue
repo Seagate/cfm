@@ -104,9 +104,13 @@
                 <v-list lines="one">
                   <v-list-item>
                     <v-list-item-title>Status</v-list-item-title>
-                    <v-list-item-subtitle>{{
-                      selectedHostStatus
-                    }}</v-list-item-subtitle>
+                    <v-list-item-subtitle
+                      :style="{
+                        fontWeight: 'bold',
+                        color: statusColor + ' !important',
+                      }"
+                      >{{ selectedHostStatus }}</v-list-item-subtitle
+                    >
                     <template v-slot:prepend>
                       <v-avatar>
                         <v-icon :color="statusColor">{{ statusIcon }}</v-icon>
@@ -915,7 +919,7 @@ export default {
     const selectedHostStatus = computed(() => hostStore.selectedHostStatus);
 
     const statusColor = computed(() => {
-      return selectedHostStatus.value === "online" ? "#6ebe4a" : "warning";
+      return selectedHostStatus.value === "online" ? "#6ebe4a" : "#ff9f40";
     });
 
     const statusIcon = computed(() => {
