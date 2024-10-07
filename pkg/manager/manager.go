@@ -123,18 +123,10 @@ func RenameAppliance(ctx context.Context, appliance *Appliance, newApplianceId s
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> RenameApplianceById: ", "applianceId", appliance.Id)
 
-	// query cache
-	existingAppliance, ok := deviceCache.GetApplianceByIdOk(appliance.Id)
-	if !ok {
-		newErr := fmt.Errorf("failed to get appliance [%s]", appliance.Id)
-		logger.Error(newErr, "failure: get appliance by id")
-		return nil, &common.RequestError{StatusCode: common.StatusApplianceIdDoesNotExist, Err: newErr}
-	}
-
 	// Store the associated blades information locally, which is needed when adding back the blades
 	bladesInfo := make(map[string]*Blade)
-	for _, id := range existingAppliance.GetAllBladeIds() {
-		bladesInfo[id] = existingAppliance.Blades[id]
+	for _, id := range appliance.GetAllBladeIds() {
+		bladesInfo[id] = appliance.Blades[id]
 	}
 
 	// delete appliance and the associated blades
@@ -178,17 +170,9 @@ func RenameAppliance(ctx context.Context, appliance *Appliance, newApplianceId s
 	}
 }
 
-func RenameBlade(ctx context.Context, blade *Blade, newBladeId string) (*Blade, error) {
+func RenameBlade(ctx context.Context, appliance *Appliance, blade *Blade, newBladeId string) (*Blade, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> RenameBladeById: ", "bladeId", blade.Id)
-
-	// query cache
-	appliance, ok := deviceCache.GetApplianceByIdOk(blade.ApplianceId)
-	if !ok {
-		newErr := fmt.Errorf("failed to get appliance [%s]", blade.ApplianceId)
-		logger.Error(newErr, "failure: get appliance by id")
-		return nil, &common.RequestError{StatusCode: common.StatusApplianceIdDoesNotExist, Err: newErr}
-	}
 
 	// Save the blade credentials for adding back with the new name
 	c := &openapi.Credentials{

@@ -549,7 +549,7 @@ func (cfm *CfmApiService) BladesUpdateById(ctx context.Context, applianceId stri
 	}
 
 	//Rename the appliance with the new id
-	newBlade, err := manager.RenameBlade(ctx, blade, newBladeId)
+	newBlade, err := manager.RenameBlade(ctx, appliance, blade, newBladeId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
