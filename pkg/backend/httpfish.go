@@ -1303,11 +1303,6 @@ func (service *httpfishService) GetHostPortPcieDevices(ctx context.Context, sett
 	logger.V(4).Info("====== GetHostPortPcieDevices ======")
 	logger.V(4).Info("GetHostPortPcieDevices", "req", req)
 
-	var ret = GetPortsResponse{
-		Status:  "Failure",
-		PortIds: []string{},
-	}
-
 	session := service.service.session.(*Session)
 
 	// Allow host sessions only
