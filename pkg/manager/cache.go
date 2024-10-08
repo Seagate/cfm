@@ -22,6 +22,7 @@ ability to easily create there own searches through the cache.
 package manager
 
 import (
+	"cfm/pkg/common"
 	"fmt"
 )
 
@@ -46,7 +47,8 @@ func NewDevicesCache() *DevicesCache {
 func (c *DevicesCache) AddAppliance(appliance *Appliance) error {
 	_, ok := c.appliances[appliance.Id]
 	if ok {
-		return fmt.Errorf("cache already contains appliance with id [%s]", appliance.Id)
+		newErr := fmt.Errorf("cache already contains appliance with id [%s]", appliance.Id)
+		return &common.RequestError{StatusCode: common.StatusApplianceIdDuplicate, Err: newErr}
 	}
 
 	c.appliances[appliance.Id] = appliance
@@ -79,7 +81,8 @@ func (c *DevicesCache) GetAllApplianceIds() []string {
 func (c *DevicesCache) GetApplianceById(applianceId string) (*Appliance, error) {
 	appliance, ok := c.GetApplianceByIdOk(applianceId)
 	if !ok {
-		return nil, fmt.Errorf("appliance [%s] doesn't exist", applianceId)
+		newErr := fmt.Errorf("appliance [%s] doesn't exist", applianceId)
+		return nil, &common.RequestError{StatusCode: common.StatusApplianceIdDoesNotExist, Err: newErr}
 	}
 
 	return appliance, nil
@@ -262,7 +265,8 @@ func (c *DevicesCache) GetAllHostIds() []string {
 func (c *DevicesCache) GetHostById(hostId string) (*Host, error) {
 	host, ok := c.GetHostByIdOk(hostId)
 	if !ok {
-		return nil, fmt.Errorf("host [%s] doesn't exist", hostId)
+		newErr := fmt.Errorf("host [%s] doesn't exist", hostId)
+		return nil, &common.RequestError{StatusCode: common.StatusHostIdDoesNotExist, Err: newErr}
 	}
 
 	return host, nil

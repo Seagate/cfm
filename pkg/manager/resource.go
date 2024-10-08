@@ -73,7 +73,7 @@ func (r *BladeResource) GetDetails(ctx context.Context) (openapi.MemoryResourceB
 		if err != nil || response == nil {
 			newErr := fmt.Errorf("failed to get resource by id (backend): appliance [%s] blade [%s] resource [%s]: %w", r.ApplianceId, r.BladeId, r.Id, err)
 			logger.Error(newErr, "failure: get details")
-			return openapi.MemoryResourceBlock{}, &common.RequestError{StatusCode: common.StatusGetMemoryResourceBlockByIdFailure, Err: newErr}
+			return openapi.MemoryResourceBlock{}, &common.RequestError{StatusCode: common.StatusBladeGetMemoryResourceBlockDetailsFailure, Err: newErr}
 		}
 
 		r.details = openapi.MemoryResourceBlock{
@@ -161,7 +161,7 @@ func (r *BladeResource) init(ctx context.Context) error {
 	if err != nil {
 		newErr := fmt.Errorf("resource [%s] init failed on blade [%s]: %w", r.Id, r.BladeId, err)
 		logger.Error(newErr, "failure: init blade resource")
-		return newErr
+		return &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
 	logger.V(2).Info("success: init blade resource", "resourceId", r.Id, "bladeId", r.BladeId, "applianceId", r.ApplianceId)

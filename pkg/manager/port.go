@@ -35,7 +35,7 @@ type CxlBladePort struct {
 	backendOps backend.BackendOperations
 }
 
-func NewCxlBladePortById(ctx context.Context, applianceId, bladeId, portId string, ops backend.BackendOperations) (*CxlBladePort, error) {
+func NewCxlBladePortById(ctx context.Context, applianceId, bladeId, portId string, ops backend.BackendOperations) *CxlBladePort {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> NewCxlBladePortById: ", "portId", portId, "bladeId", bladeId, "applianceId", applianceId, "backend", ops.GetBackendInfo(ctx).BackendName)
 
@@ -50,7 +50,7 @@ func NewCxlBladePortById(ctx context.Context, applianceId, bladeId, portId strin
 
 	logger.V(2).Info("success: new cxl blade port", "portId", p.Id, "bladeId", p.BladeId, "applianceId", p.ApplianceId)
 
-	return &p, nil
+	return &p
 }
 
 func (p *CxlBladePort) GetDetails(ctx context.Context) (openapi.PortInformation, error) {
@@ -125,7 +125,7 @@ func (p *CxlBladePort) init(ctx context.Context) error {
 	if err != nil {
 		newErr := fmt.Errorf("port [%s] init failed on blade [%s]: %w", p.Id, p.BladeId, err)
 		logger.Error(newErr, "failure: init blade port")
-		return newErr
+		return &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
 	logger.V(2).Info("success: init blade port", "portId", p.Id, "bladeId", p.BladeId, "applianceId", p.ApplianceId)

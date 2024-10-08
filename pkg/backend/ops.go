@@ -12,32 +12,29 @@ type CreateSessionRequest struct {
 }
 
 type CreateSessionResponse struct {
-	SessionId    string // The session id returned form creating a session
-	Status       string // The status of the request
-	ServiceError error  // Any error returned by the service
-	ChassisSN    string // The serial number returned from the redfish chassis schema
-	EnclosureSN  string // The serial number returned from the redfish chassis schema for the enclosure
+	SessionId   string // The session id returned form creating a session
+	Status      string // The status of the request
+	ChassisSN   string // The serial number returned from the redfish chassis schema
+	EnclosureSN string // The serial number returned from the redfish chassis schema for the enclosure
 }
 
 type DeleteSessionRequest struct {
 }
 
 type DeleteSessionResponse struct {
-	SessionId    string // The session id we are ending
-	IpAddress    string // Ip Address
-	Port         int32  // Port
-	Status       string // The status of the request
-	ServiceError error  // Any error returned by the service
+	SessionId string // The session id we are ending
+	IpAddress string // Ip Address
+	Port      int32  // Port
+	Status    string // The status of the request
 }
 
 type PortNumber int32
 
 type GetMemoryRegionResponse struct {
-	Id           string       // Id of the memory region
-	Ports        []PortNumber // Port numbers on fabric
-	CapacityMiB  int32        // Allocated memory capacity
-	Status       string       // The status of the request
-	ServiceError error        // Any error returned by the service
+	Id          string       // Id of the memory region
+	Ports       []PortNumber // Port numbers on fabric
+	CapacityMiB int32        // Allocated memory capacity
+	Status      string       // The status of the request
 }
 
 type QoS int32
@@ -48,10 +45,9 @@ type AllocateMemoryRequest struct {
 }
 
 type AllocateMemoryResponse struct {
-	SizeMiB      int32  // The allocated number of mebibytes (This may be adjusted to implement dimm interleave)
-	MemoryId     string // The id of the memory region allocated\provisioned
-	Status       string // The status of the request
-	ServiceError error  // Any error returned by the service
+	SizeMiB  int32  // The allocated number of mebibytes (This may be adjusted to implement dimm interleave)
+	MemoryId string // The id of the memory region allocated\provisioned
+	Status   string // The status of the request
 }
 
 type AllocateMemoryByResourceRequest struct {
@@ -59,10 +55,9 @@ type AllocateMemoryByResourceRequest struct {
 }
 
 type AllocateMemoryByResourceResponse struct {
-	SizeMiB      int32  // The allocated number of mebibytes
-	MemoryId     string // The id of the memory region allocated\provisioned
-	Status       string // The status of the request
-	ServiceError error  // Any error returned by the service
+	SizeMiB  int32  // The allocated number of mebibytes
+	MemoryId string // The id of the memory region allocated\provisioned
+	Status   string // The status of the request
 }
 
 type AssignMemoryRequest struct {
@@ -71,8 +66,7 @@ type AssignMemoryRequest struct {
 }
 
 type AssignMemoryResponse struct {
-	Status       string // The status of the request
-	ServiceError error  // Any error returned by the service
+	Status string // The status of the request
 }
 
 type UnassignMemoryRequest struct {
@@ -81,8 +75,7 @@ type UnassignMemoryRequest struct {
 }
 
 type UnassignMemoryResponse struct {
-	Status       string // The status of the request
-	ServiceError error  // Any error returned by the service
+	Status string // The status of the request
 }
 
 type MemoryResourceBlocksRequest struct {
@@ -91,16 +84,14 @@ type MemoryResourceBlocksRequest struct {
 type MemoryResourceBlocksResponse struct {
 	MemoryResources []string // Array to hold ids of memory resources, get from memory appliance
 	Status          string   // The status of the request
-	ServiceError    error    // Any error returned by the service
 }
 
 type GetPortsRequest struct {
 }
 
 type GetPortsResponse struct {
-	PortIds      []string // Array to hold ids of ports
-	Status       string   // The status of the request
-	ServiceError error    // Any error returned by the service
+	PortIds []string // Array to hold ids of ports
+	Status  string   // The status of the request
 }
 
 type GetPortDetailsRequest struct {
@@ -124,7 +115,6 @@ type PortInformation struct {
 type GetPortDetailsResponse struct {
 	PortInformation PortInformation // Detail info for one port id
 	Status          string          // The status of the request
-	ServiceError    error           // Any error returned by the service
 }
 
 type GetHostPortSnByIdRequest struct {
@@ -134,16 +124,14 @@ type GetHostPortSnByIdRequest struct {
 type GetHostPortSnByIdResponse struct {
 	SerialNumber string
 	Status       string // The status of the request
-	ServiceError error  // Any error returned by the service
 }
 
 type GetMemoryDevicesRequest struct {
 }
 
 type GetMemoryDevicesResponse struct {
-	DeviceIdMap  map[string][]string // map of physical devices ids (keys) to 1 or more logical device ids (values)
-	Status       string              // The status of the request
-	ServiceError error               // Any error returned by the service
+	DeviceIdMap map[string][]string // map of physical devices ids (keys) to 1 or more logical device ids (values)
+	Status      string              // The status of the request
 }
 
 type GetMemoryDeviceDetailsRequest struct {
@@ -164,7 +152,6 @@ type GetMemoryDeviceDetailsResponse struct {
 	MemorySizeMiB int32                   // The memory size of the device in MiB
 	LinkStatus    *MemoryDeviceLinkStatus // Detail info for one port id
 	Status        string                  // The status of the request
-	ServiceError  error                   // Any error returned by the service
 }
 
 type MemoryResourceBlockByIdRequest struct {
@@ -222,7 +209,6 @@ type MemoryResourceBlock struct {
 type MemoryResourceBlockByIdResponse struct {
 	MemoryResourceBlock MemoryResourceBlock // Detail info for one memory resource block
 	Status              string              // The status of the request
-	ServiceError        error               // Any error returned by the service
 }
 
 type FreeMemoryRequest struct {
@@ -230,8 +216,7 @@ type FreeMemoryRequest struct {
 }
 
 type FreeMemoryResponse struct {
-	Status       string // The status of the request
-	ServiceError error  // Any error returned by the service
+	Status string // The status of the request
 }
 
 type GetMemoryByIdRequest struct {
@@ -262,20 +247,25 @@ type TypeMemoryRegion struct {
 type GetMemoryByIdResponse struct {
 	MemoryRegion TypeMemoryRegion
 	Status       string // The status of the request
-	ServiceError error  // Any error returned by the service
 }
 
 type GetMemoryRequest struct {
 }
 
 type GetMemoryResponse struct {
-	MemoryIds    []string // list of memory ids
-	Status       string   // The status of the request
-	ServiceError error    // Any error returned by the service
+	MemoryIds []string // list of memory ids
+	Status    string   // The status of the request
 }
 
 type GetBackendInfoResponse struct {
 	BackendName string
 	Version     string
 	SessionId   string
+}
+type GetRootServiceRequest struct {
+}
+
+type GetRootServiceResponse struct {
+	Name string
+	Uuid string
 }

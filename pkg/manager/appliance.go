@@ -8,6 +8,7 @@ import (
 
 	"cfm/pkg/backend"
 	"cfm/pkg/common"
+	"cfm/pkg/common/datastore"
 	"cfm/pkg/openapi"
 
 	"github.com/google/uuid"
@@ -24,21 +25,23 @@ type Appliance struct {
 }
 
 // NewAppliance - Creates a new Appliance object.
-func NewAppliance(ctx context.Context, id string) (*Appliance, error) {
+func NewAppliance(ctx context.Context, c *openapi.Credentials) (*Appliance, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> NewAppliance: ")
 
-	applianceId := id
+	applianceId := c.CustomId
 	if applianceId == "" {
 		// Generate uuid here and combine the last N digits with the prefix to be the appliance default id
 		uuid := uuid.New().String()
 		applianceId = fmt.Sprintf("%s-%s", ID_PREFIX_APPLIANCE_DFLT, uuid[(len(uuid)-common.NumUuidCharsForId):])
+		c.CustomId = applianceId
 	}
 
 	// Check for duplicate ID
 	_, exists := deviceCache.GetApplianceByIdOk(applianceId)
 	if exists {
-		return nil, fmt.Errorf("invalid id: applianceId [%s] already exists in cfm-service", applianceId)
+		newErr := fmt.Errorf("invalid id: applianceId [%s] already exists in cfm-service", applianceId)
+		return nil, &common.RequestError{StatusCode: common.StatusApplianceIdDuplicate, Err: newErr}
 	}
 
 	a := Appliance{
@@ -93,7 +96,7 @@ func (a *Appliance) AddBlade(ctx context.Context, c *openapi.Credentials) (*Blad
 	if err != nil || response == nil {
 		newErr := fmt.Errorf("create session failure at [%s:%d] using interface [%s]: %w", c.IpAddress, c.Port, backendName, err)
 		logger.Error(newErr, "failure: add blade")
-		return nil, &common.RequestError{StatusCode: common.StatusApplianceCreateSessionFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: common.StatusBladeCreateSessionFailure, Err: newErr}
 	}
 
 	bladeId := c.CustomId
@@ -103,6 +106,7 @@ func (a *Appliance) AddBlade(ctx context.Context, c *openapi.Credentials) (*Blad
 			// Generate default id using last N digits of the session id combined with the default prefix
 			bladeId = fmt.Sprintf("%s-%s", ID_PREFIX_BLADE_DFLT, response.SessionId[(len(response.SessionId)-common.NumUuidCharsForId):])
 		}
+		c.CustomId = bladeId
 	}
 
 	// Check for duplicate ID
@@ -113,12 +117,12 @@ func (a *Appliance) AddBlade(ctx context.Context, c *openapi.Credentials) (*Blad
 		if err != nil || response == nil {
 			newErr := fmt.Errorf("failed to delete session [%s:%d] after failed duplicate bladeId [%s] check: %w", c.IpAddress, c.Port, bladeId, err)
 			logger.Error(newErr, "failure: add blade")
-			return nil, &common.RequestError{StatusCode: common.StatusApplianceDeleteSessionFailure, Err: newErr}
+			return nil, &common.RequestError{StatusCode: common.StatusBladeDeleteSessionFailure, Err: newErr}
 		}
 
 		newErr := fmt.Errorf("invalid id: bladeId [%s] already exists on appliance [%s] ", bladeId, a.Id)
 		logger.Error(newErr, "failure: add blade")
-		return nil, &common.RequestError{StatusCode: common.StatusManagerInitializationFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: common.StatusBladeIdDuplicate, Err: newErr}
 	}
 
 	// Create the new Blade
@@ -126,6 +130,7 @@ func (a *Appliance) AddBlade(ctx context.Context, c *openapi.Credentials) (*Blad
 		BladeId:     bladeId,
 		ApplianceId: a.Id,
 		Ip:          c.IpAddress,
+		Status:      common.ONLINE,
 		Port:        uint16(c.Port),
 		BackendOps:  ops,
 		Creds:       c,
@@ -134,11 +139,11 @@ func (a *Appliance) AddBlade(ctx context.Context, c *openapi.Credentials) (*Blad
 	blade, err := NewBlade(ctx, &r)
 	if err != nil || blade == nil {
 		req := backend.DeleteSessionRequest{}
-		response, err := ops.DeleteSession(ctx, &settings, &req)
-		if err != nil || response == nil {
+		response, deleErr := ops.DeleteSession(ctx, &settings, &req)
+		if deleErr != nil || response == nil {
 			newErr := fmt.Errorf("failed to delete session [%s:%d] after failed blade [%s] object creation: %w", c.IpAddress, c.Port, bladeId, err)
 			logger.Error(newErr, "failure: add blade")
-			return nil, &common.RequestError{StatusCode: common.StatusApplianceDeleteSessionFailure, Err: newErr}
+			return nil, &common.RequestError{StatusCode: common.StatusBladeDeleteSessionFailure, Err: newErr}
 		}
 
 		newErr := fmt.Errorf("appliance [%s] new blade object creation failure: %w", a.Id, err)
@@ -149,28 +154,28 @@ func (a *Appliance) AddBlade(ctx context.Context, c *openapi.Credentials) (*Blad
 	// Add blade to appliance
 	a.Blades[blade.Id] = blade
 
+	// Add host to datastore
+	applianceDatum, _ := datastore.DStore().GetDataStore().GetApplianceDatumById(a.Id)
+	applianceDatum.AddBladeDatum(c)
+	datastore.DStore().Store()
+
 	logger.V(2).Info("success: add blade", "bladeId", blade.Id, "applianceId", a.Id)
 
 	return blade, nil
 }
 
-func (a *Appliance) DeleteAllBlades(ctx context.Context) error {
+func (a *Appliance) DeleteAllBlades(ctx context.Context) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> DeleteAllBlades: ", "applianceId", a.Id)
 
 	for id := range a.Blades {
-		_, err := a.DeleteBladeById(ctx, id)
-		if err != nil {
-			return err
-		}
+		a.DeleteBladeById(ctx, id) // ignore any errors
 	}
 
 	logger.V(2).Info("success: delete all blades", "applianceId", a.Id)
-
-	return nil
 }
 
-// DeleteBladeById: Delete the blade backend session and the local blade cache
+// DeleteBladeById: Delete the blade from: backend, deviceCache and datastore
 func (a *Appliance) DeleteBladeById(ctx context.Context, bladeId string) (*Blade, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> DeleteBladeById: ", "bladeId", bladeId, "applianceId", a.Id)
@@ -178,8 +183,13 @@ func (a *Appliance) DeleteBladeById(ctx context.Context, bladeId string) (*Blade
 	// query for blade
 	blade, ok := a.Blades[bladeId]
 	if !ok {
-		logger.V(2).Info("blade not found during delete: do nothing", "bladeId", bladeId, "applianceId", a.Id)
-		return &Blade{Id: bladeId}, nil
+		logger.V(2).Info("blade not found during delete:", "bladeId", bladeId, "applianceId", a.Id)
+		newErr := fmt.Errorf("blade [%s] not found during delete", bladeId)
+
+		logger.V(2).Info("force complete appliance blade deletion after error", "bladeId", blade.Id, "applianceId", a.Id)
+		a.deleteBlade(bladeId)
+
+		return nil, &common.RequestError{StatusCode: common.StatusBladeIdDoesNotExist, Err: newErr}
 	}
 
 	// get blade backend
@@ -194,15 +204,14 @@ func (a *Appliance) DeleteBladeById(ctx context.Context, bladeId string) (*Blade
 		newErr := fmt.Errorf("failed to delete blade [%s] backend [%s] session [%s]: %w", blade.Id, ops.GetBackendInfo(ctx).BackendName, blade.Socket.String(), err)
 		logger.Error(newErr, "failure: delete blade by id")
 
-		// Currently, backend ALWAYS deletes the blade session from the backend map.  For now, need to delete blade from appliance map as well.
-		logger.V(2).Info("force blade deletion after backend session failure", "bladeId", blade.Id, "applianceId", a.Id)
-		delete(a.Blades, blade.Id)
+		// Currently, backend ALWAYS deletes the blade session from the backend map.  Do the same in the this (manager) layer
+		logger.V(2).Info("force complete appliance blade deletion after backend session failure", "bladeId", blade.Id, "applianceId", a.Id)
+		a.deleteBlade(bladeId)
 
-		return nil, &common.RequestError{StatusCode: common.StatusApplianceDeleteSessionFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: common.StatusBladeDeleteSessionFailure, Err: newErr}
 	}
 
-	// delete blade
-	delete(a.Blades, blade.Id)
+	a.deleteBlade(bladeId)
 
 	logger.V(2).Info("success: delete blade by id", "bladeId", blade.Id, "applianceId", a.Id)
 
@@ -230,7 +239,9 @@ func (a *Appliance) GetBladeById(ctx context.Context, bladeId string) (*Blade, e
 		return nil, &common.RequestError{StatusCode: common.StatusBladeIdDoesNotExist, Err: newErr}
 	}
 
-	logger.V(2).Info("success: get blade by id", "bladeId", blade.Id, "applianceId", a.Id)
+	blade.UpdateConnectionStatusBackend(ctx)
+
+	logger.V(2).Info("success: get blade by id", "status", blade.Status, "bladeId", blade.Id, "applianceId", a.Id)
 
 	return blade, nil
 }
@@ -285,24 +296,54 @@ func (a *Appliance) InvalidateCache() {
 	}
 }
 
+func (a *Appliance) AddBladeBack(ctx context.Context, c *openapi.Credentials) (*Blade, error) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info(">>>>>> Add Blade Back: ", "bladeId", c.CustomId, "applianceId", a.Id)
+
+	// add blade back
+	blade, err := a.AddBlade(ctx, c)
+	if err != nil {
+		newErr := fmt.Errorf("failed to add blade [%s] back", c.CustomId)
+		logger.Error(newErr, "failure: add blade back")
+		return nil, &common.RequestError{StatusCode: common.StatusBladeCreateSessionFailure, Err: newErr}
+	}
+
+	blade.UpdateConnectionStatusBackend(ctx)
+
+	logger.V(2).Info("success: add blade back", "status", blade.Status, "bladeId", blade.Id, "applianceId", a.Id)
+
+	return blade, nil
+}
+
 func (a *Appliance) ResyncBladeById(ctx context.Context, bladeId string) (*Blade, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> ResyncBladeById: ", "bladeId", bladeId, "applianceId", a.Id)
 
-	blade, err := a.DeleteBladeById(ctx, bladeId)
-	if err != nil {
-		newErr := fmt.Errorf("failed to resync blade(delete): appliance [%s] blade [%s]: %w", a.Id, bladeId, err)
-		logger.Error(newErr, "failure: resync blade: ignoring")
+	// query device cache
+	blade, ok := deviceCache.GetBladeByIdOk(a.Id, bladeId)
+	if !ok || blade == nil {
+		newErr := fmt.Errorf("failed to get blade [%s]", bladeId)
+		logger.Error(newErr, "failure: resync blade by id")
+		return nil, &common.RequestError{StatusCode: common.StatusBladeIdDoesNotExist, Err: newErr}
 	}
 
-	blade, err = a.AddBlade(ctx, blade.creds)
-	if err != nil {
-		newErr := fmt.Errorf("failed to resync blade(add): appliance [%s] blade [%s]: %w", a.Id, bladeId, err)
-		logger.Error(newErr, "failure: resync blade")
-		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
-	}
+	blade.UpdateConnectionStatusBackend(ctx)
 
-	logger.V(2).Info("success: resync blade", "bladeId", bladeId, "applianceId", a.Id)
+	logger.V(2).Info("success: resync blade", "status", blade.Status, "bladeId", bladeId, "applianceId", a.Id)
 
 	return blade, nil
+}
+
+/////////////////////////////////////
+//////// Private Functions //////////
+/////////////////////////////////////
+
+func (a *Appliance) deleteBlade(bladeId string) {
+	// delete blade from manager cache
+	delete(a.Blades, bladeId)
+
+	// delete blade from datastore
+	applianceDatum, _ := datastore.DStore().GetDataStore().GetApplianceDatumById(a.Id)
+	applianceDatum.DeleteBladeDatumById(bladeId)
+	datastore.DStore().Store()
 }

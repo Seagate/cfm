@@ -294,7 +294,7 @@
         ></v-icon>
         <h2 class="text-h5 mb-6">Free memory failed!</h2>
         <p class="mb-4 text-medium-emphasis text-body-2">
-          Error: {{ this.freeMemoryError }}
+          {{ this.freeMemoryError }}
         </p>
         <v-divider class="mb-4"></v-divider>
         <div class="text-end">

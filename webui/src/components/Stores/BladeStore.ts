@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia'
 import { Blade, Credentials, DefaultApi } from "@/axios/api";
 import { BASE_PATH } from "@/axios/base";
+import axios from 'axios';
 // Use API_BASE_PATH to overwrite the BASE_PATH in the generated client code
 const API_BASE_PATH = process.env.BASE_PATH || BASE_PATH;
 
@@ -13,6 +14,7 @@ export const useBladeStore = defineStore('blade', {
         selectedBladePortNum: null as unknown as number,
         selectedBladeTotalMemoryAvailableMiB: null as unknown as number | undefined,
         selectedBladeTotalMemoryAllocatedMiB: null as unknown as number | undefined,
+        selectedBladeStatus: null as unknown as string | undefined,
         addBladeError: null as unknown,
         deleteBladeError: null as unknown,
         resyncBladeError: null as unknown,
@@ -75,7 +77,15 @@ export const useBladeStore = defineStore('blade', {
                 const resyncedBlade = response.data;
                 return resyncedBlade;
             } catch (error) {
-                this.resyncBladeError = error;
+                if (axios.isAxiosError(error)) {
+                    this.resyncBladeError = error.message;
+                    if (error.response) {
+                        this.resyncBladeError = error.response?.data.status.message + " (" + error.response?.request.status + ")";
+                    }
+                }
+                else {
+                    this.resyncBladeError = error;
+                }
                 console.error("Error:", error);
             }
         },
@@ -94,7 +104,15 @@ export const useBladeStore = defineStore('blade', {
                 this.blades.push(newBlade);
                 return newBlade;
             } catch (error) {
-                this.addBladeError = error;
+                if (axios.isAxiosError(error)) {
+                    this.addBladeError = error.message;
+                    if (error.response) {
+                        this.addBladeError = error.response?.data.status.message + " (" + error.response?.request.status + ")";
+                    }
+                }
+                else {
+                    this.addBladeError = error;
+                }
                 console.error("Error:", error);
             }
         },
@@ -114,18 +132,27 @@ export const useBladeStore = defineStore('blade', {
                 }
                 return deletedBlade;
             } catch (error) {
-                this.deleteBladeError = error;
+                if (axios.isAxiosError(error)) {
+                    this.deleteBladeError = error.message;
+                    if (error.response) {
+                        this.deleteBladeError = error.response?.data.status.message + " (" + error.response?.request.status + ")";
+                    }
+                }
+                else {
+                    this.deleteBladeError = error;
+                }
                 console.error("Error:", error);
             }
         },
 
 
-        selectBlade(bladeId: string, selectedBladeIp: string, selectBladePortNum: number, selectedBladeTotalMemoryAvailableMiB: number, selectedBladeTotalMemoryAllocatedMiB: number) {
+        selectBlade(bladeId: string, selectedBladeIp: string, selectBladePortNum: number, selectedBladeTotalMemoryAvailableMiB: number, selectedBladeTotalMemoryAllocatedMiB: number, status: string | undefined) {
             this.selectedBladeId = bladeId;
             this.selectedBladeIp = selectedBladeIp;
             this.selectedBladePortNum = selectBladePortNum;
             this.selectedBladeTotalMemoryAvailableMiB = selectedBladeTotalMemoryAvailableMiB;
             this.selectedBladeTotalMemoryAllocatedMiB = selectedBladeTotalMemoryAllocatedMiB;
+            this.selectedBladeStatus = status;
         },
 
         updateSelectedBladeMemory(availableMemory: number | undefined, allocatedMemory: number | undefined) {

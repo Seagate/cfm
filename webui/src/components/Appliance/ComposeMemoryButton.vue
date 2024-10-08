@@ -153,8 +153,6 @@
         ></v-icon>
         <h2 class="text-h5 mb-6">Compose memory failed!</h2>
         <p class="mb-4 text-medium-emphasis text-body-2">
-          Error Message:
-          <br />
           {{ composeMemoryError }}
         </p>
         <v-divider class="mb-4"></v-divider>
@@ -356,7 +354,7 @@ export default {
           this.newMemoryCredentials.port
         ) {
           this.partialSuccess =
-            "Note: Memory allocation succeeded but memory port assignment failed.";
+            "Memory allocation succeeded but memory port assignment failed (206)";
         }
         // Get the size of the new memory chunk to update the blade memory,
         // The final allocated memory size may be changed by the compose memory algorithm, so it may not be the same with the input one

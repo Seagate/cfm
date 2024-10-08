@@ -33,7 +33,7 @@ type BladeMemory struct {
 	backendOps backend.BackendOperations
 }
 
-func NewBladeMemoryById(ctx context.Context, applianceId, bladeId, memoryId string, ops backend.BackendOperations) (*BladeMemory, error) {
+func NewBladeMemoryById(ctx context.Context, applianceId, bladeId, memoryId string, ops backend.BackendOperations) *BladeMemory {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> NewBladeMemoryById: ", "memoryId", memoryId, "bladeId", bladeId, "applianceId", applianceId, "backend", ops.GetBackendInfo(ctx).BackendName)
 
@@ -48,7 +48,7 @@ func NewBladeMemoryById(ctx context.Context, applianceId, bladeId, memoryId stri
 
 	logger.V(2).Info("success: new blade memory", "memoryId", m.Id, "bladeId", m.BladeId, "applianceId", m.ApplianceId)
 
-	return &m, nil
+	return &m
 }
 
 func (m *BladeMemory) GetDetails(ctx context.Context) (openapi.MemoryRegion, error) {
@@ -70,7 +70,7 @@ func (m *BladeMemory) GetDetails(ctx context.Context) (openapi.MemoryRegion, err
 			}
 			newErr := fmt.Errorf("failed to get memory by id (backend): appliance [%s] blade [%s] memory [%s]: %w", m.ApplianceId, m.BladeId, m.Id, err)
 			logger.Error(newErr, "failure: get details")
-			return openapi.MemoryRegion{}, &common.RequestError{StatusCode: common.StatusApplianceGetMemoryByIdFailure, Err: newErr}
+			return openapi.MemoryRegion{}, &common.RequestError{StatusCode: common.StatusBladeGetMemoryByIdFailure, Err: newErr}
 		}
 
 		m.details = openapi.MemoryRegion{
@@ -121,7 +121,7 @@ func (m *BladeMemory) init(ctx context.Context) error {
 	if err != nil {
 		newErr := fmt.Errorf("memory [%s] init failed on blade [%s]: %w", m.Id, m.BladeId, err)
 		logger.Error(newErr, "failure: init blade memory")
-		return newErr
+		return &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
 	logger.V(2).Info("success: init blade memory", "memoryId", m.Id, "bladeId", m.BladeId, "applianceId", m.ApplianceId)

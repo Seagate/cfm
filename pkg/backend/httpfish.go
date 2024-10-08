@@ -490,6 +490,21 @@ func (session *Session) auth() error {
 	return response.err
 }
 
+// GetRootService: Retrieve root service from endpoint
+func (service *httpfishService) GetRootService(ctx context.Context, settings *ConfigurationSettings, req *GetRootServiceRequest) (*GetRootServiceResponse, error) {
+	session := service.service.session.(*Session)
+
+	response := session.query(HTTPOperation.GET, redfish_serviceroot)
+	if response.err != nil {
+		return nil, fmt.Errorf("failed to get root service: %w", response.err)
+	}
+
+	name, _ := response.stringFromJSON("Name")
+	uuid, _ := response.stringFromJSON("UUID")
+
+	return &GetRootServiceResponse{Name: name, Uuid: uuid}, nil
+}
+
 // CreateSession: Create a new session with an endpoint service
 func (service *httpfishService) CreateSession(ctx context.Context, settings *ConfigurationSettings, req *CreateSessionRequest) (*CreateSessionResponse, error) {
 	logger := klog.FromContext(ctx)
@@ -523,7 +538,7 @@ func (service *httpfishService) CreateSession(ctx context.Context, settings *Con
 			req.Insecure = true
 			return service.CreateSession(ctx, settings, req)
 		} else {
-			return &CreateSessionResponse{SessionId: session.SessionId, Status: "Failure", ServiceError: err}, err
+			return &CreateSessionResponse{SessionId: session.SessionId, Status: "Failure"}, err
 		}
 	}
 	logger.V(4).Info("Session Created", "X-Auth-Token", session.xToken, "RedfishSessionId", session.RedfishSessionId)
@@ -536,12 +551,13 @@ func (service *httpfishService) CreateSession(ctx context.Context, settings *Con
 
 	_, exist := activeSessions[session.SessionId]
 	if exist {
-		return &CreateSessionResponse{SessionId: session.SessionId, Status: "Duplicated", ServiceError: nil}, fmt.Errorf("endpoint already exist")
+		err := fmt.Errorf("endpoint already exist")
+		return &CreateSessionResponse{SessionId: session.SessionId, Status: "Duplicated"}, err
 	}
 	activeSessions[session.SessionId] = &session
 	service.service.session = &session
 
-	return &CreateSessionResponse{SessionId: session.SessionId, Status: "Success", ServiceError: nil, ChassisSN: session.BladeSN, EnclosureSN: session.ApplianceSN}, nil
+	return &CreateSessionResponse{SessionId: session.SessionId, Status: "Success", ChassisSN: session.BladeSN, EnclosureSN: session.ApplianceSN}, nil
 }
 
 // DeleteSession: Delete a session previously established with an endpoint service
@@ -560,10 +576,10 @@ func (service *httpfishService) DeleteSession(ctx context.Context, settings *Con
 
 	// Let user know of delete backend failure.
 	if response.err != nil {
-		return &DeleteSessionResponse{SessionId: session.SessionId, IpAddress: session.ip, Port: int32(session.port), Status: "Failure", ServiceError: response.err}, response.err
+		return &DeleteSessionResponse{SessionId: session.SessionId, IpAddress: session.ip, Port: int32(session.port), Status: "Failure"}, response.err
 	}
 
-	return &DeleteSessionResponse{SessionId: session.SessionId, IpAddress: session.ip, Port: int32(session.port), Status: "Success", ServiceError: nil}, nil
+	return &DeleteSessionResponse{SessionId: session.SessionId, IpAddress: session.ip, Port: int32(session.port), Status: "Success"}, nil
 }
 
 // This struct holds the detail info of a specific resource block
@@ -772,7 +788,7 @@ func (service *httpfishService) AllocateMemory(ctx context.Context, settings *Co
 	if allocatedMebibytes == 0 || calcErr != nil {
 		newErr := fmt.Errorf("problem during resource capacity calculations: %w", calcErr)
 		logger.Error(newErr, "failure: allocate memory", "allocatedMebibytes", allocatedMebibytes, "req", req)
-		return &AllocateMemoryResponse{Status: "Failure", ServiceError: newErr}, newErr
+		return &AllocateMemoryResponse{Status: "Failure"}, newErr
 	}
 
 	jsonData := make(map[string]interface{})
@@ -783,7 +799,7 @@ func (service *httpfishService) AllocateMemory(ctx context.Context, settings *Co
 	if response.err != nil {
 		newErr := fmt.Errorf("backend session post failure(%s): %w", session.redfishPaths[PostResourceKey], response.err)
 		logger.Error(newErr, "failure: allocate memory", "req", req, "allocatedMebibytes", allocatedMebibytes)
-		return &AllocateMemoryResponse{Status: "Failure", ServiceError: newErr}, newErr
+		return &AllocateMemoryResponse{Status: "Failure"}, newErr
 	}
 
 	//extract the memorychunk Id
@@ -791,7 +807,7 @@ func (service *httpfishService) AllocateMemory(ctx context.Context, settings *Co
 	memoryId := getIdFromOdataId(uriOfMemorychunkId[0])
 	session.memoryChunkPath[memoryId] = uriOfMemorychunkId[0]
 
-	return &AllocateMemoryResponse{SizeMiB: allocatedMebibytes, MemoryId: memoryId, Status: "Success", ServiceError: nil}, nil
+	return &AllocateMemoryResponse{SizeMiB: allocatedMebibytes, MemoryId: memoryId, Status: "Success"}, nil
 }
 
 // AllocateMemoryByResource: Create a new memory region using user-specified resource blocks
@@ -810,7 +826,7 @@ func (service *httpfishService) AllocateMemoryByResource(ctx context.Context, se
 		if response.err != nil {
 			newErr := fmt.Errorf("backend session get failure(%s): %w", backendResourceUri, response.err)
 			logger.Error(newErr, "failure: allocate memory by resource", "req", req)
-			return &AllocateMemoryByResourceResponse{Status: "Failure", ServiceError: newErr}, newErr
+			return &AllocateMemoryByResourceResponse{Status: "Failure"}, newErr
 		}
 
 		// check for a valid composition state
@@ -818,7 +834,7 @@ func (service *httpfishService) AllocateMemoryByResource(ctx context.Context, se
 		if statusErr != nil {
 			newErr := fmt.Errorf("CompositionStatus not found(%s): %w", backendResourceUri, statusErr)
 			logger.Error(newErr, "failure: allocate memory by resource", "req", req)
-			return &AllocateMemoryByResourceResponse{Status: "Failure", ServiceError: newErr}, newErr
+			return &AllocateMemoryByResourceResponse{Status: "Failure"}, newErr
 		}
 
 		compositionState := compositionStatus.(map[string]interface{})["CompositionState"].(string)
@@ -828,7 +844,7 @@ func (service *httpfishService) AllocateMemoryByResource(ctx context.Context, se
 		if *resourceState != ResourceUnused {
 			newErr := fmt.Errorf("resource not accessible(%s): session [%s] state [%s] ", backendResourceUri, session.SessionId, *resourceState)
 			logger.Error(newErr, "failure: allocate memory by resource")
-			return &AllocateMemoryByResourceResponse{Status: "Failure", ServiceError: newErr}, newErr
+			return &AllocateMemoryByResourceResponse{Status: "Failure"}, newErr
 		}
 
 		// save off the backend resource uri, used later in POST
@@ -850,7 +866,7 @@ func (service *httpfishService) AllocateMemoryByResource(ctx context.Context, se
 	if response.err != nil {
 		newErr := fmt.Errorf("backend session post failure(%s): %w", session.redfishPaths[PostResourceKey], response.err)
 		logger.Error(newErr, "failure: allocate memory by resource", "req", req)
-		return &AllocateMemoryByResourceResponse{Status: "Failure", ServiceError: newErr}, newErr
+		return &AllocateMemoryByResourceResponse{Status: "Failure"}, newErr
 	}
 
 	//extract the memorychunk Id
@@ -858,7 +874,7 @@ func (service *httpfishService) AllocateMemoryByResource(ctx context.Context, se
 	memoryId := getIdFromOdataId(uriOfMemorychunkId[0])
 	session.memoryChunkPath[memoryId] = uriOfMemorychunkId[0]
 
-	return &AllocateMemoryByResourceResponse{MemoryId: memoryId, Status: "Success", ServiceError: nil}, nil
+	return &AllocateMemoryByResourceResponse{MemoryId: memoryId, Status: "Success"}, nil
 }
 
 // Extract the corresponding endpoint uri of the input port
@@ -958,14 +974,14 @@ func (service *httpfishService) AssignMemory(ctx context.Context, settings *Conf
 	if errOfTargetEndpoint != nil {
 		newErr := fmt.Errorf("backend session failure(%s): %w", session.redfishPaths[FabricConnectionsKey], errOfTargetEndpoint)
 		logger.Error(newErr, "failure: assign memory", "req", req)
-		return &AssignMemoryResponse{Status: "Failure", ServiceError: newErr}, newErr
+		return &AssignMemoryResponse{Status: "Failure"}, newErr
 	}
 
 	availableErr := session.isEndpointAvailable(*uriOfTargetEndpoint)
 	if availableErr != nil {
 		newErr := fmt.Errorf("backend session failure(%s): %w", session.redfishPaths[FabricConnectionsKey], availableErr)
 		logger.Error(newErr, "failure: assign memory", "req", req)
-		return &AssignMemoryResponse{Status: "Failure", ServiceError: newErr}, newErr
+		return &AssignMemoryResponse{Status: "Failure"}, newErr
 	}
 
 	jsonDataOfTargetEndpoint := make([]map[string]interface{}, 1)
@@ -980,10 +996,10 @@ func (service *httpfishService) AssignMemory(ctx context.Context, settings *Conf
 	if response.err != nil {
 		newErr := fmt.Errorf("backend session post failure(%s): %w", session.redfishPaths[FabricConnectionsKey], response.err)
 		logger.Error(newErr, "failure: assign memory", "req", req)
-		return &AssignMemoryResponse{Status: "Failure", ServiceError: newErr}, newErr
+		return &AssignMemoryResponse{Status: "Failure"}, newErr
 	}
 
-	return &AssignMemoryResponse{Status: "Success", ServiceError: nil}, nil
+	return &AssignMemoryResponse{Status: "Success"}, nil
 }
 
 // UnassignMemory: Delete(Unassign) a connection between a memory region and it's local hardware port.  If no connection found, no action taken.
@@ -999,14 +1015,14 @@ func (service *httpfishService) UnassignMemory(ctx context.Context, settings *Co
 	if responseGetAllConnections.err != nil {
 		newErr := fmt.Errorf("backend session get failure(%s): %w", session.redfishPaths[FabricConnectionsKey], responseGetAllConnections.err)
 		logger.Error(newErr, "failure: unassign memory", "req", req)
-		return &UnassignMemoryResponse{Status: "Failure", ServiceError: newErr}, newErr
+		return &UnassignMemoryResponse{Status: "Failure"}, newErr
 	}
 
 	connections, err := responseGetAllConnections.arrayFromJSON("Members")
 	if err != nil {
 		newErr := fmt.Errorf("response parsing failure('Members'): %w", err)
 		logger.Error(newErr, "failure: unassign memory", "req", req)
-		return &UnassignMemoryResponse{Status: "Failure", ServiceError: newErr}, newErr
+		return &UnassignMemoryResponse{Status: "Failure"}, newErr
 	}
 
 	// Search all session connections for the specified memoryId
@@ -1021,14 +1037,14 @@ func (service *httpfishService) UnassignMemory(ctx context.Context, settings *Co
 		if responseGetConnection.err != nil {
 			newErr := fmt.Errorf("backend session get failure(%s): %w", connectionUri, responseGetConnection.err)
 			logger.Error(newErr, "failure: unassign memory", "req", req)
-			return &UnassignMemoryResponse{Status: "Failure", ServiceError: newErr}, newErr
+			return &UnassignMemoryResponse{Status: "Failure"}, newErr
 		}
 
 		mcInfos, mciErr := responseGetConnection.arrayFromJSON("MemoryChunkInfo")
 		if mciErr != nil {
 			newErr := fmt.Errorf("response parsing failure('MemoryChunkInfo'): %w", mciErr)
 			logger.Error(newErr, "failure: unassign memory", "req", req)
-			return &UnassignMemoryResponse{Status: "Failure", ServiceError: newErr}, newErr
+			return &UnassignMemoryResponse{Status: "Failure"}, newErr
 		}
 
 		// Search for memoryId on the current connection
@@ -1050,7 +1066,7 @@ func (service *httpfishService) UnassignMemory(ctx context.Context, settings *Co
 					if responseGetEndpt.err != nil {
 						newErr := fmt.Errorf("backend session get failure(%s): %w", endptUri, responseGetEndpt.err)
 						logger.Error(newErr, "failure: unassign memory", "req", req)
-						return &UnassignMemoryResponse{Status: "Failure", ServiceError: newErr}, newErr
+						return &UnassignMemoryResponse{Status: "Failure"}, newErr
 					}
 
 					endptLinks, _ := responseGetEndpt.valueFromJSON("Links")
@@ -1067,7 +1083,7 @@ func (service *httpfishService) UnassignMemory(ctx context.Context, settings *Co
 							if responseDeleteConnection.err != nil {
 								newErr := fmt.Errorf("backend session delete failure(%s): %w", connectionUri, responseDeleteConnection.err)
 								logger.Error(newErr, "failure: unassign memory", "req", req)
-								return &UnassignMemoryResponse{Status: "Failure", ServiceError: newErr}, newErr
+								return &UnassignMemoryResponse{Status: "Failure"}, newErr
 							}
 
 							logger.V(4).Info("unassign memory: connection deleted", "connectionUri", connectionUri, "req", req)
@@ -1084,7 +1100,7 @@ func (service *httpfishService) UnassignMemory(ctx context.Context, settings *Co
 				if !foundPort {
 					newErr := fmt.Errorf("connection mismatch: portId(%s) not connected to memoryId(%s)", req.MemoryId, req.PortId)
 					logger.Error(newErr, "failure: unassign memory", "req", req)
-					return &UnassignMemoryResponse{Status: "Failure", ServiceError: newErr}, newErr
+					return &UnassignMemoryResponse{Status: "Failure"}, newErr
 				}
 
 				break
@@ -1099,10 +1115,10 @@ func (service *httpfishService) UnassignMemory(ctx context.Context, settings *Co
 	if !foundMemory {
 		newErr := fmt.Errorf("memoryId(%s) not found", req.MemoryId)
 		logger.Error(newErr, "failure: unassign memory", "req", req)
-		return &UnassignMemoryResponse{Status: "Failure", ServiceError: newErr}, newErr
+		return &UnassignMemoryResponse{Status: "Failure"}, newErr
 	}
 
-	return &UnassignMemoryResponse{Status: "Success", ServiceError: nil}, nil
+	return &UnassignMemoryResponse{Status: "Success"}, nil
 }
 
 // GetMemoryResourceBlocks: Request Memory Resource Block information from the backends
@@ -1118,7 +1134,7 @@ func (service *httpfishService) GetMemoryResourceBlocks(ctx context.Context, set
 	response := session.query(HTTPOperation.GET, session.redfishPaths[ResourceBlocksKey])
 
 	if response.err != nil {
-		return &MemoryResourceBlocksResponse{Status: "Failure", ServiceError: response.err}, response.err
+		return &MemoryResourceBlocksResponse{Status: "Failure"}, response.err
 	}
 
 	resourceBlocks, _ := response.arrayFromJSON("Members")
@@ -1135,7 +1151,7 @@ func (service *httpfishService) GetMemoryResourceBlocks(ctx context.Context, set
 		memoryResources = append(memoryResources, getIdFromOdataId(uri))
 	}
 
-	return &MemoryResourceBlocksResponse{MemoryResources: memoryResources, Status: "Success", ServiceError: nil}, nil
+	return &MemoryResourceBlocksResponse{MemoryResources: memoryResources, Status: "Success"}, nil
 }
 
 // GetMemoryResourceBlockById: Request a particular Memory Resource Block information by ID from the backends
@@ -1156,7 +1172,7 @@ func (service *httpfishService) GetMemoryResourceBlockById(ctx context.Context, 
 	if response.err != nil {
 		newErr := fmt.Errorf("backend session get failure(%s): %w", uri, response.err)
 		logger.Error(newErr, "failure: get resource by id", "req", req)
-		return &MemoryResourceBlockByIdResponse{Status: "Failure", ServiceError: newErr}, newErr
+		return &MemoryResourceBlockByIdResponse{Status: "Failure"}, newErr
 	}
 
 	// Update CompositionState using the Reserved and CompositionState values from Redfish
@@ -1216,7 +1232,7 @@ func (service *httpfishService) GetMemoryResourceBlockById(ctx context.Context, 
 
 	memoryResourceBlock.CapacityMiB = int32(totalMebibytes)
 
-	return &MemoryResourceBlockByIdResponse{MemoryResourceBlock: memoryResourceBlock, Status: "Success", ServiceError: nil}, nil
+	return &MemoryResourceBlockByIdResponse{MemoryResourceBlock: memoryResourceBlock, Status: "Success"}, nil
 }
 
 func findResourceState(compositionState *string, reserved bool) *ResourceState {
@@ -1243,30 +1259,27 @@ func (service *httpfishService) GetPorts(ctx context.Context, settings *Configur
 	logger.V(4).Info("====== GetPorts ======")
 	logger.V(4).Info("GetPorts", "req", req)
 
-	var ret = GetPortsResponse{
-		Status: "Failure",
-	}
-
 	session := service.service.session.(*Session)
 
 	// Allow blade sessions only
 	_, keyExist := session.redfishPaths[FabricPortsKey]
 	if !keyExist {
-		ret.Status = "Not Supported"
-		ret.ServiceError = fmt.Errorf("session (%s) does not support .../fabrics/.../switches/.../ports", session.SessionId)
-		logger.Error(ret.ServiceError, "failure: get ports")
-		return &ret, ret.ServiceError
+		newErr := fmt.Errorf("session (%s) does not support .../fabrics/.../switches/.../ports", session.SessionId)
+		logger.Error(newErr, "failure: get ports")
+		return &GetPortsResponse{Status: "Not Supported"}, newErr
 	}
 
 	response := session.query(HTTPOperation.GET, session.redfishPaths[FabricPortsKey])
 
 	if response.err != nil {
-		ret.ServiceError = response.err
-		logger.Error(ret.ServiceError, "failure: get ports")
-		return &ret, ret.ServiceError
+		newErr := response.err
+		logger.Error(newErr, "failure: get ports")
+		return &GetPortsResponse{Status: "Failure"}, newErr
 	}
 
 	ports, _ := response.arrayFromJSON("Members")
+
+	var portIds []string
 
 	for _, port := range ports {
 		uri := port.(map[string]interface{})["@odata.id"].(string)
@@ -1277,13 +1290,11 @@ func (service *httpfishService) GetPorts(ctx context.Context, settings *Configur
 
 		portId := tokens[len(tokens)-1]
 		if len(portId) > 0 {
-			ret.PortIds = append(ret.PortIds, portId)
+			portIds = append(portIds, portId)
 		}
 	}
 
-	ret.Status = "Success"
-
-	return &ret, nil
+	return &GetPortsResponse{PortIds: portIds, Status: "Success"}, nil
 }
 
 // GetHostPortPcieDevices: Request pcie devices, each representing a physical host port, from the backend
@@ -1302,19 +1313,19 @@ func (service *httpfishService) GetHostPortPcieDevices(ctx context.Context, sett
 	// Allow host sessions only
 	_, keyExist := session.redfishPaths[ChassisPcieDevKey]
 	if !keyExist {
-		ret.Status = "Not Supported"
-		ret.ServiceError = fmt.Errorf("session (%s) does not support .../chassis/.../pciedevices", session.SessionId)
-		logger.Error(ret.ServiceError, "failure: get port pcie devices")
-		return &ret, ret.ServiceError
+		newErr := fmt.Errorf("session (%s) does not support .../chassis/.../pciedevices", session.SessionId)
+		logger.Error(newErr, "failure: get port pcie devices")
+		return &GetPortsResponse{Status: "Not Supported"}, newErr
 	}
 
 	response := session.query(HTTPOperation.GET, session.redfishPaths[ChassisPcieDevKey])
 	if response.err != nil {
-		ret.ServiceError = response.err
-		logger.Error(ret.ServiceError, "failure: get ports")
-		return &ret, ret.ServiceError
+		newErr := response.err
+		logger.Error(newErr, "failure: get ports")
+		return &GetPortsResponse{Status: "Failure"}, newErr
 	}
 
+	var portIds []string
 	ports, _ := response.arrayFromJSON("Members")
 	for _, port := range ports {
 		uri := port.(map[string]interface{})["@odata.id"].(string)
@@ -1325,13 +1336,11 @@ func (service *httpfishService) GetHostPortPcieDevices(ctx context.Context, sett
 
 		pcieId := tokens[len(tokens)-1]
 		if len(pcieId) > 0 {
-			ret.PortIds = append(ret.PortIds, pcieId)
+			portIds = append(portIds, pcieId)
 		}
 	}
 
-	ret.Status = "Success"
-
-	return &ret, nil
+	return &GetPortsResponse{PortIds: portIds, Status: "Success"}, nil
 }
 
 // GetPortDetails: Request Ports info from the backend
@@ -1340,39 +1349,34 @@ func (service *httpfishService) GetPortDetails(ctx context.Context, settings *Co
 	logger.V(4).Info("====== GetPortDetails ======")
 	logger.V(4).Info("GetPortDetails", "req", req)
 
-	var ret = GetPortDetailsResponse{
-		PortInformation: PortInformation{},
-		Status:          "Failure",
-	}
-
 	session := service.service.session.(*Session)
 
 	// Allow blade sessions only
 	_, keyExist := session.redfishPaths[FabricPortsKey]
 	if !keyExist {
-		ret.Status = "Not Supported"
-		ret.ServiceError = fmt.Errorf("session (%s) does not support .../fabrics/.../switches/.../ports", session.SessionId)
-		logger.Error(ret.ServiceError, "failure: get port details", "req", req)
-		return &ret, ret.ServiceError
+		newErr := fmt.Errorf("session (%s) does not support .../fabrics/.../switches/.../ports", session.SessionId)
+		logger.Error(newErr, "failure: get port details", "req", req)
+		return &GetPortDetailsResponse{Status: "Not Supported"}, newErr
 	}
 
 	response := session.query(HTTPOperation.GET, session.buildPath(FabricPortsKey, req.PortId))
 	if response.err != nil {
-		ret.ServiceError = response.err
-		logger.Error(ret.ServiceError, "failure: get port details", "req", req)
-		return &ret, ret.ServiceError
+		newErr := response.err
+		logger.Error(newErr, "failure: get port details", "req", req)
+		return &GetPortDetailsResponse{Status: "Failure"}, newErr
 	}
 
+	var portInformation PortInformation
 	id, _ := response.stringFromJSON("Id")
-	ret.PortInformation.Id = id
-	ret.PortInformation.PortProtocol, _ = response.stringFromJSON("PortProtocol")
-	ret.PortInformation.PortMedium, _ = response.stringFromJSON("PortMedium")
+	portInformation.Id = id
+	portInformation.PortProtocol, _ = response.stringFromJSON("PortProtocol")
+	portInformation.PortMedium, _ = response.stringFromJSON("PortMedium")
 	width, err := response.floatFromJSON("ActiveWidth")
 	if err == nil {
-		ret.PortInformation.Width = int32(width)
+		portInformation.Width = int32(width)
 	}
-	ret.PortInformation.LinkStatus, _ = response.stringFromJSON("LinkStatus")
-	ret.PortInformation.LinkState, _ = response.stringFromJSON("LinkState")
+	portInformation.LinkStatus, _ = response.stringFromJSON("LinkStatus")
+	portInformation.LinkState, _ = response.stringFromJSON("LinkState")
 
 	status, _ := response.valueFromJSON("Status")
 
@@ -1380,37 +1384,36 @@ func (service *httpfishService) GetPortDetails(ctx context.Context, settings *Co
 	state := status.(map[string]interface{})["State"].(string)
 	healthAndState := fmt.Sprintf("%s/%s", health, state)
 
-	ret.PortInformation.StatusHealth = health
-	ret.PortInformation.StatusState = state
-	ret.Status = healthAndState
+	portInformation.StatusHealth = health
+	portInformation.StatusState = state
 
 	portField, err := response.valueFromJSON("Port")
 	if err == nil {
 		speedFloat, _ := portField.(map[string]interface{})["CurrentSpeedGbps"].(float64)
-		ret.PortInformation.CurrentSpeedGbps = int32(speedFloat)
+		portInformation.CurrentSpeedGbps = int32(speedFloat)
 	}
 
 	// Extract GCXLID from endpoint
 	uriOfTargetEndpoint, errOfTargetEndpoint := session.getEndpointUriFromPort(id)
 	if errOfTargetEndpoint != nil {
-		ret.ServiceError = errOfTargetEndpoint
-		logger.Error(ret.ServiceError, "failure: get port details", "req", req)
-		return &ret, ret.ServiceError
+		newErr := errOfTargetEndpoint
+		logger.Error(newErr, "failure: get port details", "req", req)
+		return &GetPortDetailsResponse{Status: "Failure"}, newErr
 	}
 
 	response = session.query(HTTPOperation.GET, *uriOfTargetEndpoint)
 	if response.err != nil {
-		ret.ServiceError = response.err
-		logger.Error(ret.ServiceError, "failure: get port details", "req", req)
-		return &ret, ret.ServiceError
+		newErr := errOfTargetEndpoint
+		logger.Error(newErr, "failure: get port details", "req", req)
+		return &GetPortDetailsResponse{Status: "Failure"}, newErr
 	}
 
 	identifiers, _ := response.valueFromJSON("Identifiers")
-	ret.PortInformation.GCxlId = identifiers.([]interface{})[0].(map[string]interface{})["DurableName"].(string)
+	portInformation.GCxlId = identifiers.([]interface{})[0].(map[string]interface{})["DurableName"].(string)
 
 	//Note: "PortInformation.LinkedPortUri" can't be determined here.  Handled separately.
 
-	return &ret, ret.ServiceError
+	return &GetPortDetailsResponse{PortInformation: portInformation, Status: healthAndState}, nil
 }
 
 // GetHostPortSnById: Request the serial number from a specific port (ie - pcie device) and cxl host
@@ -1419,42 +1422,34 @@ func (service *httpfishService) GetHostPortSnById(ctx context.Context, settings 
 	logger.V(4).Info("====== GetHostPortSnById ======")
 	logger.V(4).Info("GetHostPortSnById", "req", req)
 
-	var ret = GetHostPortSnByIdResponse{
-		Status: "Failure",
-	}
-
 	session := service.service.session.(*Session)
 
 	// Allow host sessions only
 	_, keyExist := session.redfishPaths[ChassisPcieDevKey]
 	if !keyExist {
-		ret.Status = "Not Supported"
-		ret.ServiceError = fmt.Errorf("session (%s) does not support .../chassis/.../pciedevices", session.SessionId)
-		logger.Error(ret.ServiceError, "failure: get host port sn by id", "req", req)
-		return &ret, ret.ServiceError
+		newErr := fmt.Errorf("session (%s) does not support .../chassis/.../pciedevices", session.SessionId)
+		logger.Error(newErr, "failure: get host port sn by id", "req", req)
+		return &GetHostPortSnByIdResponse{Status: "Not Supported"}, newErr
 	}
 
 	// Query port
 	deviceUri := session.buildPath(ChassisPcieDevKey, req.PortId)
 	response := session.query(HTTPOperation.GET, deviceUri)
 	if response.err != nil {
-		ret.ServiceError = fmt.Errorf("session (%s) query failure (%s) for port (%s): %w", session.SessionId, deviceUri, req.PortId, response.err)
-		logger.Error(ret.ServiceError, "failure: get host port sn by id")
-		return &ret, ret.ServiceError
+		newErr := fmt.Errorf("session (%s) query failure (%s) for port (%s): %w", session.SessionId, deviceUri, req.PortId, response.err)
+		logger.Error(newErr, "failure: get host port sn by id")
+		return &GetHostPortSnByIdResponse{Status: "Failure"}, newErr
 	}
 
 	// Extract the SN
 	sn, err := response.stringFromJSON("SerialNumber")
 	if err != nil {
-		ret.ServiceError = fmt.Errorf("session (%s) query failure (%s) for port (%s): SerialNumber NOT found: %w", session.SessionId, deviceUri, req.PortId, response.err)
-		logger.Error(ret.ServiceError, "failure: get host port sn by id")
-		return &ret, ret.ServiceError
+		newErr := fmt.Errorf("session (%s) query failure (%s) for port (%s): SerialNumber NOT found: %w", session.SessionId, deviceUri, req.PortId, response.err)
+		logger.Error(newErr, "failure: get host port sn by id")
+		return &GetHostPortSnByIdResponse{Status: "Failure"}, newErr
 	}
 
-	ret.SerialNumber = sn
-	ret.Status = "Success"
-
-	return &ret, nil
+	return &GetHostPortSnByIdResponse{SerialNumber: sn, Status: "Success"}, nil
 }
 
 // GetMemoryDevices: Delete memory region info by memory id
@@ -1468,7 +1463,7 @@ func (service *httpfishService) GetMemoryDevices(ctx context.Context, settings *
 	if response.err != nil {
 		newErr := fmt.Errorf("backend get failure [%s]: %w", session.redfishPaths[ChassisPcieDevKey], response.err)
 		logger.Error(newErr, "failure: get memory devices")
-		return &GetMemoryDevicesResponse{Status: "Failure", ServiceError: newErr}, newErr
+		return &GetMemoryDevicesResponse{Status: "Failure"}, newErr
 	}
 
 	// Mapping of physical device IDs (keys) to a slice of logical device IDs (values)
@@ -1485,14 +1480,14 @@ func (service *httpfishService) GetMemoryDevices(ctx context.Context, settings *
 		if response.err != nil {
 			newErr := fmt.Errorf("backend get failure [%s]: %w", session.buildPath("ChassisPcieDev", phyDevId), response.err)
 			logger.Error(newErr, "failure: get memory devices")
-			return &GetMemoryDevicesResponse{Status: "Failure", ServiceError: newErr}, newErr
+			return &GetMemoryDevicesResponse{Status: "Failure"}, newErr
 		}
 
 		logicalDevicesUri, err := response.odataStringFromJSON("CXLLogicalDevices")
 		if err != nil {
 			newErr := fmt.Errorf("backend response key ['CXLLogicalDevices'] not found for uri [%s]: %w", logicalDevicesUri, err)
 			logger.Error(newErr, "failure: get memory devices")
-			return &GetMemoryDevicesResponse{Status: "Failure", ServiceError: newErr}, newErr
+			return &GetMemoryDevicesResponse{Status: "Failure"}, newErr
 		}
 
 		cxlCollection := session.query(HTTPOperation.GET, logicalDevicesUri)
@@ -1503,7 +1498,7 @@ func (service *httpfishService) GetMemoryDevices(ctx context.Context, settings *
 		}
 	}
 
-	return &GetMemoryDevicesResponse{DeviceIdMap: deviceIdMap, Status: "Success", ServiceError: nil}, nil
+	return &GetMemoryDevicesResponse{DeviceIdMap: deviceIdMap, Status: "Success"}, nil
 }
 
 // pcieGenToSpeed: convert PCIe device generation string to speed
@@ -1534,20 +1529,19 @@ func (service *httpfishService) GetMemoryDeviceDetails(ctx context.Context, sett
 	if response.err != nil {
 		newErr := fmt.Errorf("backend get failure [%s]: %w", pcieDeviceUri, response.err)
 		logger.Error(newErr, "failure: get memory device details")
-		return &GetMemoryDeviceDetailsResponse{Status: "Failure", ServiceError: newErr}, newErr
+		return &GetMemoryDeviceDetailsResponse{Status: "Failure"}, newErr
 	}
 
 	status, _ := response.valueFromJSON("Status")
 	memDev := GetMemoryDeviceDetailsResponse{
-		Status:       status.(map[string]interface{})["State"].(string),
-		ServiceError: nil,
+		Status: status.(map[string]interface{})["State"].(string),
 	}
 
 	sn, err := response.stringFromJSON("SerialNumber")
 	if err != nil {
 		newErr := fmt.Errorf("backend response key ['SerialNumber'] not found for uri [%s]: %w", pcieDeviceUri, err)
 		logger.Error(newErr, "failure: get memory device details")
-		return &GetMemoryDeviceDetailsResponse{Status: "Failure", ServiceError: newErr}, newErr
+		return &GetMemoryDeviceDetailsResponse{Status: "Failure"}, newErr
 	}
 	memDev.SerialNumber = sn
 
@@ -1581,7 +1575,7 @@ func (service *httpfishService) GetMemoryDeviceDetails(ctx context.Context, sett
 	if err != nil {
 		newErr := fmt.Errorf("backend response key ['CXLLogicalDevices'] not found for uri [%s]: %w", logicalDevicesUri, err)
 		logger.Error(newErr, "failure: get memory device details")
-		return &GetMemoryDeviceDetailsResponse{Status: "Failure", ServiceError: newErr}, newErr
+		return &GetMemoryDeviceDetailsResponse{Status: "Failure"}, newErr
 	}
 
 	logicalDeviceUri := fmt.Sprintf("%s/%s", logicalDevicesUri, req.LogicalDeviceId)
@@ -1589,7 +1583,7 @@ func (service *httpfishService) GetMemoryDeviceDetails(ctx context.Context, sett
 	if logicalDevice.err != nil {
 		newErr := fmt.Errorf("backend get failure [%s]: %w", logicalDeviceUri, logicalDevice.err)
 		logger.Error(newErr, "failure: get memory device details")
-		return &GetMemoryDeviceDetailsResponse{Status: "Failure", ServiceError: newErr}, newErr
+		return &GetMemoryDeviceDetailsResponse{Status: "Failure"}, newErr
 	}
 
 	memSize, _ := logicalDevice.valueFromJSON("MemorySizeMiB")
@@ -1600,28 +1594,6 @@ func (service *httpfishService) GetMemoryDeviceDetails(ctx context.Context, sett
 	logger.V(2).Info("success: GetMemoryDeviceDetails", "memDev", memDev)
 
 	return &memDev, nil
-}
-
-// Extract the connection info for a specific endpoint
-func (session *Session) getConnectionFromEndpoint(uriEndpoint string) (*string, error) {
-	// Get the endpoint
-	responseOfEndpoint := session.query(HTTPOperation.GET, uriEndpoint)
-	if responseOfEndpoint.err != nil {
-		return nil, fmt.Errorf("failed to get endpoint")
-	}
-
-	// Extra the corresponding endpoint
-	links, _ := responseOfEndpoint.valueFromJSON("Links")
-	uriOfConnection := links.(map[string]interface{})["Connections"].([]interface{})[0].(map[string]interface{})["@odata.id"].(string)
-	// if the connection is empty, no connection
-	if &uriOfConnection == nil {
-		return nil, fmt.Errorf("endpoint has no connection")
-	}
-
-	// Get the connection id
-	connectionId := getIdFromOdataId(uriOfConnection)
-
-	return &connectionId, nil
 }
 
 // FreeMemoryById: Delete memory region (memory chunk) by memory id
@@ -1638,16 +1610,12 @@ func (service *httpfishService) FreeMemoryById(ctx context.Context, settings *Co
 	if response.err != nil {
 		newErr := fmt.Errorf("backend session delete failure(%s): %w", session.buildPath(SystemMemoryChunksKey, req.MemoryId), response.err)
 		logger.Error(newErr, "failure: free memory by id", "req", req)
-		return &FreeMemoryResponse{Status: "Failure", ServiceError: newErr}, newErr
+		return &FreeMemoryResponse{Status: "Failure"}, newErr
 	}
 
 	delete(session.memoryChunkPath, req.MemoryId)
 
-	freeMemoryResponse := &FreeMemoryResponse{
-		Status:       "Success",
-		ServiceError: nil}
-
-	return freeMemoryResponse, nil
+	return &FreeMemoryResponse{Status: "Success"}, nil
 }
 
 // GetMemoryById: Get a specific memory region info by memory id
@@ -1655,15 +1623,11 @@ func (service *httpfishService) GetMemoryById(ctx context.Context, setting *Conf
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info("====== GetMemoryById ======")
 	logger.V(4).Info("get memory by id", "request", req)
-
-	memoryByIdResponse := GetMemoryByIdResponse{
-		MemoryRegion: TypeMemoryRegion{
-			MemoryId: req.MemoryId,
-			Status:   "Success",
-			Type:     MemoryType(MEMORYTYPE_MEMORY_TYPE_REGION),
-			SizeMiB:  0,
-		},
-		Status: "Success",
+	memoryRegion := TypeMemoryRegion{
+		MemoryId: req.MemoryId,
+		Status:   "Failure",
+		Type:     MemoryType(MEMORYTYPE_MEMORY_TYPE_REGION),
+		SizeMiB:  0,
 	}
 
 	session := service.service.session.(*Session)
@@ -1676,28 +1640,22 @@ func (service *httpfishService) GetMemoryById(ctx context.Context, setting *Conf
 
 		path, exist = session.memoryChunkPath[req.MemoryId]
 		if !exist {
-			memoryByIdResponse.Status = "Not Found"
-			memoryByIdResponse.MemoryRegion.Status = "Failure"
-			memoryByIdResponse.ServiceError = fmt.Errorf("memory (%s) does not exist", req.MemoryId)
-
-			return &memoryByIdResponse, memoryByIdResponse.ServiceError
+			newErr := fmt.Errorf("memory (%s) does not exist", req.MemoryId)
+			return &GetMemoryByIdResponse{MemoryRegion: memoryRegion, Status: "Not Found"}, newErr
 		}
 	}
 	response := session.query(HTTPOperation.GET, path)
 
 	if response.err != nil {
-		memoryByIdResponse.Status = "Failure"
-		memoryByIdResponse.MemoryRegion.Status = "Failure"
-		memoryByIdResponse.ServiceError = response.err
-
-		return &memoryByIdResponse, memoryByIdResponse.ServiceError
+		newErr := response.err
+		return &GetMemoryByIdResponse{MemoryRegion: memoryRegion, Status: "Failure"}, newErr
 	}
-	memoryByIdResponse.MemoryRegion.MemoryId, _ = response.stringFromJSON("Id")
+	memoryRegion.MemoryId, _ = response.stringFromJSON("Id")
 	val, _ := response.valueFromJSON("MemoryChunkSizeMiB")
-	memoryByIdResponse.MemoryRegion.SizeMiB = int32(val.(float64))
+	memoryRegion.SizeMiB = int32(val.(float64))
 
 	if strings.Contains(path, "CXL") { // host cxl memory
-		memoryByIdResponse.MemoryRegion.Type = MemoryType(MEMORYTYPE_MEMORY_TYPE_CXL)
+		memoryRegion.Type = MemoryType(MEMORYTYPE_MEMORY_TYPE_CXL)
 		// Check if performacne metric is reported
 		oemField, _ := response.valueFromJSON("Oem")
 		if oemField != nil {
@@ -1711,16 +1669,17 @@ func (service *httpfishService) GetMemoryById(ctx context.Context, setting *Conf
 			*/
 			bwStr := oemField.(map[string]interface{})["Seagate"].(map[string]interface{})["Bandwidth"].(string)
 			bwFloat, _ := strconv.ParseFloat(strings.Split(bwStr, " ")[0], 64)
-			memoryByIdResponse.MemoryRegion.Bandwidth = int32(bwFloat)
+			memoryRegion.Bandwidth = int32(bwFloat)
 			latStr := oemField.(map[string]interface{})["Seagate"].(map[string]interface{})["Latency"].(string)
 			latInt64, _ := strconv.ParseInt(strings.Split(latStr, " ")[0], 10, 64)
-			memoryByIdResponse.MemoryRegion.Latency = int32(latInt64)
+			memoryRegion.Latency = int32(latInt64)
 		}
 
 		links, _ := response.valueFromJSON("Links")
 		endpoints, ok := links.(map[string]interface{})["Endpoints"].([]interface{})
 		if !ok || len(endpoints) >= 2 {
-			return &memoryByIdResponse, fmt.Errorf("invalid endpoints")
+			newErr := fmt.Errorf("invalid endpoints")
+			return &GetMemoryByIdResponse{MemoryRegion: memoryRegion, Status: "Failure"}, newErr
 		}
 
 		// This entire IF is about finding the host port associated with the requested memoryId
@@ -1729,13 +1688,15 @@ func (service *httpfishService) GetMemoryById(ctx context.Context, setting *Conf
 
 			response := session.query(HTTPOperation.GET, uriSystemMemory)
 			if response.err != nil {
-				return &memoryByIdResponse, fmt.Errorf("get [%s] failure: %w", uriSystemMemory, response.err)
+				newErr := fmt.Errorf("get [%s] failure: %w", uriSystemMemory, response.err)
+				return &GetMemoryByIdResponse{MemoryRegion: memoryRegion, Status: "Failure"}, newErr
 			}
 
 			links, _ = response.valueFromJSON("Links")
 			sources := links.(map[string]interface{})["MemoryMediaSources"].([]interface{})
 			if !ok || len(sources) >= 2 {
-				return &memoryByIdResponse, fmt.Errorf("invalid memory media sources")
+				newErr := fmt.Errorf("invalid memory media sources")
+				return &GetMemoryByIdResponse{MemoryRegion: memoryRegion, Status: "Failure"}, newErr
 			}
 
 			if len(sources) != 0 {
@@ -1743,13 +1704,15 @@ func (service *httpfishService) GetMemoryById(ctx context.Context, setting *Conf
 
 				response = session.query(HTTPOperation.GET, uriChassisMemoryChunks)
 				if response.err != nil {
-					return &memoryByIdResponse, fmt.Errorf("get [%s] failure: %w", uriChassisMemoryChunks, response.err)
+					newErr := fmt.Errorf("get [%s] failure: %w", uriChassisMemoryChunks, response.err)
+					return &GetMemoryByIdResponse{MemoryRegion: memoryRegion, Status: "Failure"}, newErr
 				}
 
 				links, _ = response.valueFromJSON("Links")
 				devices := links.(map[string]interface{})["CXLLogicalDevices"].([]interface{})
 				if !ok || len(devices) >= 2 {
-					return &memoryByIdResponse, fmt.Errorf("invalid cxl logical devices")
+					newErr := fmt.Errorf("invalid cxl logical devices")
+					return &GetMemoryByIdResponse{MemoryRegion: memoryRegion, Status: "Failure"}, newErr
 				}
 
 				if len(devices) != 0 {
@@ -1757,20 +1720,21 @@ func (service *httpfishService) GetMemoryById(ctx context.Context, setting *Conf
 
 					elements := strings.Split(uriCxlLogicalDevice, "/")
 					if len(elements) < 8 {
-						return &memoryByIdResponse, fmt.Errorf("invalid cxl logical devices uri [%s]", uriCxlLogicalDevice)
+						newErr := fmt.Errorf("invalid cxl logical devices uri [%s]", uriCxlLogicalDevice)
+						return &GetMemoryByIdResponse{MemoryRegion: memoryRegion, Status: "Failure"}, newErr
 					}
 
-					memoryByIdResponse.MemoryRegion.PortId = elements[len(elements)-3]
-					memoryByIdResponse.MemoryRegion.LogicalDeviceId = elements[len(elements)-1]
+					memoryRegion.PortId = elements[len(elements)-3]
+					memoryRegion.LogicalDeviceId = elements[len(elements)-1]
 				}
 			}
 		}
 
-		return &memoryByIdResponse, memoryByIdResponse.ServiceError
+		return &GetMemoryByIdResponse{MemoryRegion: memoryRegion, Status: "Success"}, nil
 
 	} else if strings.Contains(path, "DIMMs") { // host local memory
-		memoryByIdResponse.MemoryRegion.Type = MemoryType(MEMORYTYPE_MEMORY_TYPE_LOCAL)
-		return &memoryByIdResponse, memoryByIdResponse.ServiceError
+		memoryRegion.Type = MemoryType(MEMORYTYPE_MEMORY_TYPE_LOCAL)
+		return &GetMemoryByIdResponse{MemoryRegion: memoryRegion, Status: "Success"}, nil
 
 	} else { // memory appliance memory
 		links, _ := response.valueFromJSON("Links")
@@ -1802,11 +1766,11 @@ func (service *httpfishService) GetMemoryById(ctx context.Context, setting *Conf
 					return nil, fmt.Errorf("invalid port uri [%s]", uriPort)
 				}
 
-				memoryByIdResponse.MemoryRegion.PortId = elements[len(elements)-1]
+				memoryRegion.PortId = elements[len(elements)-1]
 			}
 		}
 
-		return &memoryByIdResponse, memoryByIdResponse.ServiceError
+		return &GetMemoryByIdResponse{MemoryRegion: memoryRegion, Status: "Success"}, nil
 	}
 }
 
@@ -1816,20 +1780,15 @@ func (service *httpfishService) GetMemory(ctx context.Context, settings *Configu
 	logger.V(4).Info("====== GetMemory ======")
 	logger.V(4).Info("get memory", "request", req)
 
-	memoryResponse := GetMemoryResponse{
-		MemoryIds: make([]string, 0),
-		Status:    "Success",
-	}
+	var memoryIds []string
 
 	session := service.service.session.(*Session)
 
 	response := session.query(HTTPOperation.GET, session.redfishPaths[SystemMemoryChunksKey])
 
 	if response.err != nil {
-		memoryResponse.Status = "Failure"
-		memoryResponse.ServiceError = response.err
-
-		return &memoryResponse, response.err
+		newErr := response.err
+		return &GetMemoryResponse{Status: "Failure"}, newErr
 	}
 
 	members, _ := response.arrayFromJSON("Members")
@@ -1840,7 +1799,7 @@ func (service *httpfishService) GetMemory(ctx context.Context, settings *Configu
 		components := strings.Split(uri, "/")
 
 		if len(components) > 0 {
-			memoryResponse.MemoryIds = append(memoryResponse.MemoryIds, components[len(components)-1])
+			memoryIds = append(memoryIds, components[len(components)-1])
 			session.memoryChunkPath[components[len(components)-1]] = uri
 		}
 	}
@@ -1851,10 +1810,8 @@ func (service *httpfishService) GetMemory(ctx context.Context, settings *Configu
 		response = session.query(HTTPOperation.GET, cxlMemoryPath)
 
 		if response.err != nil {
-			memoryResponse.Status = "Failure"
-			memoryResponse.ServiceError = response.err
-
-			return &memoryResponse, response.err
+			newErr := response.err
+			return &GetMemoryResponse{Status: "Failure"}, newErr
 		}
 
 		members, _ = response.arrayFromJSON("Members")
@@ -1865,13 +1822,13 @@ func (service *httpfishService) GetMemory(ctx context.Context, settings *Configu
 			components := strings.Split(uri, "/")
 
 			if len(components) > 0 {
-				memoryResponse.MemoryIds = append(memoryResponse.MemoryIds, components[len(components)-1])
+				memoryIds = append(memoryIds, components[len(components)-1])
 				session.memoryChunkPath[components[len(components)-1]] = uri
 			}
 		}
 	}
 
-	return &memoryResponse, nil
+	return &GetMemoryResponse{MemoryIds: memoryIds, Status: "Success"}, nil
 }
 
 // GetBackendInfo: Get the information of this backend

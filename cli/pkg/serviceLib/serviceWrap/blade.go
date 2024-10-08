@@ -4,6 +4,7 @@ package serviceWrap
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	service "cfm/pkg/client"
@@ -50,47 +51,74 @@ func (s *ApplianceBladeSummary) ApplianceCount() int {
 }
 
 func AddBlade(client *service.APIClient, applianceId string, bladeCreds *service.Credentials) (*service.Blade, error) {
-	addRequest := client.DefaultAPI.BladesPost(context.Background(), applianceId)
-	addRequest = addRequest.Credentials(*bladeCreds)
-	addedBlade, response, err := addRequest.Execute()
+	request := client.DefaultAPI.BladesPost(context.Background(), applianceId)
+	request = request.Credentials(*bladeCreds)
+	blade, response, err := request.Execute()
 	if err != nil {
-		msg := fmt.Sprintf("%T: Execute FAILURE", addRequest)
-		klog.ErrorS(err, msg, "response", response)
-		return nil, fmt.Errorf("failure: blades post: %s", err)
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
+			klog.V(4).Info(newErr)
+			return nil, newErr
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
-	klog.V(3).InfoS("BladesPost success", "bladeId", addedBlade.GetId(), "applianceId", applianceId)
+	klog.V(3).InfoS("success: AddBlade", "bladeId", blade.GetId(), "applianceId", applianceId)
 
-	return addedBlade, nil
+	return blade, nil
 }
 
 func DeleteBladeById(client *service.APIClient, applId, bladeId string) (*service.Blade, error) {
-	deleteRequest := client.DefaultAPI.BladesDeleteById(context.Background(), applId, bladeId)
-	deletedBlade, response, err := deleteRequest.Execute()
+	request := client.DefaultAPI.BladesDeleteById(context.Background(), applId, bladeId)
+	blade, response, err := request.Execute()
 	if err != nil {
-		msg := fmt.Sprintf("%T: Execute FAILURE", deleteRequest)
-		klog.ErrorS(err, msg, "response", response)
-		return nil, fmt.Errorf("failure: delete blade by id failure")
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
+			klog.V(4).Info(newErr)
+			return nil, newErr
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
-	klog.V(3).InfoS("BladesDeleteById success", "ApplianceID", applId, "BladeID", deletedBlade.GetId())
+	klog.V(3).InfoS("success: DeleteBladeById", "applianceId", applId, "bladeID", blade.GetId())
 
-	return deletedBlade, nil
+	return blade, nil
 }
 
 // Find a specific Blade by ID on a specific Appliance
 func FindBladeById_SingleAppl(client *service.APIClient, applId, bladeId string) (*service.Blade, error) {
 
-	requestBlade := client.DefaultAPI.BladesGetById(context.Background(), applId, bladeId)
+	request := client.DefaultAPI.BladesGetById(context.Background(), applId, bladeId)
 	//TODO: What does this api do when the blade is empty
-	blade, response, err := requestBlade.Execute()
+	blade, response, err := request.Execute()
 	if err != nil {
-		msg := fmt.Sprintf("%T: Execute FAILURE", requestBlade)
-		klog.ErrorS(err, msg, "response", response)
-		return nil, fmt.Errorf("failure: get appliance blade by id: %s", err)
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
+			klog.V(4).Info(newErr)
+			return nil, newErr
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
-	klog.V(3).InfoS("BladesGetById success", "applId", applId, "bladeId", blade.GetId())
+	klog.V(3).InfoS("success: FindBladeById_SingleAppl", "applianceId", applId, "bladeId", blade.GetId())
 
 	return blade, nil
 }
@@ -100,15 +128,24 @@ func FindBladeById_AllAppls(client *service.APIClient, bladeId string) (*Applian
 	summary := NewApplianceBladeSummary()
 
 	//Get all existing appliances
-	requestAppliances := client.DefaultAPI.AppliancesGet(context.Background())
-	applColl, response, err := requestAppliances.Execute()
+	request := client.DefaultAPI.AppliancesGet(context.Background())
+	applColl, response, err := request.Execute()
 	if err != nil {
-		msg := fmt.Sprintf("%T: Execute FAILURE", requestAppliances)
-		klog.ErrorS(err, msg, "response", response)
-		return nil, fmt.Errorf("failure: get appliances: %s", err)
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
+			klog.V(4).Info(newErr)
+			return nil, newErr
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
-	klog.V(3).InfoS("AppliancesGet success", "applCount", applColl.GetMemberCount())
+	klog.V(4).InfoS("success: AppliancesGet", "applCount", applColl.GetMemberCount())
 
 	if applColl.GetMemberCount() == 0 {
 		klog.V(3).InfoS("FindBladeById_AllAppls: no appliances found")
@@ -134,15 +171,24 @@ func FindBladeById_AllAppls(client *service.APIClient, bladeId string) (*Applian
 func GetAllBlades_SingleAppl(client *service.APIClient, applId string) (*[]*service.Blade, error) {
 	var blades []*service.Blade
 
-	requestBlades := client.DefaultAPI.BladesGet(context.Background(), applId)
-	bladeColl, response, err := requestBlades.Execute()
+	request := client.DefaultAPI.BladesGet(context.Background(), applId)
+	bladeColl, response, err := request.Execute()
 	if err != nil {
-		msg := fmt.Sprintf("%T: Execute FAILURE", requestBlades)
-		klog.ErrorS(err, msg, "response", response)
-		return nil, fmt.Errorf("failure: get appliance blades: %s", err)
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
+			klog.V(4).Info(newErr)
+			return nil, newErr
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
-	klog.V(3).InfoS("BladesGet success", "applId", applId, "bladeColl", bladeColl.GetMemberCount())
+	klog.V(4).InfoS("success: BladesGet", "applianceId", applId, "bladeCount", bladeColl.GetMemberCount())
 
 	for _, bladeMember := range bladeColl.GetMembers() {
 		bladeId := ReadLastItemFromUri(bladeMember.GetUri())
@@ -163,15 +209,24 @@ func GetAllBlades_AllAppls(client *service.APIClient) (*ApplianceBladeSummary, e
 	summary := NewApplianceBladeSummary()
 
 	//Get all existing appliances
-	requestAppliances := client.DefaultAPI.AppliancesGet(context.Background())
-	applColl, response, err := requestAppliances.Execute()
+	request := client.DefaultAPI.AppliancesGet(context.Background())
+	applColl, response, err := request.Execute()
 	if err != nil {
-		msg := fmt.Sprintf("%T: Execute FAILURE", requestAppliances)
-		klog.ErrorS(err, msg, "response", response)
-		return nil, fmt.Errorf("failure: get appliances: %s", err)
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
+			klog.V(4).Info(newErr)
+			return nil, newErr
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
-	klog.V(3).InfoS("AppliancesGet success", "applCount", applColl.GetMemberCount())
+	klog.V(4).InfoS("success: AppliancesGet", "applCount", applColl.GetMemberCount())
 
 	//Scan collection members for target appliance id
 	for _, appl := range applColl.GetMembers() {
@@ -192,12 +247,21 @@ func ResyncBladeById(client *service.APIClient, applId, bladeId string) (*servic
 	request := client.DefaultAPI.BladesResyncById(context.Background(), applId, bladeId)
 	blade, response, err := request.Execute()
 	if err != nil {
-		msg := fmt.Sprintf("%T: Execute FAILURE", blade)
-		klog.ErrorS(err, msg, "response", response)
-		return nil, fmt.Errorf("failure: resync blade by id failure")
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
+			klog.V(4).Info(newErr)
+			return nil, newErr
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
-	klog.V(3).InfoS("BladesResyncById success", "ApplianceID", applId, "BladeID", blade.GetId())
+	klog.V(3).InfoS("success: ResyncBladeById", "applianceId", applId, "bladeID", blade.GetId())
 
 	return blade, nil
 }

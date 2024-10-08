@@ -11,6 +11,7 @@ import (
 
 	"cfm/pkg/backend"
 	"cfm/pkg/common"
+	"cfm/pkg/common/datastore"
 	"cfm/pkg/openapi"
 
 	"k8s.io/klog/v2"
@@ -19,9 +20,9 @@ import (
 const ID_PREFIX_BLADE_DFLT string = "blade"
 
 type Blade struct {
-	Id  string
-	Uri string
-	// Status     string	// Meaningless without async update
+	Id          string
+	Uri         string
+	Status      common.ConnectionStatus
 	Socket      SocketDetails
 	ApplianceId string
 	Memory      map[string]*BladeMemory
@@ -42,6 +43,7 @@ type RequestNewBlade struct {
 	Ip          string
 	Port        uint16
 	ApplianceId string
+	Status      common.ConnectionStatus
 	BackendOps  backend.BackendOperations
 	Creds       *openapi.Credentials
 }
@@ -55,6 +57,7 @@ func NewBlade(ctx context.Context, r *RequestNewBlade) (*Blade, error) {
 		Uri:         GetCfmUriBladeId(r.ApplianceId, r.BladeId),
 		Socket:      *NewSocketDetails(r.Ip, r.Port),
 		ApplianceId: r.ApplianceId,
+		Status:      r.Status,
 		Ports:       make(map[string]*CxlBladePort),
 		Resources:   make(map[string]*BladeResource),
 		Memory:      make(map[string]*BladeMemory),
@@ -125,7 +128,7 @@ func (b *Blade) AssignMemory(ctx context.Context, r *RequestAssignMemory) (*open
 	if len(memory.resourceIds) != 0 {
 		resourcesToUpdate = memory.resourceIds
 	} else {
-		resourcesToUpdate = b.GetAllResourceIds()
+		resourcesToUpdate = b.GetAllResourceIds(ctx)
 	}
 	for _, resourceId := range resourcesToUpdate {
 		resource, err := b.GetResourceById(ctx, resourceId)
@@ -173,14 +176,14 @@ func (b *Blade) ComposeMemory(ctx context.Context, r *RequestComposeMemory) (*op
 		if err != nil {
 			newErr := fmt.Errorf("get details failure on blade [%s] resource [%s]: %w", b.Id, resource.Id, err)
 			logger.Error(newErr, "failure: compose memory")
-			return nil, &common.RequestError{StatusCode: common.StatusComposeMemoryFailure, Err: newErr}
+			return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 		}
 	}
 	resourceIds := b.findResourcesByQoS(r.SizeMib, r.Qos)
 	if resourceIds == nil {
 		newErr := fmt.Errorf("unable to find resources by qos during compose: appliance [%s] blade [%s] request [%v]", b.ApplianceId, b.Id, r)
 		logger.Error(newErr, "failure: compose memory")
-		return nil, &common.RequestError{StatusCode: common.StatusComposeMemoryFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: common.StatusBladeGetMemoryResourceBlocksFailure, Err: newErr}
 	}
 
 	memoryRegion, err := b.ComposeMemoryByResource(ctx, r.PortId, resourceIds)
@@ -193,7 +196,7 @@ func (b *Blade) ComposeMemory(ctx context.Context, r *RequestComposeMemory) (*op
 		} else {
 			newErr := fmt.Errorf("compose memory by resource failure during compose memory: %w", err)
 			logger.Error(newErr, "failure: compose memory")
-			return nil, &common.RequestError{StatusCode: common.StatusComposeMemoryFailure, Err: newErr}
+			return nil, &common.RequestError{StatusCode: common.StatusComposeMemoryByResourceFailure, Err: newErr}
 		}
 	}
 
@@ -227,7 +230,7 @@ func (b *Blade) ComposeMemoryByResource(ctx context.Context, portId string, reso
 	if err != nil {
 		newErr := fmt.Errorf("add memory by id failed [%s] during compose by resource: appliance [%s] blade [%s] resourceIds [%s]: %w", responseAlloc.MemoryId, b.ApplianceId, b.Id, resourceIds, err)
 		logger.Error(newErr, "failure: compose memory by resource")
-		return nil, &common.RequestError{StatusCode: common.StatusComposeMemoryByResourceFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
 	// Save there resource ids.  Used when memory is freed
@@ -238,7 +241,7 @@ func (b *Blade) ComposeMemoryByResource(ctx context.Context, portId string, reso
 	if err != nil {
 		newErr := fmt.Errorf("get details failure for memory [%s] during compose by resource: appliance [%s] blade [%s] resourceIds [%s]: %w", responseAlloc.MemoryId, b.ApplianceId, b.Id, resourceIds, err)
 		logger.Error(newErr, "failure: compose memory by resource")
-		return nil, &common.RequestError{StatusCode: common.StatusComposeMemoryByResourceFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
 	//Invalidate all related object cache's
@@ -292,7 +295,7 @@ func (b *Blade) FreeMemoryById(ctx context.Context, memoryId string) (*openapi.M
 	if getMemoryErr != nil {
 		newErr := fmt.Errorf("get memory by id (backend) failure on appliance [%s] blade [%s] memory [%s]: %w", b.ApplianceId, b.Id, memoryId, getMemoryErr)
 		logger.Error(newErr, "failure: free memory by id")
-		return nil, &common.RequestError{StatusCode: common.StatusApplianceFreeMemoryFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: common.StatusBladeGetMemoryByIdFailure, Err: newErr}
 	}
 
 	// If present, remove the assigned port before deallocating the memory region
@@ -305,7 +308,7 @@ func (b *Blade) FreeMemoryById(ctx context.Context, memoryId string) (*openapi.M
 		if unassignErr != nil {
 			newErr := fmt.Errorf("unassign memory (backend) failure on appliance [%s] blade [%s] memory [%s]: %w", b.ApplianceId, b.Id, memoryId, unassignErr)
 			logger.Error(newErr, "failure: free memory by id")
-			return nil, &common.RequestError{StatusCode: common.StatusApplianceFreeMemoryFailure, Err: newErr}
+			return nil, &common.RequestError{StatusCode: common.StatusUnassignMemoryFailure, Err: newErr}
 		}
 
 		//Invalidate all related object cache's
@@ -321,7 +324,7 @@ func (b *Blade) FreeMemoryById(ctx context.Context, memoryId string) (*openapi.M
 	if err != nil || response == nil {
 		newErr := fmt.Errorf("free memory by id (backend) failure on appliance [%s] blade [%s] memory [%s]: %w", b.ApplianceId, b.Id, memoryId, err)
 		logger.Error(newErr, "failure: free memory by id")
-		return nil, &common.RequestError{StatusCode: common.StatusApplianceFreeMemoryFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: common.StatusBladeFreeMemoryFailure, Err: newErr}
 	}
 
 	// Invalidate the cooresponding resource caches
@@ -330,7 +333,7 @@ func (b *Blade) FreeMemoryById(ctx context.Context, memoryId string) (*openapi.M
 	if len(memory.resourceIds) != 0 {
 		resourcesToUpdate = memory.resourceIds
 	} else {
-		resourcesToUpdate = b.GetAllResourceIds()
+		resourcesToUpdate = b.GetAllResourceIds(ctx)
 	}
 	for _, resourceId := range resourcesToUpdate {
 		resource, err := b.GetResourceById(ctx, resourceId)
@@ -362,33 +365,30 @@ func (b *Blade) FreeMemoryById(ctx context.Context, memoryId string) (*openapi.M
 	return &memoryRegion, nil
 }
 
-func (b *Blade) GetAllMemoryIds() []string {
+func (b *Blade) GetAllMemoryIds(ctx context.Context) []string {
 	var ids []string
 
-	// CACHE: Get
-	for id := range b.Memory {
+	for id := range b.GetMemory(ctx) {
 		ids = append(ids, id)
 	}
 
 	return ids
 }
 
-func (b *Blade) GetAllPortIds() []string {
+func (b *Blade) GetAllPortIds(ctx context.Context) []string {
 	var ids []string
 
-	// CACHE: Get
-	for id := range b.Ports {
+	for id := range b.GetPorts(ctx) {
 		ids = append(ids, id)
 	}
 
 	return ids
 }
 
-func (b *Blade) GetAllResourceIds() []string {
+func (b *Blade) GetAllResourceIds(ctx context.Context) []string {
 	var ids []string
 
-	// CACHE: Get
-	for id := range b.Resources {
+	for id := range b.GetResources(ctx) {
 		ids = append(ids, id)
 	}
 
@@ -398,6 +398,11 @@ func (b *Blade) GetAllResourceIds() []string {
 func (b *Blade) GetMemoryById(ctx context.Context, memoryId string) (*BladeMemory, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetMemoryById: ", "memoryId", memoryId, "bladeId", b.Id, "applianceId", b.ApplianceId)
+
+	if !b.IsOnline(ctx) {
+		// If blade offline, not an error.  Just no information to return.
+		return nil, nil
+	}
 
 	memory, ok := b.Memory[memoryId]
 	if !ok {
@@ -415,6 +420,11 @@ func (b *Blade) GetMemory(ctx context.Context) map[string]*BladeMemory {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetMemory: ", "bladeId", b.Id, "applianceId", b.ApplianceId)
 
+	if !b.IsOnline(ctx) {
+		// If blade offline, not an error.  Just no information to return.
+		return make(map[string]*BladeMemory)
+	}
+
 	memory := b.Memory
 
 	logger.V(2).Info("success: get memory", "count", len(memory), "bladeId", b.Id, "applianceId", b.ApplianceId)
@@ -427,14 +437,17 @@ func (b *Blade) GetMemoryBackend(ctx context.Context) ([]string, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetMemoryBackend: ", "bladeId", b.Id, "applianceId", b.ApplianceId)
 
-	// HARDWARE: Get
+	if !b.IsOnline(ctx) {
+		// If blade offline, not an error.  Just no information to return.
+		return make([]string, 0), nil
+	}
+
 	req := backend.GetMemoryRequest{}
-	// get memory ids from backend
 	response, err := b.backendOps.GetMemory(ctx, &backend.ConfigurationSettings{}, &req)
 	if err != nil || response == nil {
 		newErr := fmt.Errorf("get memory (backend) [%s] failure on blade [%s]: %w", b.backendOps.GetBackendInfo(ctx).BackendName, b.Id, err)
 		logger.Error(newErr, "failure: get memory(backend)")
-		return nil, &common.RequestError{StatusCode: common.StatusApplianceGetMemoryFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: common.StatusBladeGetMemoryFailure, Err: newErr}
 	}
 
 	logger.V(2).Info("success: get memory(backend)", "memoryIds", response.MemoryIds, "bladeId", b.Id, "applianceId", b.ApplianceId)
@@ -454,6 +467,11 @@ func (b *Blade) GetPortById(ctx context.Context, portId string) (*CxlBladePort, 
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetPortById: ", "portId", portId, "bladeId", b.Id, "applianceId", b.ApplianceId)
 
+	if !b.IsOnline(ctx) {
+		// If blade offline, not an error.  Just no information to return.
+		return nil, nil
+	}
+
 	port, ok := b.Ports[portId]
 	if !ok {
 		newErr := fmt.Errorf("port [%s] not found on appliance [%s] blade [%s] ", portId, b.ApplianceId, b.Id)
@@ -470,6 +488,11 @@ func (b *Blade) GetPorts(ctx context.Context) map[string]*CxlBladePort {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetPorts: ", "bladeId", b.Id, "applianceId", b.ApplianceId)
 
+	if !b.IsOnline(ctx) {
+		// If blade offline, not an error.  Just no information to return.
+		return make(map[string]*CxlBladePort)
+	}
+
 	ports := b.Ports
 
 	logger.V(2).Info("success: get ports(blade) (cache)", "count", len(ports), "bladeId", b.Id, "applianceId", b.ApplianceId)
@@ -482,12 +505,17 @@ func (b *Blade) GetPortsBackend(ctx context.Context) ([]string, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetPortsBackend: ", "bladeId", b.Id, "applianceId", b.ApplianceId)
 
+	if !b.IsOnline(ctx) {
+		// If blade offline, not an error.  Just no information to return.
+		return make([]string, 0), nil
+	}
+
 	req := backend.GetPortsRequest{}
 	response, err := b.backendOps.GetPorts(ctx, &backend.ConfigurationSettings{}, &req)
 	if err != nil || response == nil {
 		newErr := fmt.Errorf("get ports (backend) [%s] failure on blade [%s]: %w", b.backendOps.GetBackendInfo(ctx).BackendName, b.Id, err)
 		logger.Error(newErr, "failure: get ports(backend)")
-		return nil, &common.RequestError{StatusCode: common.StatusApplianceGetPortsFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: common.StatusBladeGetPortsFailure, Err: newErr}
 	}
 
 	logger.V(2).Info("success: get ports(backend)", "portIds", response.PortIds, "bladeId", b.Id, "applianceId", b.ApplianceId)
@@ -498,6 +526,11 @@ func (b *Blade) GetPortsBackend(ctx context.Context) ([]string, error) {
 func (b *Blade) GetResourceById(ctx context.Context, resourceId string) (*BladeResource, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetResourceById: ", "resourceId", resourceId, "bladeId", b.Id, "applianceId", b.ApplianceId)
+
+	if !b.IsOnline(ctx) {
+		// If blade offline, not an error.  Just no information to return.
+		return nil, nil
+	}
 
 	resource, ok := b.Resources[resourceId]
 	if !ok {
@@ -515,6 +548,11 @@ func (b *Blade) GetResources(ctx context.Context) map[string]*BladeResource {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetResources: ", "bladeId", b.Id, "applianceId", b.ApplianceId)
 
+	if !b.IsOnline(ctx) {
+		// If blade offline, not an error.  Just no information to return.
+		return make(map[string]*BladeResource)
+	}
+
 	resources := b.Resources
 
 	logger.V(2).Info("success: get resources(cache)", "count", len(resources), "bladeId", b.Id, "applianceId", b.ApplianceId)
@@ -527,12 +565,17 @@ func (b *Blade) GetResourcesBackend(ctx context.Context) ([]string, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetResourcesBackend: ", "bladeId", b.Id, "applianceId", b.ApplianceId)
 
+	if !b.IsOnline(ctx) {
+		// If blade offline, not an error.  Just no information to return.
+		return make([]string, 0), nil
+	}
+
 	req := backend.MemoryResourceBlocksRequest{}
 	response, err := b.backendOps.GetMemoryResourceBlocks(ctx, &backend.ConfigurationSettings{}, &req)
 	if err != nil || response == nil {
 		newErr := fmt.Errorf("get resources (backend) [%s] failure on blade [%s]: %w", b.backendOps.GetBackendInfo(ctx).BackendName, b.Id, err)
 		logger.Error(newErr, "failure: get resources(backend)")
-		return nil, &common.RequestError{StatusCode: common.StatusGetMemoryResourceBlocksFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: common.StatusBladeGetMemoryResourceBlocksFailure, Err: newErr}
 	}
 
 	logger.V(2).Info("success: get resources(backend)", "resourceIds", response.MemoryResources, "bladeId", b.Id, "applianceId", b.ApplianceId)
@@ -546,8 +589,12 @@ func (b *Blade) GetResourceTotals(ctx context.Context) (*ResponseResourceTotals,
 
 	var totalAvail, totalAlloc int32
 
-	resources := b.GetResources(ctx)
-	for _, resource := range resources {
+	response := ResponseResourceTotals{
+		TotalMemoryAvailableMiB: 0,
+		TotalMemoryAllocatedMiB: 0,
+	}
+
+	for _, resource := range b.GetResources(ctx) {
 		totals, err := resource.GetTotals(ctx)
 		if err != nil || totals == nil {
 			newErr := fmt.Errorf("failed to get resource totals: appliance [%s] blade [%s] resource [%s]: %w", b.ApplianceId, b.Id, resource.Id, err)
@@ -559,12 +606,10 @@ func (b *Blade) GetResourceTotals(ctx context.Context) (*ResponseResourceTotals,
 		totalAlloc += totals.TotalMemoryAllocatedMiB
 	}
 
-	response := ResponseResourceTotals{
-		TotalMemoryAvailableMiB: totalAvail,
-		TotalMemoryAllocatedMiB: totalAlloc,
-	}
+	response.TotalMemoryAvailableMiB = totalAvail
+	response.TotalMemoryAllocatedMiB = totalAlloc
 
-	logger.V(2).Info("success: get resource totals", "bladeId", b.Id, "applianceId", b.ApplianceId)
+	logger.V(2).Info("success: get resource totals", "totals", response, "bladeId", b.Id, "applianceId", b.ApplianceId)
 
 	return &response, nil
 }
@@ -583,6 +628,32 @@ func (b *Blade) InvalidateCache() {
 	}
 }
 
+func (b *Blade) IsOnline(ctx context.Context) bool {
+	return b.Status == common.ONLINE
+}
+
+// UpdateConnectionStatusBackend - Query the blade root service to verify continued connection and update the object status accordingly.
+func (b *Blade) UpdateConnectionStatusBackend(ctx context.Context) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info(">>>>>> UpdateConnectionStatusBackend: ", "bladeId", b.Id)
+
+	req := backend.GetRootServiceRequest{}
+	response, err := b.backendOps.GetRootService(ctx, &backend.ConfigurationSettings{}, &req)
+	if err != nil || response == nil {
+		b.Status = common.OFFLINE
+	} else {
+		b.Status = common.ONLINE
+	}
+
+	// Update datastore status
+	applianceDatum, _ := datastore.DStore().GetDataStore().GetApplianceDatumById(b.ApplianceId)
+	bladeDatum, _ := applianceDatum.GetBladeDatumById(ctx, b.Id)
+	bladeDatum.SetConnectionStatus(&b.Status)
+	datastore.DStore().Store()
+
+	logger.V(2).Info("update blade status(backend)", "status", b.Status, "bladeId", b.Id)
+}
+
 /////////////////////////////////////
 //////// Private Functions //////////
 /////////////////////////////////////
@@ -592,21 +663,19 @@ func (b *Blade) addMemoryById(ctx context.Context, memoryId string) (*BladeMemor
 
 	_, exists := b.Memory[memoryId]
 	if exists {
-		return nil, fmt.Errorf("appliance [%s] blade [%s] already contains memory with id [%s]", b.ApplianceId, b.Id, memoryId)
+		newErr := fmt.Errorf("appliance [%s] blade [%s] already contains memory with id [%s]", b.ApplianceId, b.Id, memoryId)
+		return nil, &common.RequestError{StatusCode: common.StatusMemoryIdDuplicate, Err: newErr}
 	}
 
 	// Create the new object
-	memory, err := NewBladeMemoryById(ctx, b.ApplianceId, b.Id, memoryId, b.backendOps)
-	if err != nil {
-		return nil, fmt.Errorf("memory object creation failed for appliance [%s] blade [%s]: %w", b.ApplianceId, b.Id, err)
-	}
+	memory := NewBladeMemoryById(ctx, b.ApplianceId, b.Id, memoryId, b.backendOps)
 
 	// Initialize new object
-	err = memory.init(ctx)
+	err := memory.init(ctx)
 	if err != nil {
 		newErr := fmt.Errorf("memory [%s] object init failed for appliance [%s] blade [%s]: %w", memory.Id, b.ApplianceId, b.Id, err)
 		logger.Error(newErr, "failure: add memory by id")
-		return nil, newErr
+		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
 	// Add the new object
@@ -620,21 +689,19 @@ func (b *Blade) addPortById(ctx context.Context, portId string) (*CxlBladePort, 
 
 	_, exists := b.Ports[portId]
 	if exists {
-		return nil, fmt.Errorf("appliance [%s] blade [%s] already contains port with id [%s]", b.ApplianceId, b.Id, portId)
+		newErr := fmt.Errorf("appliance [%s] blade [%s] already contains port with id [%s]", b.ApplianceId, b.Id, portId)
+		return nil, &common.RequestError{StatusCode: common.StatusPortIdDuplicate, Err: newErr}
 	}
 
 	// Create the new object
-	port, err := NewCxlBladePortById(ctx, b.ApplianceId, b.Id, portId, b.backendOps)
-	if err != nil {
-		return nil, fmt.Errorf("port object creation failed for appliance [%s] blade [%s]: %w", b.ApplianceId, b.Id, err)
-	}
+	port := NewCxlBladePortById(ctx, b.ApplianceId, b.Id, portId, b.backendOps)
 
 	// Initialize new object
-	err = port.init(ctx)
+	err := port.init(ctx)
 	if err != nil {
 		newErr := fmt.Errorf("port [%s] object init failed for appliance [%s] blade [%s]: %w", port.Id, b.ApplianceId, b.Id, err)
 		logger.Error(newErr, "failure: add port by id")
-		return nil, newErr
+		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
 	// Add the new object
@@ -921,7 +988,7 @@ func (b *Blade) initMemory(ctx context.Context) error {
 	logger.V(4).Info(">>>>>> initMemory: ", "bladeId", b.Id, "applianceId", b.ApplianceId)
 
 	memoryIds, err := b.GetMemoryBackend(ctx)
-	if err != nil || memoryIds == nil {
+	if err != nil {
 		newErr := fmt.Errorf("blade [%s] init failed during get memory: %w", b.Id, err)
 		logger.Error(newErr, "failure: init memory: blade")
 		return newErr

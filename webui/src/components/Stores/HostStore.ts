@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia'
 import { Host, Credentials, DefaultApi } from "@/axios/api";
 import { BASE_PATH } from "@/axios/base";
+import axios from 'axios';
 
 // Use API_BASE_PATH to overwrite the BASE_PATH in the generated client code
 const API_BASE_PATH = process.env.BASE_PATH || BASE_PATH;
@@ -13,6 +14,7 @@ export const useHostStore = defineStore('host', {
         selectedHostIp: null as unknown as string,
         selectedHostPortNum: null as unknown as number,
         selectedHostLocalMemory: null as unknown as number | undefined,
+        selectedHostStatus: null as unknown as string | undefined,
         addHostError: null as unknown,
         deleteHostError: null as unknown,
         resyncHostError: null as unknown,
@@ -59,7 +61,15 @@ export const useHostStore = defineStore('host', {
                 this.hosts.push(addedHost);
                 return addedHost;
             } catch (error) {
-                this.addHostError = error;
+                if (axios.isAxiosError(error)) {
+                    this.addHostError = error.message;
+                    if (error.response) {
+                        this.addHostError = error.response?.data.status.message + " (" + error.response?.request.status + ")";
+                    }
+                }
+                else {
+                    this.addHostError = error;
+                }
                 console.error("Error:", error);
             }
         },
@@ -79,7 +89,15 @@ export const useHostStore = defineStore('host', {
                 }
                 return deletedHost;
             } catch (error) {
-                this.deleteHostError = error;
+                if (axios.isAxiosError(error)) {
+                    this.deleteHostError = error.message;
+                    if (error.response) {
+                        this.deleteHostError = error.response?.data.status.message + " (" + error.response?.request.status + ")";
+                    }
+                }
+                else {
+                    this.deleteHostError = error;
+                }
                 console.error("Error:", error);
             }
         },
@@ -93,16 +111,25 @@ export const useHostStore = defineStore('host', {
                 const resyncedHost = response.data;
                 return resyncedHost;
             } catch (error) {
-                this.resyncHostError = error;
+                if (axios.isAxiosError(error)) {
+                    this.resyncHostError = error.message;
+                    if (error.response) {
+                        this.resyncHostError = error.response?.data.status.message + " (" + error.response?.request.status + ")";
+                    }
+                }
+                else {
+                    this.resyncHostError = error;
+                }
                 console.error("Error:", error);
             }
         },
 
-        selectHost(selectedHostId: string, selectedHostIp: string, selectedHostPortNum: number, selectedHostLocalMemory: number | undefined) {
+        selectHost(selectedHostId: string, selectedHostIp: string, selectedHostPortNum: number, selectedHostLocalMemory: number | undefined, status: string | undefined) {
             this.selectedHostId = selectedHostId;
             this.selectedHostIp = selectedHostIp;
             this.selectedHostPortNum = selectedHostPortNum;
             this.selectedHostLocalMemory = selectedHostLocalMemory;
+            this.selectedHostStatus = status
         },
     }
 })
