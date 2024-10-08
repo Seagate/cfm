@@ -1,0 +1,29 @@
+From e3add1887e6d256b255d5fd48f5e1d2bbe4402c8 Mon Sep 17 00:00:00 2001
+From: Hongjian Fan <hongjian.fan@seagate.com>
+Date: Fri, 9 Aug 2024 08:16:44 -0500
+Subject: [PATCH] patch: force endpoint even when there is no link
+
+---
+ pkg/redfishapi/model_memory_chunks_v1_6_1_links.go | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/pkg/redfishapi/model_memory_chunks_v1_6_1_links.go b/pkg/redfishapi/model_memory_chunks_v1_6_1_links.go
+index 6f6d6f2..176899b 100644
+--- a/pkg/redfishapi/model_memory_chunks_v1_6_1_links.go
++++ b/pkg/redfishapi/model_memory_chunks_v1_6_1_links.go
+@@ -18,10 +18,10 @@ type MemoryChunksV161Links struct {
+ 	CXLLogicalDevicesodataCount int64 `json:"CXLLogicalDevices@odata.count,omitempty"`
+ 
+ 	// An array of links to the endpoints that connect to this memory chunk.
+-	Endpoints []OdataV4IdRef `json:"Endpoints,omitempty"`
++	Endpoints []OdataV4IdRef `json:"Endpoints"` // manual change to force endpoint even when there is no link
+ 
+ 	// The number of items in a collection.
+-	EndpointsodataCount int64 `json:"Endpoints@odata.count,omitempty"`
++	EndpointsodataCount int64 `json:"Endpoints@odata.count"` // manual change to force endpoint even when there is no link
+ 
+ 	// An array of links to the memory regions for which this memory chunk provides capacity.
+ 	MemoryRegions []OdataV4IdRef `json:"MemoryRegions,omitempty"`
+-- 
+2.25.1
+

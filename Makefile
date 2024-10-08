@@ -109,10 +109,8 @@ generate-redfish:
 	docker run -u $(GENERATE_USER) --rm -v ${PWD}:/local openapitools/openapi-generator-cli:v7.0.0 generate -i /local/$(OPENAPI_REDFISH_YAML) -g go-server -o /local/pkg/redfishapi --package-name redfishapi --additional-properties=sourceFolder=,outputAsLibrary=true,router=mux,serverPort=8080,enumClassPrefix=true -t /local/api/templates/go-server --skip-validate-spec
 	@echo "Format files after generation to conform to project standard"
 	docker run --rm -v ${PWD}:/local golang:$(GO_VERSION) $(GOFMT_OPTS)
-	@echo "Apply local patch for xml response fix"
-	git apply api/patch/Apply-xml-workaround-to-fix-metadata-response.patch
-	@echo "Apply local patch for missing import"
-	git apply api/patch/fix-missing-import.patch
+	@echo "Apply local patch for redfish auto generated codes"
+	git apply api/patch/*.redfish.patch
 
 generate-axios:
 	@echo "Generating $(OPENAPI_YAML) axios server using openapi-generator-cli"
