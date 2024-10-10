@@ -566,7 +566,30 @@ func (cfm *CfmApiService) BladesUpdateById(ctx context.Context, applianceId stri
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
-	return openapi.Response(http.StatusOK, newBlade), nil
+	totals, err := newBlade.GetResourceTotals(ctx)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	b := openapi.Blade{
+		Id:        newBlade.Id,
+		IpAddress: newBlade.GetNetIp(),
+		Port:      int32(newBlade.GetNetPort()),
+		Status:    string(newBlade.Status),
+		Ports: openapi.MemberItem{
+			Uri: manager.GetCfmUriBladePorts(appliance.Id, newBlade.Id),
+		},
+		Resources: openapi.MemberItem{
+			Uri: manager.GetCfmUriBladeResources(appliance.Id, newBlade.Id),
+		},
+		Memory: openapi.MemberItem{
+			Uri: manager.GetCfmUriBladeMemory(appliance.Id, newBlade.Id),
+		},
+		TotalMemoryAvailableMiB: totals.TotalMemoryAvailableMiB,
+		TotalMemoryAllocatedMiB: totals.TotalMemoryAllocatedMiB,
+	}
+
+	return openapi.Response(http.StatusOK, b), nil
 }
 
 // BladesGetResourceById -
