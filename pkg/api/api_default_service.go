@@ -167,7 +167,19 @@ func (cfm *CfmApiService) AppliancesUpdateById(ctx context.Context, applianceId 
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
-	return openapi.Response(http.StatusOK, newAppliance), nil
+	a := openapi.Appliance{
+		Id:        newAppliance.Id,
+		IpAddress: "", // Unused
+		Port:      0,  // Unused
+		Status:    "", // Unused
+		Blades: openapi.MemberItem{
+			Uri: manager.GetCfmUriBlades(newAppliance.Id),
+		},
+		TotalMemoryAvailableMiB: 0,
+		TotalMemoryAllocatedMiB: 0,
+	}
+
+	return openapi.Response(http.StatusOK, a), nil
 }
 
 // AppliancesResync -
