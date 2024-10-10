@@ -193,19 +193,7 @@
                       ></v-btn>
                     </v-toolbar>
                     <v-card-text>
-                      <h2 class="text-h6 text-green-lighten-2">
-                        Blade
-                        <v-btn icon variant="text">
-                          <v-icon
-                            @click="resyncBladeWindowButton"
-                            id="resyncBladeButton"
-                            >mdi-sync-circle</v-icon
-                          >
-                          <v-tooltip activator="parent" location="end"
-                            >Click here to resynchronize this blade</v-tooltip
-                          >
-                        </v-btn>
-                      </h2>
+                      <h2 class="text-h6 text-green-lighten-2">Blade</h2>
                       A blade is associated with one appliance and it is Redfish
                       service running on OpenBMC.
                     </v-card-text>
