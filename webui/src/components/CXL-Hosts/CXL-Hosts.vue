@@ -25,6 +25,14 @@
         color="#6ebe4a"
         bg-color="rgba(110, 190, 74, 0.1)"
       >
+        <v-tab>
+          <v-btn variant="text" id="addHost" @click="addNewHostWindowButton">
+            <v-icon start color="#6ebe4a">mdi-plus-thick</v-icon>
+            <v-tooltip activator="parent" location="end"
+              >Click here to add new cxl-host</v-tooltip
+            >
+          </v-btn>
+        </v-tab>
         <v-tab
           v-for="host in hosts"
           :value="host.id"
@@ -43,28 +51,44 @@
           <v-row justify="space-between" align="center">
             <v-col> {{ host.id }} </v-col>
             <v-col>
-              <v-btn icon variant="text">
-                <v-icon
-                  size="x-small"
-                  color="warning"
-                  @click="deleteHostWindowButton"
-                  id="deleteHostWindow"
-                  >mdi-close</v-icon
-                >
-                <v-tooltip activator="parent" location="end"
-                  >Click here to delete this cxl-host</v-tooltip
-                >
-              </v-btn>
+              <v-menu>
+                <template v-slot:activator="{ props }">
+                  <v-btn
+                    color="#6ebe4a"
+                    icon="mdi-dots-vertical"
+                    variant="text"
+                    v-bind="props"
+                    @click.stop="
+                      selectHost(
+                        host.id,
+                        host.ipAddress,
+                        host.port,
+                        host.localMemoryMiB,
+                        host.status
+                      )
+                    "
+                  ></v-btn>
+                </template>
+                <v-list>
+                  <v-list-item
+                    v-for="(item, i) in hostDropItems"
+                    :key="i"
+                    :value="item"
+                    :id="item.id"
+                    @click="item.function"
+                  >
+                    <template v-slot:prepend>
+                      <v-icon
+                        :icon="item.icon"
+                        :color="item.iconColor"
+                      ></v-icon>
+                    </template>
+                    <v-list-item-title>{{ item.text }}</v-list-item-title>
+                  </v-list-item>
+                </v-list>
+              </v-menu>
             </v-col>
           </v-row>
-        </v-tab>
-        <v-tab>
-          <v-btn variant="text" id="addHost" @click="addNewHostWindowButton">
-            <v-icon start color="#6ebe4a">mdi-plus-thick</v-icon>
-            <v-tooltip activator="parent" location="end"
-              >Click here to add new cxl-host</v-tooltip
-            >
-          </v-btn>
         </v-tab>
       </v-tabs>
 
@@ -84,20 +108,7 @@
                   >
                 </v-toolbar>
                 <v-card-text>
-                  <h2 class="text-h6 text-green-lighten-2">
-                    CXL-Host
-                    <v-btn icon variant="text">
-                      <v-icon
-                        @click="resyncHostWindowButton"
-                        id="resyncHostButton"
-                        >mdi-sync-circle</v-icon
-                      >
-                      <v-tooltip activator="parent" location="end"
-                        >Click here to resynchronize this CXL-Host
-                        device</v-tooltip
-                      >
-                    </v-btn>
-                  </h2>
+                  <h2 class="text-h6 text-green-lighten-2">CXL-Host</h2>
                   💻A CXL-Host device is a Redfish Service agent providing local
                   memory composition.
                 </v-card-text>
@@ -626,6 +637,147 @@
         </v-col>
       </v-row>
     </v-dialog>
+
+    <!-- The dialog for renaming a cxl host -->
+    <v-dialog v-model="dialogRenameHost" max-width="600px">
+      <v-card>
+        <v-card-title>
+          <span class="text-h5">Rename Host</span>
+        </v-card-title>
+        <v-divider></v-divider>
+        <v-card-text>
+          <v-container>
+            <v-row class="justify-center">
+              <v-col>
+                <div style="position: relative; width: 100%">
+                  <v-text-field
+                    v-model="selectedHostId"
+                    label="Current Host Name"
+                    :style="{ width: '100%' }"
+                    id="currentHostId"
+                    readonly
+                  ></v-text-field>
+                  <v-text-field
+                    v-model="renameHostCredentials.customId"
+                    label="New Host Name"
+                    :style="{ width: '100%' }"
+                    id="renameHostId"
+                    :rules="[rules.required]"
+                  ></v-text-field>
+                </div>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-card-text>
+        <v-divider></v-divider>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="#6ebe4a"
+            variant="text"
+            id="cancelRenameHost"
+            @click="dialogRenameHost = false"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+            color="#6ebe4a"
+            variant="text"
+            id="confirmRenameHost"
+            @click="
+              renameHostConfirm(selectedHostId, renameHostCredentials.customId)
+            "
+          >
+            Rename
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="dialogRenameHostSuccess" max-width="600px">
+      <v-sheet
+        elevation="12"
+        max-width="600"
+        rounded="lg"
+        width="100%"
+        class="pa-4 text-center mx-auto"
+      >
+        <v-icon
+          class="mb-5"
+          color="success"
+          icon="mdi-check-circle"
+          size="112"
+        ></v-icon>
+        <h2 class="text-h5 mb-6">Rename a Host succeeded!</h2>
+        <p class="mb-4 text-medium-emphasis text-body-2">
+          New Host Id:
+          <br />{{ renamedHostId }}
+        </p>
+        <v-divider class="mb-4"></v-divider>
+        <div class="text-end">
+          <v-btn
+            class="text-none"
+            color="success"
+            rounded
+            variant="flat"
+            width="90"
+            id="renameHostSuccess"
+            @click="dialogRenameHostSuccess = false"
+          >
+            Done
+          </v-btn>
+        </div>
+      </v-sheet>
+    </v-dialog>
+
+    <v-dialog v-model="dialogRenameHostFailure" max-width="600px">
+      <v-sheet
+        elevation="12"
+        max-width="600"
+        rounded="lg"
+        width="100%"
+        class="pa-4 text-center mx-auto"
+      >
+        <v-icon
+          class="mb-5"
+          color="error"
+          icon="mdi-alert-circle"
+          size="112"
+        ></v-icon>
+        <h2 class="text-h5 mb-6">Rename a Host failed!</h2>
+        <p class="mb-4 text-medium-emphasis text-body-2">
+          {{ renameHostError }}
+        </p>
+        <v-divider class="mb-4"></v-divider>
+        <div class="text-end">
+          <v-btn
+            class="text-none"
+            color="error"
+            rounded
+            variant="flat"
+            width="90"
+            id="renameHostFailure"
+            @click="dialogRenameHostFailure = false"
+          >
+            Done
+          </v-btn>
+        </div>
+      </v-sheet>
+    </v-dialog>
+
+    <v-dialog v-model="dialogRenameHostWait">
+      <v-row align-content="center" class="fill-height" justify="center">
+        <v-col cols="6">
+          <v-progress-linear color="#6ebe4a" height="50" indeterminate rounded>
+            <template v-slot:default>
+              <div class="text-center">
+                {{ renameHostProgressText }}
+              </div>
+            </template>
+          </v-progress-linear>
+        </v-col>
+      </v-row>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -645,6 +797,8 @@ export default {
     return {
       loadProgressText: "Loading the page, please wait...",
       resyncHostProgressText: "Resynchronizing the CXL-Host, please wait...",
+      renameHostProgressText: "Renaming the CXL-Host, please wait...",
+
       // The rules for the input fields when adding a new cxl-host
       rules: {
         required: (value: any) => !!value || "Field is required",
@@ -682,6 +836,40 @@ export default {
       dialogResyncHostSuccess: false,
       dialogResyncHostFailure: false,
       resyncHostError: null as unknown,
+
+      renameHostCredentials: {
+        customId: "",
+      },
+      renamedHostId: "", // Be used on success popup
+      dialogRenameHost: false,
+      renameHostError: null as unknown,
+      dialogRenameHostSuccess: false,
+      dialogRenameHostFailure: false,
+      dialogRenameHostWait: false,
+
+      hostDropItems: [
+        {
+          text: "Delete",
+          icon: "mdi-delete",
+          function: this.deleteHostWindowButton,
+          id: "deleteHostWindow",
+          iconColor: "warning",
+        },
+        {
+          text: "Rename",
+          icon: "mdi-rename-box",
+          function: this.renameHost,
+          id: "renameHostWindow",
+          iconColor: "primary",
+        },
+        {
+          text: "Resync",
+          icon: "mdi-sync-circle",
+          function: this.resyncHostWindowButton,
+          id: "resyncHostWindow",
+          iconColor: "#6ebe4a",
+        },
+      ],
     };
   },
 
@@ -801,6 +989,48 @@ export default {
         this.dialogResyncHostWait = false;
         this.dialogResyncHostFailure = true;
       }
+    },
+
+    renameHost() {
+      this.dialogRenameHost = true;
+    },
+
+    /* Triggle the API hostsUpdateById in host store to rename a host */
+    async renameHostConfirm(hostId: string, newHostId: string) {
+      // Make the rename host popup disappear and waiting popup appear
+      this.dialogRenameHost = false;
+      this.dialogRenameHostWait = true;
+
+      const hostStore = useHostStore();
+      const newHost = await hostStore.renameHost(hostId, newHostId);
+      this.renameHostError = hostStore.renameHostError as string;
+
+      if (!this.renameHostError) {
+        this.renamedHostId = newHost.id;
+
+        // Set the renamed host as the selected host
+        const Hosts = computed(() => hostStore.hosts);
+        if (Hosts.value.length > 0) {
+          hostStore.selectHost(
+            newHost?.id + "",
+            newHost?.ipAddress + "",
+            Number(newHost?.port),
+            newHost?.localMemoryMiB,
+            newHost?.status
+          );
+        }
+
+        this.dialogRenameHostWait = false;
+        this.dialogRenameHostSuccess = true;
+      } else {
+        this.dialogRenameHostWait = false;
+        this.dialogRenameHostFailure = true;
+      }
+
+      // Reset the credentials
+      this.renameHostCredentials = {
+        customId: "",
+      };
     },
 
     // Method to manually update the content for the resync cxl-host

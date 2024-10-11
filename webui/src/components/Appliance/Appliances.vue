@@ -1646,7 +1646,7 @@ export default {
       this.dialogRenameBlade = true;
     },
 
-    /* Triggle the API bladesUpdateById in appliance store to rename a blade */
+    /* Triggle the API bladesUpdateById in blade store to rename a blade */
     async renameBladeConfirm(
       applianceId: string,
       bladeId: string,
