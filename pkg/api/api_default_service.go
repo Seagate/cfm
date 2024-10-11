@@ -1054,7 +1054,30 @@ func (cfm *CfmApiService) HostsUpdateById(ctx context.Context, hostId string, ne
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
-	return openapi.Response(http.StatusOK, newHost), nil
+	totals, err := newHost.GetMemoryTotals(ctx)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	h := openapi.Host{
+		Id:        newHost.Id,
+		IpAddress: newHost.GetNetIp(),
+		Port:      int32(newHost.GetNetPort()),
+		Status:    string(newHost.Status),
+		Ports: openapi.MemberItem{
+			Uri: manager.GetCfmUriHostPorts(newHost.Id),
+		},
+		Memory: openapi.MemberItem{
+			Uri: manager.GetCfmUriHostMemory(newHost.Id),
+		},
+		MemoryDevices: openapi.MemberItem{
+			Uri: manager.GetCfmUriHostMemoryDevices(newHost.Id),
+		},
+		LocalMemoryMiB:  totals.LocalMemoryMib,
+		RemoteMemoryMiB: totals.RemoteMemoryMib,
+	}
+
+	return openapi.Response(http.StatusOK, h), nil
 }
 
 // HostsResync -
