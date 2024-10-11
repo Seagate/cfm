@@ -840,7 +840,7 @@ export default {
       renameHostCredentials: {
         customId: "",
       },
-      renamedHostId: "", // Be used on success popup
+      renamedHostId: null as unknown as string | undefined, // Be used on success popup
       dialogRenameHost: false,
       renameHostError: null as unknown,
       dialogRenameHostSuccess: false,
@@ -1006,7 +1006,7 @@ export default {
       this.renameHostError = hostStore.renameHostError as string;
 
       if (!this.renameHostError) {
-        this.renamedHostId = newHost.id;
+        this.renamedHostId = newHost?.id;
 
         // Set the renamed host as the selected host
         const Hosts = computed(() => hostStore.hosts);

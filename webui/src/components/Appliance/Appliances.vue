@@ -1425,7 +1425,7 @@ export default {
       renameApplianceCredentials: {
         customId: "",
       },
-      renamedApplianceId: "", // Be used on success popup
+      renamedApplianceId: null as unknown as string | undefined, // Be used on success popup
       dialogRenameAppliance: false,
       renameApplianceError: null as unknown,
       dialogRenameApplianceSuccess: false,
@@ -1452,7 +1452,7 @@ export default {
       renameBladeCredentials: {
         customId: "",
       },
-      renamedBladeId: "", // Be used on success popup
+      renamedBladeId: null as unknown as string | undefined, // Be used on success popup
       dialogRenameBlade: false,
       renameBladeError: null as unknown,
       dialogRenameBladeSuccess: false,
@@ -1621,7 +1621,7 @@ export default {
       this.renameApplianceError = applianceStore.renameApplianceError as string;
 
       if (!this.renameApplianceError) {
-        this.renamedApplianceId = newAppliance.id;
+        this.renamedApplianceId = newAppliance?.id;
 
         // Set the renamed appliance as the selected appliance
         const appliances = computed(() => applianceStore.appliances);
@@ -1666,7 +1666,7 @@ export default {
       this.renameBladeError = bladeStore.renameBladeError as string;
 
       if (!this.renameBladeError) {
-        this.renamedBladeId = newBlade.id;
+        this.renamedBladeId = newBlade?.id;
 
         // Set the renamed Blade as the selected Blade
         const Blades = computed(() => bladeStore.blades);
