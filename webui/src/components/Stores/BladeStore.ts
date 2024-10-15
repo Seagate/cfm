@@ -18,6 +18,7 @@ export const useBladeStore = defineStore('blade', {
         addBladeError: null as unknown,
         deleteBladeError: null as unknown,
         resyncBladeError: null as unknown,
+        renameBladeError: null as unknown,
     }),
     actions: {
         async fetchBlades(applianceId: string) {
@@ -67,6 +68,37 @@ export const useBladeStore = defineStore('blade', {
                 console.error("Error fetching blade by id:", error);
             }
         },
+
+        async renameBlade(applianceId: string, bladeId: string, newBladeId: string) {
+            this.renameBladeError = "";
+            
+            try {
+                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
+                const response = await defaultApi.bladesUpdateById(applianceId, bladeId, newBladeId);
+
+                // Update the blades array
+                if (response) {
+                    this.blades = this.blades.filter(
+                        (blade) => blade.id !== bladeId
+                    );
+                    this.blades.push(response.data);
+                }
+
+                return response.data
+            } catch (error) {
+                if (axios.isAxiosError(error)) {
+                    this.renameBladeError = error.message;
+                    if (error.response) {
+                        this.renameBladeError = error.response?.data.status.message + " (" + error.response?.request.status + ")";
+                    }
+                }
+                else {
+                    this.renameBladeError = error;
+                }
+                console.error("Error:", error);
+            }
+        },
+
 
         async resyncBlade(applianceId: string, bladeId: string) {
             this.resyncBladeError = "";
