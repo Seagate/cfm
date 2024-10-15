@@ -14,9 +14,11 @@ export const useBladeStore = defineStore('blade', {
         selectedBladePortNum: null as unknown as number,
         selectedBladeTotalMemoryAvailableMiB: null as unknown as number | undefined,
         selectedBladeTotalMemoryAllocatedMiB: null as unknown as number | undefined,
+        selectedBladeStatus: null as unknown as string | undefined,
         addBladeError: null as unknown,
         deleteBladeError: null as unknown,
         resyncBladeError: null as unknown,
+        renameBladeError: null as unknown,
     }),
     actions: {
         async fetchBlades(applianceId: string) {
@@ -66,6 +68,37 @@ export const useBladeStore = defineStore('blade', {
                 console.error("Error fetching blade by id:", error);
             }
         },
+
+        async renameBlade(applianceId: string, bladeId: string, newBladeId: string) {
+            this.renameBladeError = "";
+            
+            try {
+                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
+                const response = await defaultApi.bladesUpdateById(applianceId, bladeId, newBladeId);
+
+                // Update the blades array
+                if (response) {
+                    this.blades = this.blades.filter(
+                        (blade) => blade.id !== bladeId
+                    );
+                    this.blades.push(response.data);
+                }
+
+                return response.data
+            } catch (error) {
+                if (axios.isAxiosError(error)) {
+                    this.renameBladeError = error.message;
+                    if (error.response) {
+                        this.renameBladeError = error.response?.data.status.message + " (" + error.response?.request.status + ")";
+                    }
+                }
+                else {
+                    this.renameBladeError = error;
+                }
+                console.error("Error:", error);
+            }
+        },
+
 
         async resyncBlade(applianceId: string, bladeId: string) {
             this.resyncBladeError = "";
@@ -145,12 +178,13 @@ export const useBladeStore = defineStore('blade', {
         },
 
 
-        selectBlade(bladeId: string, selectedBladeIp: string, selectBladePortNum: number, selectedBladeTotalMemoryAvailableMiB: number, selectedBladeTotalMemoryAllocatedMiB: number) {
+        selectBlade(bladeId: string, selectedBladeIp: string, selectBladePortNum: number, selectedBladeTotalMemoryAvailableMiB: number, selectedBladeTotalMemoryAllocatedMiB: number, status: string | undefined) {
             this.selectedBladeId = bladeId;
             this.selectedBladeIp = selectedBladeIp;
             this.selectedBladePortNum = selectBladePortNum;
             this.selectedBladeTotalMemoryAvailableMiB = selectedBladeTotalMemoryAvailableMiB;
             this.selectedBladeTotalMemoryAllocatedMiB = selectedBladeTotalMemoryAllocatedMiB;
+            this.selectedBladeStatus = status;
         },
 
         updateSelectedBladeMemory(availableMemory: number | undefined, allocatedMemory: number | undefined) {

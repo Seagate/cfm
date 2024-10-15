@@ -14,9 +14,11 @@ export const useHostStore = defineStore('host', {
         selectedHostIp: null as unknown as string,
         selectedHostPortNum: null as unknown as number,
         selectedHostLocalMemory: null as unknown as number | undefined,
+        selectedHostStatus: null as unknown as string | undefined,
         addHostError: null as unknown,
         deleteHostError: null as unknown,
         resyncHostError: null as unknown,
+        renameHostError: null as unknown,
         hostIds: [] as string[],
     }),
 
@@ -101,6 +103,37 @@ export const useHostStore = defineStore('host', {
             }
         },
 
+        async renameHost(hostId: string, newHostId: string) {
+            this.renameHostError = "";
+
+            try {
+                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
+                const response = await defaultApi.hostsUpdateById(hostId, newHostId);
+
+                // Update the hosts array
+                if (response) {
+                    this.hosts = this.hosts.filter(
+                        (host) => host.id !== hostId
+                    );
+                    this.hosts.push(response.data);
+                }
+
+                return response.data
+            } catch (error) {
+                if (axios.isAxiosError(error)) {
+                    this.renameHostError = error.message;
+                    if (error.response) {
+                        this.renameHostError = error.response?.data.status.message + " (" + error.response?.request.status + ")";
+                    }
+                }
+                else {
+                    this.renameHostError = error;
+                }
+                console.error("Error:", error);
+            }
+        },
+
+
         async resyncHost(hostId: string) {
             this.resyncHostError = "";
             try {
@@ -123,11 +156,12 @@ export const useHostStore = defineStore('host', {
             }
         },
 
-        selectHost(selectedHostId: string, selectedHostIp: string, selectedHostPortNum: number, selectedHostLocalMemory: number | undefined) {
+        selectHost(selectedHostId: string, selectedHostIp: string, selectedHostPortNum: number, selectedHostLocalMemory: number | undefined, status: string | undefined) {
             this.selectedHostId = selectedHostId;
             this.selectedHostIp = selectedHostIp;
             this.selectedHostPortNum = selectedHostPortNum;
             this.selectedHostLocalMemory = selectedHostLocalMemory;
+            this.selectedHostStatus = status
         },
     }
 })

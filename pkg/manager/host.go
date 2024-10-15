@@ -10,6 +10,7 @@ import (
 
 	"cfm/pkg/backend"
 	"cfm/pkg/common"
+	"cfm/pkg/common/datastore"
 	"cfm/pkg/openapi"
 
 	"k8s.io/klog/v2"
@@ -18,9 +19,9 @@ import (
 const ID_PREFIX_HOST_DFLT string = "host"
 
 type Host struct {
-	Id  string
-	Uri string
-	// Status     string	// Meaningless without async update
+	Id            string
+	Uri           string
+	Status        common.ConnectionStatus
 	Socket        SocketDetails
 	Ports         map[string]*CxlHostPort
 	MemoryDevices map[string]*HostMemoryDevice
@@ -41,6 +42,7 @@ type RequestNewHost struct {
 	HostId     string
 	Ip         string
 	Port       uint16
+	Status     common.ConnectionStatus
 	BackendOps backend.BackendOperations
 	Creds      *openapi.Credentials
 }
@@ -53,6 +55,7 @@ func NewHost(ctx context.Context, r *RequestNewHost) (*Host, error) {
 		Id:            r.HostId,
 		Uri:           GetCfmUriHostId(r.HostId),
 		Socket:        *NewSocketDetails(r.Ip, r.Port),
+		Status:        r.Status,
 		Ports:         make(map[string]*CxlHostPort),
 		MemoryDevices: make(map[string]*HostMemoryDevice),
 		Memory:        make(map[string]*HostMemory),
@@ -182,30 +185,30 @@ func (h *Host) FreeMemoryById(ctx context.Context, hostMemoryId string) (*openap
 	return memory, nil
 }
 
-func (h *Host) GetAllMemoryIds() []string {
+func (h *Host) GetAllMemoryIds(ctx context.Context) []string {
 	var ids []string
 
-	for id := range h.Memory {
+	for id := range h.GetMemory(ctx) {
 		ids = append(ids, id)
 	}
 
 	return ids
 }
 
-func (h *Host) GetAllMemoryDeviceIds() []string {
+func (h *Host) GetAllMemoryDeviceIds(ctx context.Context) []string {
 	var ids []string
 
-	for id := range h.MemoryDevices {
+	for id := range h.GetMemoryDevices(ctx) {
 		ids = append(ids, id)
 	}
 
 	return ids
 }
 
-func (h *Host) GetAllPortIds() []string {
+func (h *Host) GetAllPortIds(ctx context.Context) []string {
 	var ids []string
 
-	for id := range h.Ports {
+	for id := range h.GetPorts(ctx) {
 		ids = append(ids, id)
 	}
 
@@ -215,6 +218,11 @@ func (h *Host) GetAllPortIds() []string {
 func (h *Host) GetMemoryById(ctx context.Context, memoryId string) (*HostMemory, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetMemoryById: ", "memoryId", memoryId, "hostId", h.Id)
+
+	if !h.IsOnline(ctx) {
+		// If host offline, not an error.  Just no information to return.
+		return nil, nil
+	}
 
 	memory, ok := h.Memory[memoryId]
 	if !ok {
@@ -232,6 +240,11 @@ func (h *Host) GetMemory(ctx context.Context) map[string]*HostMemory {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetMemory: ", "hostId", h.Id)
 
+	if !h.IsOnline(ctx) {
+		// If host offline, not an error.  Just no information to return.
+		return make(map[string]*HostMemory)
+	}
+
 	memory := h.Memory
 
 	logger.V(2).Info("success: get memory", "count", len(memory), "hostId", h.Id)
@@ -243,6 +256,11 @@ func (h *Host) GetMemory(ctx context.Context) map[string]*HostMemory {
 func (h *Host) GetMemoryBackend(ctx context.Context) ([]string, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetMemoryBackend: ", "hostId", h.Id)
+
+	if !h.IsOnline(ctx) {
+		// If host offline, not an error.  Just no information to return.
+		return make([]string, 0), nil
+	}
 
 	req := backend.GetMemoryRequest{}
 	response, err := h.backendOps.GetMemory(ctx, &backend.ConfigurationSettings{}, &req)
@@ -259,6 +277,11 @@ func (h *Host) GetMemoryDeviceById(ctx context.Context, memdevId string) (*HostM
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetMemoryDeviceById: ", "memdevId", memdevId, "hostId", h.Id)
 
+	if !h.IsOnline(ctx) {
+		// If host offline, not an error.  Just no information to return.
+		return nil, nil
+	}
+
 	memdev, ok := h.MemoryDevices[memdevId]
 	if !ok {
 		newErr := fmt.Errorf("memory device [%s] not found on host [%s]", memdevId, h.Id)
@@ -274,6 +297,11 @@ func (h *Host) GetMemoryDeviceById(ctx context.Context, memdevId string) (*HostM
 func (h *Host) GetMemoryDevices(ctx context.Context) map[string]*HostMemoryDevice {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetMemoryDevices: ", "hostId", h.Id)
+
+	if !h.IsOnline(ctx) {
+		// If host offline, not an error.  Just no information to return.
+		return make(map[string]*HostMemoryDevice)
+	}
 
 	memdevs := h.MemoryDevices
 
@@ -305,7 +333,7 @@ func (h *Host) GetMemoryDomainAllMemoryIds(ctx context.Context, domain string) (
 
 	typeString, exist := HostMemoryDomain[domain]
 	if exist {
-		for id, mem := range h.Memory {
+		for id, mem := range h.GetMemory(ctx) {
 			details, err := mem.GetDetails(ctx)
 			if err != nil {
 				return nil, err
@@ -330,6 +358,11 @@ func (h *Host) GetMemoryDevicesBackend(ctx context.Context) (map[string][]string
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetMemoryDevicesBackend: ", "hostId", h.Id)
 
+	if !h.IsOnline(ctx) {
+		// If host offline, not an error.  Just no information to return.
+		return make(map[string][]string, 0), nil
+	}
+
 	req := backend.GetMemoryDevicesRequest{}
 	response, err := h.backendOps.GetMemoryDevices(ctx, &backend.ConfigurationSettings{}, &req)
 	if err != nil || response == nil {
@@ -343,13 +376,23 @@ func (h *Host) GetMemoryDevicesBackend(ctx context.Context) (map[string][]string
 	return response.DeviceIdMap, nil
 }
 
+type ResponseHostMemoryTotals struct {
+	LocalMemoryMib  int32
+	RemoteMemoryMib int32
+}
+
 func (h *Host) GetMemoryTotals(ctx context.Context) (*ResponseHostMemoryTotals, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetMemoryTotals: ", "hostId", h.Id)
 
 	var local, remote int32
 
-	for _, memory := range h.Memory {
+	response := ResponseHostMemoryTotals{
+		LocalMemoryMib:  0,
+		RemoteMemoryMib: 0,
+	}
+
+	for _, memory := range h.GetMemory(ctx) {
 		totals, err := memory.GetTotals(ctx)
 		if err != nil || totals == nil {
 			newErr := fmt.Errorf("failed to get memory totals: host [%s] memory [%s]: %w", h.Id, memory.Id, err)
@@ -361,12 +404,10 @@ func (h *Host) GetMemoryTotals(ctx context.Context) (*ResponseHostMemoryTotals, 
 		remote += totals.RemoteMemoryMib
 	}
 
-	response := ResponseHostMemoryTotals{
-		LocalMemoryMib:  local,
-		RemoteMemoryMib: remote,
-	}
+	response.LocalMemoryMib = local
+	response.RemoteMemoryMib = remote
 
-	logger.V(2).Info("success: get memory totals", "hostId", h.Id)
+	logger.V(2).Info("success: get memory totals", "totals", response, "hostId", h.Id)
 
 	return &response, nil
 }
@@ -374,6 +415,11 @@ func (h *Host) GetMemoryTotals(ctx context.Context) (*ResponseHostMemoryTotals, 
 func (h *Host) GetPortById(ctx context.Context, portId string) (*CxlHostPort, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetPortById: ", "portId", portId, "hostId", h.Id)
+
+	if !h.IsOnline(ctx) {
+		// If host offline, not an error.  Just no information to return.
+		return nil, nil
+	}
 
 	port, ok := h.Ports[portId]
 	if !ok {
@@ -391,6 +437,11 @@ func (h *Host) GetPorts(ctx context.Context) map[string]*CxlHostPort {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetPorts: ", "hostId", h.Id)
 
+	if !h.IsOnline(ctx) {
+		// If host offline, not an error.  Just no information to return.
+		return make(map[string]*CxlHostPort)
+	}
+
 	ports := h.Ports
 
 	logger.V(2).Info("success: get ports", "count", len(ports), "hostId", h.Id)
@@ -402,6 +453,11 @@ func (h *Host) GetPorts(ctx context.Context) map[string]*CxlHostPort {
 func (h *Host) GetPortsBackend(ctx context.Context) ([]string, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetPortsBackend: ", "hostId", h.Id)
+
+	if !h.IsOnline(ctx) {
+		// If host offline, not an error.  Just no information to return.
+		return make([]string, 0), nil
+	}
 
 	req := backend.GetPortsRequest{}
 	response, err := h.backendOps.GetHostPortPcieDevices(ctx, &backend.ConfigurationSettings{}, &req)
@@ -438,9 +494,29 @@ func (h *Host) InvalidateCache() {
 	}
 }
 
-type ResponseHostMemoryTotals struct {
-	LocalMemoryMib  int32
-	RemoteMemoryMib int32
+func (h *Host) IsOnline(ctx context.Context) bool {
+	return h.Status == common.ONLINE
+}
+
+// UpdateConnectionStatusBackend - Query the host root service to verify continued connection and update the object status accordingly.
+func (h *Host) UpdateConnectionStatusBackend(ctx context.Context) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info(">>>>>> UpdateConnectionStatusBackend: ", "hostId", h.Id)
+
+	req := backend.GetRootServiceRequest{}
+	response, err := h.backendOps.GetRootService(ctx, &backend.ConfigurationSettings{}, &req)
+	if err != nil || response == nil {
+		h.Status = common.OFFLINE
+	} else {
+		h.Status = common.ONLINE
+	}
+
+	// Update datastore status
+	hostDatum, _ := datastore.DStore().GetDataStore().GetHostDatumById(h.Id)
+	hostDatum.SetConnectionStatus(&h.Status)
+	datastore.DStore().Store()
+
+	logger.V(2).Info("update host status(backend)", "status", h.Status, "hostId", h.Id)
 }
 
 /////////////////////////////////////

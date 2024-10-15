@@ -4,6 +4,7 @@ package serviceWrap
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	service "cfm/pkg/client"
@@ -57,12 +58,21 @@ func FindMemoryDeviceOnHost(client *service.APIClient, hostId, memoryDeviceId st
 	request := client.DefaultAPI.HostsGetMemoryDeviceById(context.Background(), hostId, memoryDeviceId)
 	memoryDevice, response, err := request.Execute()
 	if err != nil {
-		msg := fmt.Sprintf("%T: Execute FAILURE", request)
-		klog.ErrorS(err, msg, "response", response)
-		return nil, fmt.Errorf("failure: get host memoryDevice by id: %s", err)
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
+			klog.V(4).Info(newErr)
+			return nil, newErr
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.V(4).Info(newErr)
+		return nil, newErr
 	}
 
-	klog.V(3).InfoS("HostsGetMemoryById success", "hostId", hostId, "memoryDeviceId", memoryDevice.GetId())
+	klog.V(3).InfoS("success: FindMemoryDeviceOnHost", "hostId", hostId, "memoryDeviceId", memoryDevice.GetId())
 
 	return memoryDevice, nil
 }
@@ -73,26 +83,44 @@ func GetAllMemoryDevicesForHost(client *service.APIClient, hostId string) (*[]*s
 	request := client.DefaultAPI.HostsGetMemoryDevices(context.Background(), hostId)
 	memoryDeviceColl, response, err := request.Execute()
 	if err != nil {
-		msg := fmt.Sprintf("%T: Execute FAILURE", request)
-		klog.ErrorS(err, msg, "response", response)
-		// return nil, fmt.Errorf("failure: get host memoryDevices: %s", err)
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
+			klog.V(4).Info(newErr)
+			return nil, newErr
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.V(4).Info(newErr)
+		// return nil, newErr
 		return &memoryDevices, nil //TODO: Error here instead?
 	}
 
-	klog.V(3).InfoS("HostGetMemory success", "hostId", hostId, "memoryDeviceColl", memoryDeviceColl.GetMemberCount())
+	klog.V(4).InfoS("success: HostsGetMemoryDevices", "hostId", hostId, "memoryDeviceColl", memoryDeviceColl.GetMemberCount())
 
 	for _, member := range memoryDeviceColl.GetMembers() {
 		memoryDeviceId := ReadLastItemFromUri(member.GetUri())
 		request := client.DefaultAPI.HostsGetMemoryDeviceById(context.Background(), hostId, memoryDeviceId)
 		memoryDevice, response, err := request.Execute()
 		if err != nil {
-			msg := fmt.Sprintf("%T: Execute FAILURE", request)
-			klog.ErrorS(err, msg, "response", response)
-			// return nil, fmt.Errorf("failure: get host memoryDevice by id: %s", err)
+			// Decode the JSON response into a struct
+			var status service.StatusMessage
+			if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+				newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
+				klog.V(4).Info(newErr)
+				return nil, newErr
+			}
+
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+				request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+			klog.V(4).Info(newErr)
+			// return nil, newErr
 			continue //TODO: Error here instead?
 		}
 
-		klog.V(3).InfoS("HostsGetMemoryById success", "hostId", hostId, "memoryDeviceId", memoryDevice.GetId())
+		klog.V(4).InfoS("success: HostsGetMemoryById", "hostId", hostId, "memoryDeviceId", memoryDevice.GetId())
 
 		memoryDevices = append(memoryDevices, memoryDevice)
 	}
@@ -107,9 +135,18 @@ func GetMemoryDevices_AllHosts(client *service.APIClient) (*HostMemoryDeviceSumm
 	request := client.DefaultAPI.HostsGet(context.Background())
 	hostColl, response, err := request.Execute()
 	if err != nil {
-		msg := fmt.Sprintf("%T: Execute FAILURE", request)
-		klog.ErrorS(err, msg, "response", response)
-		// return nil, fmt.Errorf("failure: get host memoryDevices: %s", err)
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
+			klog.V(4).Info(newErr)
+			return nil, newErr
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.V(4).Info(newErr)
+		// return nil, newErr
 		return summary, nil //TODO: Error here instead?
 	}
 
@@ -134,9 +171,18 @@ func FindMemoryDevice_AllHosts(client *service.APIClient, memoryDeviceId string)
 	request := client.DefaultAPI.HostsGet(context.Background())
 	hostColl, response, err := request.Execute()
 	if err != nil {
-		msg := fmt.Sprintf("%T: Execute FAILURE", request)
-		klog.ErrorS(err, msg, "response", response)
-		// return nil, fmt.Errorf("failure: get host memoryDevices: %s", err)
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
+			klog.V(4).Info(newErr)
+			return nil, newErr
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.V(4).Info(newErr)
+		// return nil, newErr
 		return summary, nil //TODO: Error here instead?
 	}
 

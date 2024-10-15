@@ -8,6 +8,7 @@ import (
 
 	"cfm/pkg/backend"
 	"cfm/pkg/common"
+	"cfm/pkg/common/datastore"
 	"cfm/pkg/openapi"
 
 	"k8s.io/klog/v2"
@@ -42,20 +43,19 @@ func AddAppliance(ctx context.Context, c *openapi.Credentials) (*Appliance, erro
 	logger.V(4).Info(">>>>>> AddAppliance: ")
 
 	// Create a new cfm-service Appliance object
-	appliance, err := NewAppliance(ctx, c.CustomId)
+	appliance, err := NewAppliance(ctx, c)
 	if err != nil || appliance == nil {
 		newErr := fmt.Errorf("new appliance creation failure: %w", err)
 		logger.Error(newErr, "failure: add appliance")
 		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
-	// Cache it
-	err = deviceCache.AddAppliance(appliance)
-	if err != nil {
-		newErr := fmt.Errorf("add appliance [%s] failure: %w", appliance.Id, err)
-		logger.Error(newErr, "failure: add appliance")
-		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
-	}
+	// Add appliance to device cache
+	deviceCache.AddAppliance(appliance) // ignore error, duplicate check done above
+
+	// Add appliance to datastore
+	datastore.DStore().GetDataStore().AddApplianceDatum(c)
+	datastore.DStore().Store()
 
 	logger.V(2).Info("success: add appliance", "applianceId", appliance.Id)
 
@@ -74,24 +74,18 @@ func DeleteApplianceById(ctx context.Context, applianceId string) (*Appliance, e
 		return nil, &common.RequestError{StatusCode: common.StatusApplianceIdDoesNotExist, Err: newErr}
 	}
 
-	err := appliance.DeleteAllBlades(ctx) // cache and hardware interactions here
-	if err != nil {
-		newErr := fmt.Errorf("failed to delete all appliance [%s] blades: %w", appliance.Id, err)
-		logger.Error(newErr, "failure: delete appliance by id")
-		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
-	}
+	appliance.DeleteAllBlades(ctx)
 
 	// delete appliance from cache
-	a := deviceCache.DeleteApplianceById(appliance.Id)
-	if a == nil {
-		newErr := fmt.Errorf("appliance [%s] cache delete failed", appliance.Id)
-		logger.Error(newErr, "failure: delete appliance by id")
-		return nil, &common.RequestError{StatusCode: common.StatusApplianceDeleteSessionFailure, Err: newErr}
-	}
+	deviceCache.DeleteApplianceById(appliance.Id)
 
-	logger.V(2).Info("success: delete appliance by id", "applianceId", a.Id)
+	// delete appliance from datastore
+	datastore.DStore().GetDataStore().DeleteApplianceDatumById(appliance.Id)
+	datastore.DStore().Store()
 
-	return a, nil
+	logger.V(2).Info("success: delete appliance by id", "applianceId", appliance.Id)
+
+	return appliance, nil
 }
 
 func GetAllApplianceIds() []string {
@@ -125,7 +119,86 @@ func GetAppliances(ctx context.Context) map[string]*Appliance {
 	return appliances
 }
 
-func ResyncApplianceById(ctx context.Context, applianceId string) (*Appliance, *[]string, error) {
+func RenameAppliance(ctx context.Context, appliance *Appliance, newApplianceId string) (*Appliance, error) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info(">>>>>> RenameApplianceById: ", "applianceId", appliance.Id)
+
+	// Store the associated blades information locally, which is needed when adding back the blades
+	bladesInfo := make(map[string]*Blade)
+	for _, id := range appliance.GetAllBladeIds() {
+		bladesInfo[id] = appliance.Blades[id]
+	}
+
+	// delete appliance and the associated blades
+	_, err := DeleteApplianceById(ctx, appliance.Id)
+	if err != nil {
+		return nil, &common.RequestError{StatusCode: common.StatusApplianceDeleteSessionFailure, Err: err}
+	}
+
+	// add appliance back with the new id
+	c := openapi.Credentials{
+		CustomId: newApplianceId,
+	}
+	newAppliance, err := AddAppliance(ctx, &c)
+	if err != nil {
+		return nil, &common.RequestError{StatusCode: common.StatusApplianceCreateSessionFailure, Err: err}
+	}
+
+	var failedBladeIds []string
+
+	// Add blades back to the new appliance
+	for id, blade := range bladesInfo {
+		_, err := newAppliance.AddBladeBack(ctx, blade.creds)
+		if err != nil {
+			newErr := fmt.Errorf("add blade by id [%s] failure: appliance [%s]: %w", id, newApplianceId, err)
+			logger.Error(newErr, "failure: add blade to new appliance: handle and continue")
+			failedBladeIds = append(failedBladeIds, id)
+		}
+	}
+
+	if len(failedBladeIds) == 0 {
+		logger.V(2).Info("success: rename appliance", "applianceId", newApplianceId, "blades", bladesInfo)
+		return newAppliance, nil
+	} else if len(failedBladeIds) < len(bladesInfo) {
+		newErr := fmt.Errorf("rename appliance by id [%s]: some failure(s): blade(s) [%s]", newApplianceId, failedBladeIds)
+		logger.Error(newErr, "partial success: rename appliance by id")
+		return newAppliance, &common.RequestError{StatusCode: common.StatusApplianceRenameFailure, Err: newErr}
+	} else {
+		newErr := fmt.Errorf("rename appliance by id [%s] failure", newApplianceId)
+		logger.Error(newErr, "failure: rename appliance by id")
+		return nil, &common.RequestError{StatusCode: common.StatusApplianceRenameFailure, Err: newErr}
+	}
+}
+
+func RenameBlade(ctx context.Context, appliance *Appliance, blade *Blade, newBladeId string) (*Blade, error) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info(">>>>>> RenameBladeById: ", "bladeId", blade.Id)
+
+	// Save the blade credentials for adding back with the new name
+	c := &openapi.Credentials{
+		Username:  blade.creds.Username,
+		Password:  blade.creds.Password,
+		IpAddress: blade.creds.IpAddress,
+		Port:      blade.creds.Port,
+		Insecure:  blade.creds.Insecure,
+		Protocol:  blade.creds.Protocol,
+		CustomId:  newBladeId,
+	}
+
+	// delete blade
+	_, err := appliance.DeleteBladeById(ctx, blade.Id)
+	if err != nil {
+		return nil, &common.RequestError{StatusCode: common.StatusBladeRenameFailure, Err: err}
+	}
+	// Add the balde back with the new name
+	newBlade, err := appliance.AddBlade(ctx, c)
+	if err != nil {
+		return nil, &common.RequestError{StatusCode: common.StatusBladeRenameFailure, Err: err}
+	}
+	return newBlade, nil
+}
+
+func ResyncApplianceById(ctx context.Context, applianceId string) (*Appliance, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> ResyncApplianceById: ", "applianceId", applianceId)
 
@@ -135,7 +208,7 @@ func ResyncApplianceById(ctx context.Context, applianceId string) (*Appliance, *
 	if err != nil {
 		newErr := fmt.Errorf("get appliance by id [%s] failure: %w", appliance.Id, err)
 		logger.Error(newErr, "failure: resync appliance by id")
-		return nil, &failedBladeIds, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
+		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
 	bladeIds := appliance.GetAllBladeIds()
@@ -151,15 +224,15 @@ func ResyncApplianceById(ctx context.Context, applianceId string) (*Appliance, *
 
 	if len(failedBladeIds) == 0 {
 		logger.V(2).Info("success: resync appliance", "applianceId", applianceId, "bladeIds", bladeIds)
-		return appliance, &failedBladeIds, nil
+		return appliance, nil
 	} else if len(failedBladeIds) < len(bladeIds) {
 		newErr := fmt.Errorf("resync appliance by id [%s]: some failure(s): blade(s) [%s]: %w", appliance.Id, failedBladeIds, err)
 		logger.Error(newErr, "partial success: resync appliance by id")
-		return appliance, &failedBladeIds, &common.RequestError{StatusCode: common.StatusApplianceResyncPartialSuccess, Err: newErr}
+		return appliance, &common.RequestError{StatusCode: common.StatusApplianceResyncPartialSuccess, Err: newErr}
 	} else {
 		newErr := fmt.Errorf("resync appliance by id [%s] failure: %w", appliance.Id, err)
 		logger.Error(newErr, "failure: resync appliance by id")
-		return nil, &failedBladeIds, &common.RequestError{StatusCode: common.StatusApplianceResyncFailure, Err: newErr}
+		return nil, &common.RequestError{StatusCode: common.StatusApplianceResyncFailure, Err: newErr}
 	}
 }
 
@@ -217,6 +290,7 @@ func AddHost(ctx context.Context, c *openapi.Credentials) (*Host, error) {
 			// Generate default id using last N digits of the session id combined with the default prefix
 			hostId = fmt.Sprintf("%s-%s", ID_PREFIX_HOST_DFLT, response.SessionId[(len(response.SessionId)-common.NumUuidCharsForId):])
 		}
+		c.CustomId = hostId
 	}
 
 	// Check for duplicate ID.
@@ -240,6 +314,7 @@ func AddHost(ctx context.Context, c *openapi.Credentials) (*Host, error) {
 		HostId:     hostId,
 		Ip:         c.IpAddress,
 		Port:       uint16(c.Port),
+		Status:     common.ONLINE,
 		BackendOps: ops,
 		Creds:      c,
 	}
@@ -259,12 +334,44 @@ func AddHost(ctx context.Context, c *openapi.Credentials) (*Host, error) {
 		return nil, &common.RequestError{StatusCode: common.StatusManagerInitializationFailure, Err: newErr}
 	}
 
-	// Cache it
-	deviceCache.AddHost(host)
+	// Add host to device cache
+	deviceCache.AddHost(host) // ignore error, duplicate check done above
+
+	// Add host to datastore
+	datastore.DStore().GetDataStore().AddHostDatum(c)
+	datastore.DStore().Store()
 
 	logger.V(2).Info("success: add host", "hostId", host.Id)
 
 	return host, nil
+}
+
+func RenameHost(ctx context.Context, host *Host, newHostId string) (*Host, error) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info(">>>>>> RenameHostById: ", "hostId", host.Id)
+	// Save the host credentials for adding back with the new name
+	c := &openapi.Credentials{
+		Username:  host.creds.Username,
+		Password:  host.creds.Password,
+		IpAddress: host.creds.IpAddress,
+		Port:      host.creds.Port,
+		Insecure:  host.creds.Insecure,
+		Protocol:  host.creds.Protocol,
+		CustomId:  newHostId,
+	}
+
+	// delete host
+	_, err := DeleteHostById(ctx, host.Id)
+	if err != nil {
+		return nil, &common.RequestError{StatusCode: common.StatusBladeRenameFailure, Err: err}
+	}
+
+	// Add the host back with the new name
+	newHost, err := AddHost(ctx, c)
+	if err != nil {
+		return nil, &common.RequestError{StatusCode: common.StatusBladeRenameFailure, Err: err}
+	}
+	return newHost, nil
 }
 
 func DeleteHostById(ctx context.Context, hostId string) (*Host, error) {
@@ -290,24 +397,20 @@ func DeleteHostById(ctx context.Context, hostId string) (*Host, error) {
 		newErr := fmt.Errorf("failed to delete host [%s] backend [%s] session [%s]: %w", host.Id, ops.GetBackendInfo(ctx).BackendName, host.Socket.String(), err)
 		logger.Error(newErr, "failure: delete host by id")
 
-		// Currently, backend ALWAYS deletes the host session from the backend map.  For now, need to delete host from manager map as well.
-		logger.V(2).Info("force host deletion after backend session failure", "hostId", host.Id)
-		deviceCache.DeleteHostById(host.Id)
+		// Currently, backend ALWAYS deletes the host session from the backend map.
+		// Delete host from manager cache and datastore as well
+		logger.V(2).Info("force host deletion after backend delete session failure", "hostId", host.Id)
+
+		deleteHost(host.Id)
 
 		return host, &common.RequestError{StatusCode: common.StatusHostDeleteSessionFailure, Err: newErr} // Still return the host for recovery
 	}
 
-	// delete host from cache
-	h := deviceCache.DeleteHostById(host.Id)
-	if h == nil {
-		newErr := fmt.Errorf("host [%s] cache delete failed", host.Id)
-		logger.Error(newErr, "failure: delete host by id")
-		return nil, &common.RequestError{StatusCode: common.StatusHostDeleteSessionFailure, Err: newErr}
-	}
+	deleteHost(host.Id)
 
-	logger.V(2).Info("success: delete host by id", "hostId", h.Id)
+	logger.V(2).Info("success: delete host by id", "hostId", host.Id)
 
-	return h, nil
+	return host, nil
 }
 
 func GetAllHostIds() []string {
@@ -322,7 +425,7 @@ func GetHostById(ctx context.Context, hostId string) (*Host, error) {
 	host, err := deviceCache.GetHostById(hostId)
 	if err != nil {
 		logger.Error(err, "failure: get host by id")
-		newErr := fmt.Errorf("failure: get host by id [%s]", hostId)
+		newErr := fmt.Errorf("failure: get host by id [%s]: %w", hostId, err)
 		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
@@ -344,7 +447,9 @@ func GetHostById(ctx context.Context, hostId string) (*Host, error) {
 		}
 	}
 
-	logger.V(2).Info("success: get host by id", "hostId", hostId)
+	host.UpdateConnectionStatusBackend(ctx)
+
+	logger.V(2).Info("success: get host by id", "status", host.Status, "hostId", host.Id)
 
 	return host, nil
 }
@@ -364,20 +469,32 @@ func ResyncHostById(ctx context.Context, hostId string) (*Host, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> ResyncHostById: ", "hostId", hostId)
 
-	host, err := DeleteHostById(ctx, hostId)
-	if err != nil {
-		newErr := fmt.Errorf("failed to resync host(delete): host [%s]: %w", hostId, err)
-		logger.Error(newErr, "failure: resync host: ignoring")
+	// query device cache
+	host, ok := deviceCache.GetHostByIdOk(hostId)
+	if !ok || host == nil {
+		newErr := fmt.Errorf("failed to get host [%s]", hostId)
+		logger.Error(newErr, "failure: resync host by id")
+		return nil, &common.RequestError{StatusCode: common.StatusHostIdDoesNotExist, Err: newErr}
 	}
 
-	host, err = AddHost(ctx, host.creds)
-	if err != nil {
-		newErr := fmt.Errorf("failed to resync host(add): host [%s]: %w", hostId, err)
-		logger.Error(newErr, "failure: resync host")
-		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
-	}
+	host.UpdateConnectionStatusBackend(ctx)
 
-	logger.V(2).Info("success: resync host", "hostId", hostId)
+	logger.V(2).Info("success: resync host", "status", host.Status, "hostId", host.Id)
 
 	return host, nil
+}
+
+////////////////////////////////////
+//////// Helper Functions //////////
+////////////////////////////////////
+
+func deleteHost(hostId string) *Host {
+	// delete host from manager cache
+	h := deviceCache.DeleteHostById(hostId)
+
+	// delete host from datastore
+	datastore.DStore().GetDataStore().DeleteHostDatumById(hostId)
+	datastore.DStore().Store()
+
+	return h
 }

@@ -57,6 +57,12 @@ const (
 	StatusGetMemoryDevicesDetailsFailure            //409
 
 	StatusApplianceResyncFailure //409
+	StatusBladeResyncFailure     //409
+	StatusHostResyncFailure      //409
+
+	StatusApplianceRenameFailure //409
+	StatusBladeRenameFailure     //409
+	StatusHostRenameFailure      //409
 
 	StatusApplianceIdDuplicate //409
 	StatusBladeIdDuplicate     //409
@@ -150,6 +156,10 @@ func (e StatusCodeType) String() string {
 		return "Get Memory Devices Details Failure"
 	case StatusApplianceResyncFailure:
 		return "Appliance Resync Failure"
+	case StatusBladeResyncFailure:
+		return "Blade Resync Failure"
+	case StatusHostResyncFailure:
+		return "Host Resync Failure"
 	case StatusBladeIdDoesNotExist:
 		return "Blade Id Does Not Exist"
 	case StatusAppliancesExceedMaximum:
@@ -170,6 +180,12 @@ func (e StatusCodeType) String() string {
 		return "Port Id Already Exist"
 	case StatusHostIdDuplicate:
 		return "Host Id Already Exist"
+	case StatusApplianceRenameFailure:
+		return "Rename Appliance Failure"
+	case StatusBladeRenameFailure:
+		return "Rename Blade Failure"
+	case StatusHostRenameFailure:
+		return "Rename Host Failure"
 	}
 	return "Unknown"
 
@@ -209,10 +225,15 @@ func (e StatusCodeType) HttpStatusCode() int {
 		StatusGetMemoryDevicesFailure,
 		StatusGetMemoryDevicesDetailsFailure,
 		StatusApplianceResyncFailure,
+		StatusBladeResyncFailure,
+		StatusHostResyncFailure,
 		StatusApplianceIdDuplicate,
 		StatusBladeIdDuplicate,
 		StatusPortIdDuplicate,
-		StatusHostIdDuplicate:
+		StatusHostIdDuplicate,
+		StatusApplianceRenameFailure,
+		StatusBladeRenameFailure,
+		StatusHostRenameFailure:
 		return http.StatusConflict // 409
 	case StatusBackendInterfaceFailure,
 		StatusBladeCreateSessionFailure,
