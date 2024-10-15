@@ -248,8 +248,7 @@ func (m *HostMemory) InvalidateCache() {
 }
 
 func (m *HostMemory) ValidateCache() {
-	// m.cacheUpdated = true
-	m.cacheUpdated = false // Temporarily disable host cache usage
+	m.cacheUpdated = true
 }
 
 func (m *HostMemory) init(ctx context.Context) error {

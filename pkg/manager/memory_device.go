@@ -109,8 +109,7 @@ func (d *HostMemoryDevice) InvalidateCache() {
 }
 
 func (d *HostMemoryDevice) ValidateCache() {
-	// d.cacheUpdated = true
-	d.cacheUpdated = false // Temporarily disable host cache usage
+	d.cacheUpdated = true
 }
 
 func (d *HostMemoryDevice) init(ctx context.Context) error {
