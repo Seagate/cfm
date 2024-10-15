@@ -13,10 +13,41 @@ export const useApplianceStore = defineStore('appliance', {
         selectedApplianceId: null as unknown as string,
         addApplianceError: null as unknown,
         deleteApplianceError: null as unknown,
+        renameApplianceError: null as unknown,
         applianceIds: [] as { id: string, bladeIds: string[] }[],
     }),
 
     actions: {
+        async renameAppliance(applianceId: string, newApplianceId: string) {
+            this.renameApplianceError = "";
+            try {
+                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
+                const response = await defaultApi.appliancesUpdateById(applianceId, newApplianceId);
+
+                // Update the appliances array
+                if (response) {
+                    this.appliances = this.appliances.filter(
+                        (appliance) => appliance.id !== applianceId
+                    );
+                    this.appliances.push(response.data);
+                }
+
+                return response.data
+            } catch (error) {
+                if (axios.isAxiosError(error)) {
+                    this.renameApplianceError = error.message;
+
+                    if (error.response) {
+                        this.renameApplianceError = error.response?.data.status.message + " (" + error.response?.request.status + ")";
+                    }
+                }
+                else {
+                    this.renameApplianceError = error;
+                }
+                console.error("Error:", error);
+            }
+        },
+
         async fetchAppliances() {
             this.appliances = [];
             this.applianceIds = [];
@@ -66,6 +97,7 @@ export const useApplianceStore = defineStore('appliance', {
                 const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
                 const response = await defaultApi.appliancesPost(newAppliance);
                 const addedAppliance = response.data;
+                console.log("added appliance", addedAppliance)
                 // Add the new appliance to the appliances array
                 this.appliances.push(addedAppliance);
                 return addedAppliance;

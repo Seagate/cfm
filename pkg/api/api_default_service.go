@@ -167,7 +167,19 @@ func (cfm *CfmApiService) AppliancesUpdateById(ctx context.Context, applianceId 
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
-	return openapi.Response(http.StatusOK, newAppliance), nil
+	a := openapi.Appliance{
+		Id:        newAppliance.Id,
+		IpAddress: "", // Unused
+		Port:      0,  // Unused
+		Status:    "", // Unused
+		Blades: openapi.MemberItem{
+			Uri: manager.GetCfmUriBlades(newAppliance.Id),
+		},
+		TotalMemoryAvailableMiB: 0,
+		TotalMemoryAllocatedMiB: 0,
+	}
+
+	return openapi.Response(http.StatusOK, a), nil
 }
 
 // AppliancesResync -
@@ -554,7 +566,30 @@ func (cfm *CfmApiService) BladesUpdateById(ctx context.Context, applianceId stri
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
-	return openapi.Response(http.StatusOK, newBlade), nil
+	totals, err := newBlade.GetResourceTotals(ctx)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	b := openapi.Blade{
+		Id:        newBlade.Id,
+		IpAddress: newBlade.GetNetIp(),
+		Port:      int32(newBlade.GetNetPort()),
+		Status:    string(newBlade.Status),
+		Ports: openapi.MemberItem{
+			Uri: manager.GetCfmUriBladePorts(appliance.Id, newBlade.Id),
+		},
+		Resources: openapi.MemberItem{
+			Uri: manager.GetCfmUriBladeResources(appliance.Id, newBlade.Id),
+		},
+		Memory: openapi.MemberItem{
+			Uri: manager.GetCfmUriBladeMemory(appliance.Id, newBlade.Id),
+		},
+		TotalMemoryAvailableMiB: totals.TotalMemoryAvailableMiB,
+		TotalMemoryAllocatedMiB: totals.TotalMemoryAllocatedMiB,
+	}
+
+	return openapi.Response(http.StatusOK, b), nil
 }
 
 // BladesGetResourceById -
@@ -1019,7 +1054,30 @@ func (cfm *CfmApiService) HostsUpdateById(ctx context.Context, hostId string, ne
 		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
-	return openapi.Response(http.StatusOK, newHost), nil
+	totals, err := newHost.GetMemoryTotals(ctx)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	h := openapi.Host{
+		Id:        newHost.Id,
+		IpAddress: newHost.GetNetIp(),
+		Port:      int32(newHost.GetNetPort()),
+		Status:    string(newHost.Status),
+		Ports: openapi.MemberItem{
+			Uri: manager.GetCfmUriHostPorts(newHost.Id),
+		},
+		Memory: openapi.MemberItem{
+			Uri: manager.GetCfmUriHostMemory(newHost.Id),
+		},
+		MemoryDevices: openapi.MemberItem{
+			Uri: manager.GetCfmUriHostMemoryDevices(newHost.Id),
+		},
+		LocalMemoryMiB:  totals.LocalMemoryMib,
+		RemoteMemoryMiB: totals.RemoteMemoryMib,
+	}
+
+	return openapi.Response(http.StatusOK, h), nil
 }
 
 // HostsResync -

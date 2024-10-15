@@ -45,18 +45,34 @@
           <v-row justify="space-between" align="center">
             <v-col> {{ appliance.id }} </v-col>
             <v-col>
-              <v-btn icon variant="text">
-                <v-icon
-                  size="x-small"
-                  color="warning"
-                  @click="deleteApplianceWindowButton"
-                  id="deleteApplianceWindow"
-                  >mdi-close</v-icon
-                >
-                <v-tooltip activator="parent" location="end"
-                  >Click here to delete this memory appliance</v-tooltip
-                >
-              </v-btn>
+              <v-menu>
+                <template v-slot:activator="{ props }">
+                  <v-btn
+                    color="#6ebe4a"
+                    icon="mdi-dots-vertical"
+                    variant="text"
+                    v-bind="props"
+                    @click.stop="selectAppliance(appliance.id)"
+                  ></v-btn>
+                </template>
+                <v-list>
+                  <v-list-item
+                    v-for="(item, i) in applianceDropItems"
+                    :key="i"
+                    :value="item"
+                    :id="item.id"
+                    @click="item.function"
+                  >
+                    <template v-slot:prepend>
+                      <v-icon
+                        :icon="item.icon"
+                        :color="item.iconColor"
+                      ></v-icon>
+                    </template>
+                    <v-list-item-title>{{ item.text }}</v-list-item-title>
+                  </v-list-item>
+                </v-list>
+              </v-menu>
             </v-col>
           </v-row>
         </v-tab>
@@ -105,18 +121,43 @@
               <v-row justify="space-between" align="center">
                 <v-col> {{ blade.id }} </v-col>
                 <v-col>
-                  <v-btn icon variant="text">
-                    <v-icon
-                      color="warning"
-                      size="x-small"
-                      @click="deleteBladeWindowButton"
-                      id="deleteBladeWindowButton"
-                      >mdi-close</v-icon
-                    >
-                    <v-tooltip activator="parent" location="end"
-                      >Click here to delete this blade</v-tooltip
-                    >
-                  </v-btn>
+                  <v-menu>
+                    <template v-slot:activator="{ props }">
+                      <v-btn
+                        color="#6ebe4a"
+                        icon="mdi-dots-vertical"
+                        variant="text"
+                        v-bind="props"
+                        @click.stop="
+                          selectBlade(
+                            blade.id,
+                            blade.ipAddress,
+                            blade.port,
+                            Number(blade.totalMemoryAvailableMiB),
+                            Number(blade.totalMemoryAllocatedMiB),
+                            blade.status
+                          )
+                        "
+                      ></v-btn>
+                    </template>
+                    <v-list>
+                      <v-list-item
+                        v-for="(item, i) in bladeDropItems"
+                        :key="i"
+                        :value="item"
+                        :id="item.id"
+                        @click="item.function"
+                      >
+                        <template v-slot:prepend>
+                          <v-icon
+                            :icon="item.icon"
+                            :color="item.iconColor"
+                          ></v-icon>
+                        </template>
+                        <v-list-item-title>{{ item.text }}</v-list-item-title>
+                      </v-list-item>
+                    </v-list>
+                  </v-menu>
                 </v-col>
               </v-row>
             </v-tab>
@@ -152,19 +193,7 @@
                       ></v-btn>
                     </v-toolbar>
                     <v-card-text>
-                      <h2 class="text-h6 text-green-lighten-2">
-                        Blade
-                        <v-btn icon variant="text">
-                          <v-icon
-                            @click="resyncBladeWindowButton"
-                            id="resyncBladeButton"
-                            >mdi-sync-circle</v-icon
-                          >
-                          <v-tooltip activator="parent" location="end"
-                            >Click here to resynchronize this blade</v-tooltip
-                          >
-                        </v-btn>
-                      </h2>
+                      <h2 class="text-h6 text-green-lighten-2">Blade</h2>
                       A blade is associated with one appliance and it is Redfish
                       service running on OpenBMC.
                     </v-card-text>
@@ -585,6 +614,295 @@
             <template v-slot:default>
               <div class="text-center">
                 {{ deleteApplianceProgressText }}
+              </div>
+            </template>
+          </v-progress-linear>
+        </v-col>
+      </v-row>
+    </v-dialog>
+
+    <!-- The dialog for renaming an appliance -->
+    <v-dialog v-model="dialogRenameAppliance" max-width="600px">
+      <v-card>
+        <v-card-title>
+          <span class="text-h5">Rename Appliance</span>
+        </v-card-title>
+        <v-divider></v-divider>
+        <v-card-text>
+          <v-container>
+            <v-row class="justify-center">
+              <v-col>
+                <div style="position: relative; width: 100%">
+                  <v-text-field
+                    v-model="selectedApplianceId"
+                    label="Current Appliance Name"
+                    :style="{ width: '100%' }"
+                    id="currentApplianceId"
+                    readonly
+                  ></v-text-field>
+                  <v-text-field
+                    v-model="renameApplianceCredentials.customId"
+                    label="New Appliance Name"
+                    :style="{ width: '100%' }"
+                    id="renameApplianceId"
+                    :rules="[rules.required]"
+                  ></v-text-field>
+                </div>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-card-text>
+        <v-divider></v-divider>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="#6ebe4a"
+            variant="text"
+            id="cancelRenameAppliance"
+            @click="dialogRenameAppliance = false"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+            color="#6ebe4a"
+            variant="text"
+            id="confirmRenameAppliance"
+            @click="
+              renameApplianceConfirm(
+                selectedApplianceId,
+                renameApplianceCredentials.customId
+              )
+            "
+          >
+            Rename
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="dialogRenameApplianceSuccess" max-width="600px">
+      <v-sheet
+        elevation="12"
+        max-width="600"
+        rounded="lg"
+        width="100%"
+        class="pa-4 text-center mx-auto"
+      >
+        <v-icon
+          class="mb-5"
+          color="success"
+          icon="mdi-check-circle"
+          size="112"
+        ></v-icon>
+        <h2 class="text-h5 mb-6">Rename an appliance succeeded!</h2>
+        <p class="mb-4 text-medium-emphasis text-body-2">
+          New Appliance Id:
+          <br />{{ renamedApplianceId }}
+        </p>
+        <v-divider class="mb-4"></v-divider>
+        <div class="text-end">
+          <v-btn
+            class="text-none"
+            color="success"
+            rounded
+            variant="flat"
+            width="90"
+            id="renameApplianceSuccess"
+            @click="dialogRenameApplianceSuccess = false"
+          >
+            Done
+          </v-btn>
+        </div>
+      </v-sheet>
+    </v-dialog>
+
+    <v-dialog v-model="dialogRenameApplianceFailure" max-width="600px">
+      <v-sheet
+        elevation="12"
+        max-width="600"
+        rounded="lg"
+        width="100%"
+        class="pa-4 text-center mx-auto"
+      >
+        <v-icon
+          class="mb-5"
+          color="error"
+          icon="mdi-alert-circle"
+          size="112"
+        ></v-icon>
+        <h2 class="text-h5 mb-6">Rename an appliance failed!</h2>
+        <p class="mb-4 text-medium-emphasis text-body-2">
+          {{ renameApplianceError }}
+        </p>
+        <v-divider class="mb-4"></v-divider>
+        <div class="text-end">
+          <v-btn
+            class="text-none"
+            color="error"
+            rounded
+            variant="flat"
+            width="90"
+            id="renameApplianceFailure"
+            @click="dialogRenameApplianceFailure = false"
+          >
+            Done
+          </v-btn>
+        </div>
+      </v-sheet>
+    </v-dialog>
+
+    <v-dialog v-model="dialogRenameApplianceWait">
+      <v-row align-content="center" class="fill-height" justify="center">
+        <v-col cols="6">
+          <v-progress-linear color="#6ebe4a" height="50" indeterminate rounded>
+            <template v-slot:default>
+              <div class="text-center">
+                {{ renameApplianceProgressText }}
+              </div>
+            </template>
+          </v-progress-linear>
+        </v-col>
+      </v-row>
+    </v-dialog>
+
+    <!-- The dialog for renaming a blade -->
+    <v-dialog v-model="dialogRenameBlade" max-width="600px">
+      <v-card>
+        <v-card-title>
+          <span class="text-h5">Rename Blade</span>
+        </v-card-title>
+        <v-divider></v-divider>
+        <v-card-text>
+          <v-container>
+            <v-row class="justify-center">
+              <v-col>
+                <div style="position: relative; width: 100%">
+                  <v-text-field
+                    v-model="selectedBladeId"
+                    label="Current Blade Name"
+                    :style="{ width: '100%' }"
+                    id="currentBladeId"
+                    readonly
+                  ></v-text-field>
+                  <v-text-field
+                    v-model="renameBladeCredentials.customId"
+                    label="New Blade Name"
+                    :style="{ width: '100%' }"
+                    id="renameBladeId"
+                    :rules="[rules.required]"
+                  ></v-text-field>
+                </div>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-card-text>
+        <v-divider></v-divider>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="#6ebe4a"
+            variant="text"
+            id="cancelRenameBlade"
+            @click="dialogRenameBlade = false"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+            color="#6ebe4a"
+            variant="text"
+            id="confirmRenameBlade"
+            @click="
+              renameBladeConfirm(
+                selectedApplianceId,
+                selectedBladeId,
+                renameBladeCredentials.customId
+              )
+            "
+          >
+            Rename
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="dialogRenameBladeSuccess" max-width="600px">
+      <v-sheet
+        elevation="12"
+        max-width="600"
+        rounded="lg"
+        width="100%"
+        class="pa-4 text-center mx-auto"
+      >
+        <v-icon
+          class="mb-5"
+          color="success"
+          icon="mdi-check-circle"
+          size="112"
+        ></v-icon>
+        <h2 class="text-h5 mb-6">Rename a Blade succeeded!</h2>
+        <p class="mb-4 text-medium-emphasis text-body-2">
+          New Blade Id:
+          <br />{{ renamedBladeId }}
+        </p>
+        <v-divider class="mb-4"></v-divider>
+        <div class="text-end">
+          <v-btn
+            class="text-none"
+            color="success"
+            rounded
+            variant="flat"
+            width="90"
+            id="renameBladeSuccess"
+            @click="dialogRenameBladeSuccess = false"
+          >
+            Done
+          </v-btn>
+        </div>
+      </v-sheet>
+    </v-dialog>
+
+    <v-dialog v-model="dialogRenameBladeFailure" max-width="600px">
+      <v-sheet
+        elevation="12"
+        max-width="600"
+        rounded="lg"
+        width="100%"
+        class="pa-4 text-center mx-auto"
+      >
+        <v-icon
+          class="mb-5"
+          color="error"
+          icon="mdi-alert-circle"
+          size="112"
+        ></v-icon>
+        <h2 class="text-h5 mb-6">Rename a Blade failed!</h2>
+        <p class="mb-4 text-medium-emphasis text-body-2">
+          {{ renameBladeError }}
+        </p>
+        <v-divider class="mb-4"></v-divider>
+        <div class="text-end">
+          <v-btn
+            class="text-none"
+            color="error"
+            rounded
+            variant="flat"
+            width="90"
+            id="renameBladeFailure"
+            @click="dialogRenameBladeFailure = false"
+          >
+            Done
+          </v-btn>
+        </div>
+      </v-sheet>
+    </v-dialog>
+
+    <v-dialog v-model="dialogRenameBladeWait">
+      <v-row align-content="center" class="fill-height" justify="center">
+        <v-col cols="6">
+          <v-progress-linear color="#6ebe4a" height="50" indeterminate rounded>
+            <template v-slot:default>
+              <div class="text-center">
+                {{ renameBladeProgressText }}
               </div>
             </template>
           </v-progress-linear>
@@ -1065,6 +1383,8 @@ export default {
       addBladeProgressText: "Adding blade, please wait...",
       deleteBladeProgressText: "Deleting blade, please wait...",
       resyncBladeProgressText: "Resynchronizing the blade, please wait...",
+      renameApplianceProgressText: "Renaming appliance, please wait...",
+      renameBladeProgressText: "Renaming blade, please wait...",
 
       // The rules for the input fields when adding a new appliance/blade
       rules: {
@@ -1101,6 +1421,67 @@ export default {
       dialogDeleteApplianceSuccess: false,
       dialogDeleteApplianceFailure: false,
       dialogDeleteApplianceWait: false,
+
+      renameApplianceCredentials: {
+        customId: "",
+      },
+      renamedApplianceId: null as unknown as string | undefined, // Be used on success popup
+      dialogRenameAppliance: false,
+      renameApplianceError: null as unknown,
+      dialogRenameApplianceSuccess: false,
+      dialogRenameApplianceFailure: false,
+      dialogRenameApplianceWait: false,
+
+      applianceDropItems: [
+        {
+          text: "Delete",
+          icon: "mdi-delete",
+          function: this.deleteApplianceWindowButton,
+          id: "deleteApplianceWindow",
+          iconColor: "warning",
+        },
+        {
+          text: "Rename",
+          icon: "mdi-rename-box",
+          function: this.renameAppliance,
+          id: "renameApplianceWindow",
+          iconColor: "primary",
+        },
+      ],
+
+      renameBladeCredentials: {
+        customId: "",
+      },
+      renamedBladeId: null as unknown as string | undefined, // Be used on success popup
+      dialogRenameBlade: false,
+      renameBladeError: null as unknown,
+      dialogRenameBladeSuccess: false,
+      dialogRenameBladeFailure: false,
+      dialogRenameBladeWait: false,
+
+      bladeDropItems: [
+        {
+          text: "Delete",
+          icon: "mdi-delete",
+          function: this.deleteBladeWindowButton,
+          id: "deleteBladeWindow",
+          iconColor: "warning",
+        },
+        {
+          text: "Rename",
+          icon: "mdi-rename-box",
+          function: this.renameBlade,
+          id: "renameBladeWindow",
+          iconColor: "primary",
+        },
+        {
+          text: "Resync",
+          icon: "mdi-sync-circle",
+          function: this.resyncBladeWindowButton,
+          id: "resyncBladeWindow",
+          iconColor: "#6ebe4a",
+        },
+      ],
 
       newBladeCredentials: {
         username: "root",
@@ -1219,6 +1600,99 @@ export default {
         this.dialogDeleteApplianceWait = false;
         this.dialogDeleteApplianceFailure = true;
       }
+    },
+
+    renameAppliance() {
+      this.dialogRenameAppliance = true;
+    },
+
+    /* Triggle the API appliancesUpdateById in appliance store to rename an appliance */
+    async renameApplianceConfirm(applianceId: string, newApplianceId: string) {
+      // Make the rename appliance popup disappear and waiting popup appear
+      this.dialogRenameAppliance = false;
+      this.dialogRenameApplianceWait = true;
+
+      const applianceStore = useApplianceStore();
+      const newAppliance = await applianceStore.renameAppliance(
+        applianceId,
+        newApplianceId
+      );
+
+      this.renameApplianceError = applianceStore.renameApplianceError as string;
+
+      if (!this.renameApplianceError) {
+        this.renamedApplianceId = newAppliance?.id;
+
+        // Set the renamed appliance as the selected appliance
+        const appliances = computed(() => applianceStore.appliances);
+        if (appliances.value.length > 0) {
+          applianceStore.selectAppliance(newApplianceId);
+        }
+
+        this.dialogRenameApplianceWait = false;
+        this.dialogRenameApplianceSuccess = true;
+      } else {
+        this.dialogRenameApplianceWait = false;
+        this.dialogRenameApplianceFailure = true;
+      }
+
+      // Reset the credentials
+      this.renameApplianceCredentials = {
+        customId: "",
+      };
+    },
+
+    renameBlade() {
+      this.dialogRenameBlade = true;
+    },
+
+    /* Triggle the API bladesUpdateById in blade store to rename a blade */
+    async renameBladeConfirm(
+      applianceId: string,
+      bladeId: string,
+      newBladeId: string
+    ) {
+      // Make the rename blade popup disappear and waiting popup appear
+      this.dialogRenameBlade = false;
+      this.dialogRenameBladeWait = true;
+
+      const bladeStore = useBladeStore();
+      const newBlade = await bladeStore.renameBlade(
+        applianceId,
+        bladeId,
+        newBladeId
+      );
+
+      this.renameBladeError = bladeStore.renameBladeError as string;
+
+      if (!this.renameBladeError) {
+        this.renamedBladeId = newBlade?.id;
+
+        // Set the renamed Blade as the selected Blade
+        const Blades = computed(() => bladeStore.blades);
+        if (Blades.value.length > 0) {
+          const defaultBlade = newBlade;
+          bladeStore.selectBlade(
+            defaultBlade!.id,
+            defaultBlade!.ipAddress,
+            defaultBlade!.port,
+            Number(defaultBlade!.totalMemoryAvailableMiB),
+            Number(defaultBlade!.totalMemoryAllocatedMiB),
+            defaultBlade!.status
+          );
+        }
+
+        this.dialogRenameBladeWait = false;
+        this.dialogRenameBladeSuccess = true;
+      } else {
+        this.dialogRenameBladeWait = false;
+        this.dialogRenameBladeFailure = true;
+      }
+
+      // Reset the credentials
+      this.renameBladeCredentials = {
+        customId: "",
+      };
     },
 
     /* Open the add blade popup */
