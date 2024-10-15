@@ -17,7 +17,7 @@ If desired, the user can add `:vX.X.X` to the end of the command to obtain an ol
 To enable the webui launching during cfm-service startup, the user must provide the `-webui` flag in the command below.
 
 ```bash
-docker run --restart unless-stopped --network=host --name <user-defined-container-name> --detach ghcr.io/seagate/cfm -webui -verbosity 4
+docker run --restart unless-stopped --network=host --name <container-name> --detach ghcr.io/seagate/cfm -webui -verbosity 4
 ```
 
 By default, the cfm-service will be hosted at port 8080 and the webui will be hosted at port 3000. The user could change the port by input argument -Port and/or -webuiPort. The webui only works with --network=host mode.
@@ -27,13 +27,13 @@ By default, the cfm-service will be hosted at port 8080 and the webui will be ho
 The cfm-service runtime logs can be viewed using
 
 ```bash
-docker logs --follow <user-defined-container-name>
+docker logs --follow <container-name>
 ```
 
 ## Stop and restart cfm-service
 
 ```bash
-docker restart <user-defined-container-name>
+docker restart <container-name>
 ```
 
 ## Excute CLI tool
@@ -41,7 +41,7 @@ docker restart <user-defined-container-name>
 The user can interact with the running cfm docker container (running cfm-service) to utilize the cli tool.
 
 ```bash
-docker exec -it <user-defined-container-name> ./cfm-cli <args>
+docker exec -it <container-name> ./cfm-cli <args>
 ```
 
 NOTE: cfm-cli \<args\> usage examples:
@@ -53,8 +53,15 @@ docker exec -it cfm-container ./cfm-cli list appliances
 
 ## Customization
 
-The developer could use the [DockerFile](../docker/Dockerfile) as a reference to build a new docker image with local changes
+The developer could use the [DockerFile](../docker/Dockerfile) as a reference to build a new docker image using a local [cfm](https://github.com/Seagate/cfm) clone...
 
 ```bash
-docker build --no-cache -t <user-defined-container-name> -f docker/Dockerfile .
+cd /path/to/local/cfm
+docker build --no-cache -t <new-image-name> -f docker/Dockerfile .
+```
+
+...and then run those changes
+
+```bash
+docker run --restart unless-stopped --network=host --name <new-container-name> --detach <new-image-name> -webui -verbosity 4
 ```
