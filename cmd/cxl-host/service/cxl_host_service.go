@@ -43,6 +43,7 @@ func (s *CxlHostApiService) RedfishV1AccountServiceAccountsGet(ctx context.Conte
 		Description:  "Accounts Collection",
 		Name:         "Accounts Collection",
 		Oem:          nil,
+		Members:      []redfishapi.OdataV4IdRef{},
 	}
 
 	// Iterate over all account usernames adding each to the collection
@@ -187,6 +188,7 @@ func (s *CxlHostApiService) RedfishV1AccountServiceRolesGet(ctx context.Context)
 		Description:  "Roles Collection",
 		Name:         "Roles Collection",
 		Oem:          nil,
+		Members:      []redfishapi.OdataV4IdRef{},
 	}
 
 	// Iterate over all roles adding each to the collection
@@ -484,6 +486,7 @@ func (s *CxlHostApiService) RedfishV1FabricsFabricIdSwitchesSwitchIdPortsGet(ctx
 		Description:  fabricId + " " + switchId + " Ports",
 		Name:         fabricId + " " + switchId + " Ports",
 		Oem:          nil,
+		Members:      []redfishapi.OdataV4IdRef{},
 	}
 
 	// Iterate over all possible Fabrics adding each to the collection
@@ -546,6 +549,7 @@ func (s *CxlHostApiService) RedfishV1FabricsGet(ctx context.Context) (redfishapi
 		Description:  "Fabrics Collection",
 		Name:         "Fabrics Collection",
 		Oem:          nil,
+		Members:      []redfishapi.OdataV4IdRef{},
 	}
 
 	// Iterate over all possible Fabrics adding each to the collection
@@ -640,17 +644,14 @@ func (s *CxlHostApiService) RedfishV1SessionServiceSessionsGet(ctx context.Conte
 		Description:  "Sessions",
 		Name:         "Sessions",
 		Oem:          nil,
+		Members:      []redfishapi.OdataV4IdRef{},
 	}
 
 	// Iterate over all possible sessions adding each to the collection
 	sessions := accounts.GetSessions()
 	collection.MembersodataCount = int64(len(sessions))
-	if collection.MembersodataCount > 0 {
-		for id := range sessions {
-			collection.Members = append(collection.Members, redfishapi.OdataV4IdRef{OdataId: fmt.Sprintf("/redfish/v1/SessionService/Sessions/%s", id)})
-		}
-	} else {
-		collection.Members = []redfishapi.OdataV4IdRef{}
+	for id := range sessions {
+		collection.Members = append(collection.Members, redfishapi.OdataV4IdRef{OdataId: fmt.Sprintf("/redfish/v1/SessionService/Sessions/%s", id)})
 	}
 
 	return redfishapi.Response(http.StatusOK, collection), nil
@@ -748,6 +749,7 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdMemoryDomainsGet(ctx contex
 		OdataId:   "/redfish/v1/Chassis/" + chassisId + "/MemoryDomains",
 		OdataType: "#MemoryDomainCollection.MemoryDomainCollection",
 		Name:      "MemoryDomain Collection",
+		Members:   []redfishapi.OdataV4IdRef{},
 	}
 	collection.Members = append(collection.Members, redfishapi.OdataV4IdRef{OdataId: fmt.Sprintf("/redfish/v1/Chassis/%s/MemoryDomains/DIMMs", chassisId)})
 	if CheckMemoryDomainName("CXL") {
@@ -806,6 +808,7 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdMemoryDomainsMemoryDomainId
 		OdataId:   "/redfish/v1/Chassis/" + chassisId + "/MemoryDomains/" + memoryDomainId + "/MemoryChunks",
 		OdataType: "#MemoryChunksCollection.MemoryChunksCollection",
 		Name:      "Memory Chunks Collection",
+		Members:   []redfishapi.OdataV4IdRef{},
 	}
 
 	if memoryDomainId == "DIMMs" { // each numa node with dimm attached ( numa node with CPU ) is mapped to a memory chunk
@@ -878,6 +881,7 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdPCIeDevicesGet(ctx context.
 		Description:  "PCIeDevice Collection",
 		Name:         "PCIeDevice Collection",
 		Oem:          nil,
+		Members:      []redfishapi.OdataV4IdRef{},
 	}
 
 	// Only show CXL device in the PCIe device collection. Use CXL dev name as PCIe dev name
@@ -907,7 +911,7 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdPCIeDevicesPCIeDeviceIdCXLL
 
 	dev := GetCXLDevInfo(BDtoBDF(pCIeDeviceId))
 	gcxlid := FormatGCXLID(dev)
-	fmt := redfishapi.ResourceV1191DurableNameFormat("GCXLID")
+	fmt := redfishapi.ResourceV1200DurableNameFormat("GCXLID")
 	resource := redfishapi.CxlLogicalDeviceV111CxlLogicalDevice{
 		OdataContext: "/redfish/v1/$metadata#CXLLogicalDevice.CXLLogicalDevice",
 		OdataId:      "/redfish/v1/Chassis/" + chassisId + "/PCIeDevices/" + pCIeDeviceId + "/CXLLogicalDevices/" + cXLLogicalDeviceId,
@@ -971,6 +975,7 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdPCIeDevicesPCIeDeviceIdCXLL
 		Description:          "CXL Logical Device Collection",
 		MembersodataNextLink: "",
 		Name:                 "CXL Logical Device Collection",
+		Members:              []redfishapi.OdataV4IdRef{},
 	}
 	for _, id := range GetCXLLogicalDeviceIds(pCIeDeviceId) {
 		collection.Members = append(collection.Members, redfishapi.OdataV4IdRef{
@@ -1052,6 +1057,7 @@ func (s *CxlHostApiService) RedfishV1ChassisChassisIdPCIeDevicesPCIeDeviceIdPCIe
 		Description:  "PCIeFunction Collection",
 		Name:         "PCIe Function Collection",
 		Oem:          nil,
+		Members:      []redfishapi.OdataV4IdRef{},
 	}
 
 	for _, id := range GetPCIeFunctionIds(pCIeDeviceId) {
@@ -1297,6 +1303,7 @@ func (s *CxlHostApiService) RedfishV1SystemsComputerSystemIdMemoryDomainsGet(ctx
 		OdataId:   "/redfish/v1/Systems/" + computerSystemId + "/MemoryDomains",
 		OdataType: "#MemoryDomainCollection.MemoryDomainCollection",
 		Name:      "MemoryDomain Collection",
+		Members:   []redfishapi.OdataV4IdRef{},
 	}
 	collection.Members = append(collection.Members, redfishapi.OdataV4IdRef{OdataId: fmt.Sprintf("/redfish/v1/Systems/%s/MemoryDomains/DIMMs", computerSystemId)})
 	if CheckMemoryDomainName("CXL") {
@@ -1341,6 +1348,7 @@ func (s *CxlHostApiService) RedfishV1SystemsComputerSystemIdMemoryDomainsMemoryD
 		OdataId:   "/redfish/v1/Systems/" + computerSystemId + "/MemoryDomains/" + memoryDomainId + "/MemoryChunks",
 		OdataType: "#MemoryChunksCollection.MemoryChunksCollection",
 		Name:      "Memory Chunks Collection",
+		Members:   []redfishapi.OdataV4IdRef{},
 	}
 
 	if memoryDomainId == "DIMMs" { // each numa node with dimm attached ( numa node with CPU ) is mapped to a memory chunk
@@ -1386,15 +1394,22 @@ func (s *CxlHostApiService) RedfishV1SystemsComputerSystemIdMemoryDomainsMemoryD
 
 	} else {
 		bdf := CxlDevNodeToBDF(memoryChunksId)
-		memAddr := GetCxlAddressInfoMiB(bdf)
-		resource.AddressRangeOffsetMiB = &memAddr.BaseAddress
-		resource.MemoryChunkSizeMiB = &memAddr.Size
-		resource.Links.Endpoints = append(resource.Links.Endpoints, redfishapi.OdataV4IdRef{OdataId: fmt.Sprintf("/redfish/v1/Systems/%s/Memory/CXL%d", computerSystemId, CxlDevBDFtoIndex(CxlDevNodeToBDF(memoryChunksId)))})
-		resource.Links.EndpointsodataCount = 1
+		if bdf == "" { // node doesn't match to a CXL dev's base address
+			mem := GetNumaMemInfo(memoryChunksId)
+			memMiB := mem.MemTotal >> 10 // MemTotal is in KiB
+			resource.MemoryChunkSizeMiB = &memMiB
+			resource.Links.Endpoints = make([]redfishapi.OdataV4IdRef, 0)
+		} else {
+			memAddr := GetCxlAddressInfoMiB(bdf)
+			resource.AddressRangeOffsetMiB = &memAddr.BaseAddress
+			resource.MemoryChunkSizeMiB = &memAddr.Size
+			resource.Links.Endpoints = append(resource.Links.Endpoints, redfishapi.OdataV4IdRef{OdataId: fmt.Sprintf("/redfish/v1/Systems/%s/Memory/CXL%d", computerSystemId, CxlDevBDFtoIndex(CxlDevNodeToBDF(memoryChunksId)))})
+			resource.Links.EndpointsodataCount = 1
 
-		perfMetric := GetCXLMemPerf(bdf)
-		if perfMetric != nil {
-			resource.Oem = map[string]interface{}{"Seagate": map[string]interface{}{"Bandwidth": perfMetric.Bandwidth, "Latency": perfMetric.Latency}}
+			perfMetric := GetCXLMemPerf(bdf)
+			if perfMetric != nil {
+				resource.Oem = map[string]interface{}{"Seagate": map[string]interface{}{"Bandwidth": perfMetric.Bandwidth, "Latency": perfMetric.Latency}}
+			}
 		}
 	}
 
@@ -1413,6 +1428,7 @@ func (s *CxlHostApiService) RedfishV1SystemsComputerSystemIdMemoryGet(ctx contex
 		Description:          "Memory Collection",
 		MembersodataNextLink: "",
 		Name:                 "Memory Collection",
+		Members:              []redfishapi.OdataV4IdRef{},
 	}
 	for i := 1; i <= GetCXLDevCnt(); i++ {
 		collection.Members = append(collection.Members,

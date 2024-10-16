@@ -16,7 +16,7 @@ RUN docker-entrypoint.sh generate -i ${BASEPATH}/${OPENAPI_YAML} -g go-server -o
 
 # Generating ${OPENAPI_YAML} go client using openapi-generator-cli
 RUN docker-entrypoint.sh generate -i ${BASEPATH}/${OPENAPI_YAML} -g go -o ${BASEPATH}/pkg/client -p isGoSubmodule=true,withGoMod=false --package-name client --ignore-file-override ${BASEPATH}/api/ignore/.openapi-generator-ignore-client -t ${BASEPATH}/api/templates/go
-	
+
 # workaround for withGoMod=false not functioning with openapi-generator
 RUN	rm ${BASEPATH}/pkg/client/go.mod
 RUN	rm ${BASEPATH}/pkg/client/go.sum
@@ -41,8 +41,7 @@ WORKDIR ${BASEPATH}
 RUN gofmt -w ${BASEPATH}
 
 # apply local patch for xml response fix
-RUN git apply api/patch/Apply-xml-workaround-to-fix-metadata-response.patch
-RUN git apply api/patch/fix-missing-import.patch
+RUN git apply api/patch/*.redfish.patch
 
 # build the excutable
 RUN make build-go
