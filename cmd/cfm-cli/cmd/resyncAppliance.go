@@ -40,6 +40,7 @@ func init() {
 	initCommonPersistentFlags(resyncApplianceCmd)
 
 	resyncApplianceCmd.Flags().StringP(flags.APPLIANCE_ID, flags.APPLIANCE_ID_SH, flags.ID_DFLT, "ID of composable memory appliance (CMA)")
+	resyncApplianceCmd.MarkFlagRequired(flags.APPLIANCE_ID)
 
 	//Add command to parent
 	resyncCmd.AddCommand(resyncApplianceCmd)
