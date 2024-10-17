@@ -39,11 +39,11 @@ func init() {
 
 	initCommonPersistentFlags(renameApplianceCmd)
 
-	renameApplianceCmd.Flags().String(flags.APPLIANCE_ID, flags.APPLIANCE_ID_SH, "Current ID of composable memory appliance (CMA)")
+	renameApplianceCmd.Flags().StringP(flags.APPLIANCE_ID, flags.APPLIANCE_ID_SH, flags.ID_DFLT, "Current ID of composable memory appliance (CMA)")
 	renameApplianceCmd.MarkFlagRequired(flags.APPLIANCE_ID)
-	renameApplianceCmd.Flags().String(flags.NEW_ID, flags.NEW_ID_SH, "New ID of composable memory appliance (CMA)")
+	renameApplianceCmd.Flags().StringP(flags.NEW_ID, flags.NEW_ID_SH, flags.ID_DFLT, "New ID of composable memory appliance (CMA)")
 	renameApplianceCmd.MarkFlagRequired(flags.NEW_ID)
 
 	//Add command to parent
-	resyncCmd.AddCommand(renameApplianceCmd)
+	renameCmd.AddCommand(renameApplianceCmd)
 }

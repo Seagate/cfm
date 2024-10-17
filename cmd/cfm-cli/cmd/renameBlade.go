@@ -43,9 +43,9 @@ func init() {
 	renameBladeCmd.MarkFlagRequired(flags.APPLIANCE_ID)
 	renameBladeCmd.Flags().StringP(flags.BLADE_ID, flags.BLADE_ID_SH, flags.ID_DFLT, "Current blade ID")
 	renameBladeCmd.MarkFlagRequired(flags.BLADE_ID)
-	renameBladeCmd.Flags().String(flags.NEW_ID, flags.NEW_ID_SH, "New blade ID")
+	renameBladeCmd.Flags().StringP(flags.NEW_ID, flags.NEW_ID_SH, flags.ID_DFLT, "New blade ID")
 	renameBladeCmd.MarkFlagRequired(flags.NEW_ID)
 
 	//Add command to parent
-	resyncCmd.AddCommand(renameBladeCmd)
+	renameCmd.AddCommand(renameBladeCmd)
 }

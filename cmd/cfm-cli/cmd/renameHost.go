@@ -41,9 +41,9 @@ func init() {
 
 	renameHostCmd.Flags().StringP(flags.HOST_ID, flags.HOST_ID_SH, flags.ID_DFLT, "Current CXL host ID")
 	renameHostCmd.MarkFlagRequired(flags.HOST_ID)
-	renameHostCmd.Flags().String(flags.NEW_ID, flags.NEW_ID_SH, "New CXL host ID")
+	renameHostCmd.Flags().StringP(flags.NEW_ID, flags.NEW_ID_SH, flags.ID_DFLT, "New CXL host ID")
 	renameHostCmd.MarkFlagRequired(flags.NEW_ID)
 
 	//Add command to parent
-	resyncCmd.AddCommand(renameHostCmd)
+	renameCmd.AddCommand(renameHostCmd)
 }
