@@ -128,6 +128,35 @@ func (r *ServiceRequestListAppliances) OutputResults(a *[]*service.Appliance) {
 	fmt.Printf("\n")
 }
 
+type ServiceRequestRenameAppliance struct {
+	ServiceTcp     *TcpInfo
+	ApplianceId    *Id
+	NewApplianceId *Id
+}
+
+func NewServiceRequestRenameAppliance(cmd *cobra.Command) *ServiceRequestRenameAppliance {
+	return &ServiceRequestRenameAppliance{
+		ServiceTcp:     NewTcpInfo(cmd, flags.SERVICE),
+		ApplianceId:    NewId(cmd, flags.APPLIANCE),
+		NewApplianceId: NewId(cmd, flags.NEW),
+	}
+}
+
+func (r *ServiceRequestRenameAppliance) Execute() (*service.Appliance, error) {
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ServiceTcp", fmt.Sprintf("%+v", *r.ServiceTcp))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ApplianceId", fmt.Sprintf("%+v", *r.ApplianceId))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "NewApplianceId", fmt.Sprintf("%+v", *r.NewApplianceId))
+
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort())
+
+	appliance, err := serviceWrap.RenameApplianceById(serviceClient, r.ApplianceId.GetId(), r.NewApplianceId.GetId())
+	if err != nil {
+		return nil, fmt.Errorf("failure: rename appliance: %s", err)
+	}
+
+	return appliance, err
+}
+
 type ServiceRequestResyncAppliance struct {
 	ServiceTcp  *TcpInfo
 	ApplianceId *Id

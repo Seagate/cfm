@@ -26,6 +26,7 @@ const (
 	PROTOCOL string = "protocol"
 	SIZE     string = "size"
 	QOS      string = "qos" //quality of service
+	NEW      string = "new"
 )
 
 //
@@ -49,6 +50,8 @@ const (
 	BLADE_ID_SH     string = "B"
 	HOST_ID         string = HOST + "-" + ID
 	HOST_ID_SH      string = "H"
+	NEW_ID          string = NEW + "-" + ID
+	NEW_ID_SH       string = "N"
 
 	DEVICE_USERNAME    string = DEVICE + "-" + USERNAME
 	DEVICE_USERNAME_SH string = "R"
