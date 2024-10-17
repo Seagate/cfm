@@ -111,6 +111,30 @@ func GetAllAppliances(client *service.APIClient) (*[]*service.Appliance, error) 
 	return &appliances, nil
 }
 
+func RenameApplianceById(client *service.APIClient, applianceId string, newApplianceId string) (*service.Appliance, error) {
+	request := client.DefaultAPI.AppliancesUpdateById(context.Background(), applianceId)
+	request = request.NewApplianceId(newApplianceId)
+	appliance, response, err := request.Execute()
+	if err != nil {
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
+			klog.V(4).Info(newErr)
+			return nil, newErr
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.V(4).Info(newErr)
+		return nil, newErr
+	}
+
+	klog.V(3).InfoS("success: RenameApplianceById", "request", request)
+
+	return appliance, nil
+}
+
 func ResyncApplianceById(client *service.APIClient, applianceId string) (*service.Appliance, error) {
 	request := client.DefaultAPI.AppliancesResyncById(context.Background(), applianceId)
 	appliance, response, err := request.Execute()

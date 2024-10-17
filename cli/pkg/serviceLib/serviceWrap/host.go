@@ -111,6 +111,30 @@ func GetAllHosts(client *service.APIClient) (*[]*service.Host, error) {
 	return &hosts, nil
 }
 
+func RenameHostById(client *service.APIClient, hostId string, newHostId string) (*service.Host, error) {
+	request := client.DefaultAPI.HostsUpdateById(context.Background(), hostId)
+	request = request.NewHostId(newHostId)
+	host, response, err := request.Execute()
+	if err != nil {
+		// Decode the JSON response into a struct
+		var status service.StatusMessage
+		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
+			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
+			klog.V(4).Info(newErr)
+			return nil, newErr
+		}
+
+		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
+			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+		klog.V(4).Info(newErr)
+		return nil, newErr
+	}
+
+	klog.V(3).InfoS("success: RenameHostById", "request", request)
+
+	return host, nil
+}
+
 func ResyncHostById(client *service.APIClient, hostId string) (*service.Host, error) {
 	request := client.DefaultAPI.HostsResyncById(context.Background(), hostId)
 	host, response, err := request.Execute()

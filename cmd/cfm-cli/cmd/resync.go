@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// deleteCmd represents the delete command
 var resyncCmd = &cobra.Command{
 	Use:   "resync <device> [<flags>]",
 	Short: "Resynchronize the cfm service to the specified hardware",
