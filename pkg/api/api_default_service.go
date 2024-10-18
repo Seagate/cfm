@@ -14,7 +14,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os/exec"
 	"sort"
+	"strconv"
+	"strings"
 
 	"cfm/pkg/common"
 	"cfm/pkg/manager"
@@ -1108,4 +1111,75 @@ func (cfm *CfmApiService) RootGet(ctx context.Context) (openapi.ImplResponse, er
 		},
 	}
 	return openapi.Response(http.StatusOK, response), nil
+}
+
+type Device struct {
+	Hostname string `json:"hostname"`
+	Address  string `json:"address"`
+	Port     int    `json:"port"`
+	Type     string `json:"type"`
+}
+
+// DiscoverDevices -
+func (cfm *CfmApiService) DiscoverDevices(ctx context.Context, type_ string) (openapi.ImplResponse, error) {
+	if type_ != "cma" && type_ != "cxl-host" {
+		err := common.RequestError{
+			StatusCode: http.StatusBadRequest,
+			Err:        fmt.Errorf("invalid type parameter"),
+		}
+		return formatErrorResp(ctx, &err)
+	}
+
+	// Construct the full command with grep
+	var grepFilter string
+	if type_ == "cma" {
+		grepFilter = "grep -B 4 \"cma=true\""
+	} else if type_ == "cxl-host" {
+		grepFilter = "grep -B 4 \"cxl-host=true\""
+	}
+	// Run the command
+	cmd := exec.Command("sh", "-c", "avahi-browse -d local _obmc_redfish._tcp --resolve -t | "+grepFilter)
+	output, err := cmd.Output()
+	if err != nil {
+		err := common.RequestError{
+			StatusCode: http.StatusInternalServerError,
+			Err:        fmt.Errorf("failed to run avahi-browse"),
+		}
+		return formatErrorResp(ctx, &err)
+	}
+
+	lines := strings.Split(string(output), "\n")
+	var devices []Device
+	var currentDevice Device
+
+	for _, line := range lines {
+		if strings.Contains(line, "hostname = [") {
+			currentDevice.Hostname = extractValue(line)
+		} else if strings.Contains(line, "address = [") {
+			currentDevice.Address = extractValue(line)
+		} else if strings.Contains(line, "port = [") {
+			currentDevice.Port = extractPort(line)
+		} else if strings.Contains(line, "txt = [\"cma=true\"]") && type_ == "cma" {
+			currentDevice.Type = "cma"
+			devices = append(devices, currentDevice)
+		} else if strings.Contains(line, "txt = [\"cxl-host=true\"]") && type_ == "cxl-host" {
+			currentDevice.Type = "cxl-host"
+			devices = append(devices, currentDevice)
+		}
+	}
+
+	return openapi.Response(http.StatusOK, devices), nil
+}
+
+func extractValue(line string) string {
+	start := strings.Index(line, "[") + 1
+	end := strings.Index(line, "]")
+	return line[start:end]
+}
+
+func extractPort(line string) int {
+	start := strings.Index(line, "[") + 1
+	end := strings.Index(line, "]")
+	port, _ := strconv.Atoi(line[start:end])
+	return port
 }
