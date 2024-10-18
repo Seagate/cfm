@@ -40,6 +40,7 @@ func init() {
 	initCommonPersistentFlags(resyncHostCmd)
 
 	resyncHostCmd.Flags().StringP(flags.HOST_ID, flags.HOST_ID_SH, flags.ID_DFLT, "ID of CXL host")
+	resyncHostCmd.MarkFlagRequired(flags.HOST_ID)
 
 	//Add command to parent
 	resyncCmd.AddCommand(resyncHostCmd)

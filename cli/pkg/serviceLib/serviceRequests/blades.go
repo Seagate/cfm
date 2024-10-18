@@ -180,6 +180,38 @@ func (r *ServiceRequestListBlades) OutputResults(s *serviceWrap.ApplianceBladeSu
 	fmt.Printf("\n")
 }
 
+type ServiceRequestRenameBlade struct {
+	ServiceTcp  *TcpInfo
+	ApplianceId *Id
+	BladeId     *Id
+	NewBladeId  *Id
+}
+
+func NewServiceRequestRenameBlade(cmd *cobra.Command) *ServiceRequestRenameBlade {
+	return &ServiceRequestRenameBlade{
+		ServiceTcp:  NewTcpInfo(cmd, flags.SERVICE),
+		ApplianceId: NewId(cmd, flags.APPLIANCE),
+		BladeId:     NewId(cmd, flags.BLADE),
+		NewBladeId:  NewId(cmd, flags.NEW),
+	}
+}
+
+func (r *ServiceRequestRenameBlade) Execute() (*service.Blade, error) {
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ServiceTcp", fmt.Sprintf("%+v", *r.ServiceTcp))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ApplianceId", fmt.Sprintf("%+v", *r.ApplianceId))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "BladeId", fmt.Sprintf("%+v", *r.BladeId))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "NewBladeId", fmt.Sprintf("%+v", *r.NewBladeId))
+
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort())
+
+	blade, err := serviceWrap.RenameBladeById(serviceClient, r.ApplianceId.GetId(), r.BladeId.GetId(), r.NewBladeId.GetId())
+	if err != nil {
+		return nil, fmt.Errorf("failure: rename blade: %s", err)
+	}
+
+	return blade, err
+}
+
 type ServiceRequestResyncBlade struct {
 	ServiceTcp  *TcpInfo
 	ApplianceId *Id

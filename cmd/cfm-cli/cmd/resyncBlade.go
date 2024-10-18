@@ -40,7 +40,9 @@ func init() {
 	initCommonPersistentFlags(resyncBladeCmd)
 
 	resyncBladeCmd.Flags().StringP(flags.APPLIANCE_ID, flags.APPLIANCE_ID_SH, flags.ID_DFLT, "ID of blade's appliance")
+	resyncBladeCmd.MarkFlagRequired(flags.APPLIANCE_ID)
 	resyncBladeCmd.Flags().StringP(flags.BLADE_ID, flags.BLADE_ID_SH, flags.ID_DFLT, "ID of blade")
+	resyncBladeCmd.MarkFlagRequired(flags.BLADE_ID)
 
 	//Add command to parent
 	resyncCmd.AddCommand(resyncBladeCmd)
