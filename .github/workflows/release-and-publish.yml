@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: Set up environment variables
-        run: echo "IMAGE_NAME=ghcr.io/${{ github.repository }}" | tr '[:upper:]' '[:lower:]' >> $GITHUB_ENV
+        run: echo "IMAGE_NAME=$(echo "${{ env.IMAGE_REGISTRY }}/${{ github.repository }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Checkout
         uses: actions/checkout@v4
