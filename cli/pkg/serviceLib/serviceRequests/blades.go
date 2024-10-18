@@ -160,8 +160,8 @@ func (r *ServiceRequestListBlades) Execute() (*serviceWrap.ApplianceBladeSummary
 
 func (r *ServiceRequestListBlades) OutputResults(s *serviceWrap.ApplianceBladeSummary) {
 
-	fmt.Printf("\n%-25s %-15s %-20s %-25s\n", "Appliance ID", "Blade ID", "Free Memory (MiB)", "Composed Memory (MiB)")
-	fmt.Printf("%s %s %s %s\n", strings.Repeat("-", 25), strings.Repeat("-", 15), strings.Repeat("-", 20), strings.Repeat("-", 25))
+	fmt.Printf("\n%-25s %-15s %-20s %-25s %-10s\n", "Appliance ID", "Blade ID", "Free Memory (MiB)", "Composed Memory (MiB)", "Status")
+	fmt.Printf("%s %s %s %s %s\n", strings.Repeat("-", 25), strings.Repeat("-", 15), strings.Repeat("-", 20), strings.Repeat("-", 25), strings.Repeat("-", 10))
 	if len(s.ApplToBladeMap) == 0 {
 		fmt.Printf("\nNo Appliances found\n\n")
 		return
@@ -173,7 +173,7 @@ func (r *ServiceRequestListBlades) OutputResults(s *serviceWrap.ApplianceBladeSu
 			continue
 		}
 		for _, blade := range *blades {
-			fmt.Printf("%-25s %-15s %-20d %-25d\n", applId, blade.GetId(), blade.GetTotalMemoryAvailableMiB(), blade.GetTotalMemoryAllocatedMiB())
+			fmt.Printf("%-25s %-15s %-20d %-25d %-10s\n", applId, blade.GetId(), blade.GetTotalMemoryAvailableMiB(), blade.GetTotalMemoryAllocatedMiB(), blade.GetStatus())
 		}
 	}
 
