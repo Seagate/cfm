@@ -8,7 +8,6 @@ env:
   NEXT_VERSION:
   PUBLISH_IMAGE:
   IMAGE_REGISTRY: ghcr.io
-  IMAGE_NAME: ghcr.io/${{ github.repository }}
 
 jobs:
   release-and-publish:
@@ -18,6 +17,9 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
+      - name: Set up environment variables
+        run: echo "IMAGE_NAME=$(echo "${{ env.IMAGE_REGISTRY }}/${{ github.repository }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
       - name: Checkout
         uses: actions/checkout@v4
 

@@ -128,6 +128,35 @@ func (r *ServiceRequestListHosts) OutputResults(h *[]*service.Host) {
 	fmt.Printf("\n")
 }
 
+type ServiceRequestRenameHost struct {
+	ServiceTcp *TcpInfo
+	HostId     *Id
+	NewHostId  *Id
+}
+
+func NewServiceRequestRenameHost(cmd *cobra.Command) *ServiceRequestRenameHost {
+	return &ServiceRequestRenameHost{
+		ServiceTcp: NewTcpInfo(cmd, flags.SERVICE),
+		HostId:     NewId(cmd, flags.HOST),
+		NewHostId:  NewId(cmd, flags.NEW),
+	}
+}
+
+func (r *ServiceRequestRenameHost) Execute() (*service.Host, error) {
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ServiceTcp", fmt.Sprintf("%+v", *r.ServiceTcp))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "HostId", fmt.Sprintf("%+v", *r.HostId))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "NewHostId", fmt.Sprintf("%+v", *r.NewHostId))
+
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort())
+
+	host, err := serviceWrap.RenameHostById(serviceClient, r.HostId.GetId(), r.NewHostId.GetId())
+	if err != nil {
+		return nil, fmt.Errorf("failure: rename host: %s", err)
+	}
+
+	return host, err
+}
+
 type ServiceRequestResyncHost struct {
 	ServiceTcp *TcpInfo
 	HostId     *Id
