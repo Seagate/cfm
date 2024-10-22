@@ -17,9 +17,13 @@ jobs:
 
       - name: Generate support files
         run: make generate
-  
+
       - name: Format Golang
         run: if [ "$(gofmt -l . | wc -l)" -gt 0 ]; then exit 1; fi
 
-      - name: Build Golang
+      - name: Build cfm-service & cfm-cli (Golang)
         run: make build-go
+
+      - name: Build cxl-host (Golang)
+        working-directory: ./cmd/cxl-host
+        run: make local
