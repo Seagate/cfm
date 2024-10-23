@@ -11,8 +11,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
+	"github.com/godbus/dbus/v5"
+	"github.com/holoplot/go-avahi"
 	"k8s.io/klog/v2"
 )
 
@@ -53,9 +56,61 @@ func main() {
 	accounts.AccountsHandler().InitLogger(logger)
 	accounts.AccountsHandler().Restore()
 
+	// avahi publish
+	err = AvahiPublish(ctx, settings.Port)
+	if err != nil {
+		fmt.Printf("ERROR: avahi publish failed, err=%v\nContinue...\n", err)
+	}
 	DefaultApiService := cxl_host.NewCxlHostApiService()
 	DefaultApiController := redfishapi.NewDefaultAPIController(DefaultApiService)
 	OverrideAPIController := cxl_host.NewOverrideAPIController(DefaultApiService)
 	router := cxl_host.NewCxlHostRouter(ctx, OverrideAPIController, DefaultApiController)
 	log.Fatal(http.ListenAndServe(":"+settings.Port, router))
+}
+
+// AvahiPublish: Publish the service with avahi
+func AvahiPublish(ctx context.Context, port string) error {
+	txt := [][]byte{}
+	txt = append(txt, []byte("cxl-host=true"))
+
+	conn, err := dbus.SystemBus()
+	if err != nil {
+		return fmt.Errorf("avahi: Cannot get system bus: %v", err)
+	}
+
+	a, err := avahi.ServerNew(conn)
+	if err != nil {
+		return fmt.Errorf("avahi: Avahi new failed: %v", err)
+	}
+
+	eg, err := a.EntryGroupNew()
+	if err != nil {
+		return fmt.Errorf("avahi: EntryGroupNew() failed: %v", err)
+	}
+
+	hostname, err := a.GetHostName()
+	if err != nil {
+		return fmt.Errorf("avahi: GetHostName() failed: %v", err)
+	}
+
+	fqdn, err := a.GetHostNameFqdn()
+	if err != nil {
+		return fmt.Errorf("avahi: GetHostNameFqdn() failed: %v", err)
+	}
+
+	p, err := strconv.Atoi(port)
+	if err != nil {
+		return fmt.Errorf("avahi: Cannot convert port to Integer: %v", err)
+	}
+	err = eg.AddService(avahi.InterfaceUnspec, avahi.ProtoInet, 0, hostname, "_obmc_redfish._tcp", "local", fqdn, uint16(p), txt)
+	if err != nil {
+		return fmt.Errorf("avahi: AddService() failed: %v", err)
+	}
+
+	err = eg.Commit()
+	if err != nil {
+		return fmt.Errorf("avahi: Commit() failed: %v", err)
+	}
+
+	return nil
 }
