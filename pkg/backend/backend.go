@@ -28,6 +28,7 @@ type BackendOperations interface {
 	UnassignMemory(context.Context, *ConfigurationSettings, *UnassignMemoryRequest) (*UnassignMemoryResponse, error)
 	GetMemoryById(context.Context, *ConfigurationSettings, *GetMemoryByIdRequest) (*GetMemoryByIdResponse, error)
 	GetBackendInfo(context.Context) *GetBackendInfoResponse
+	GetBackendStatus(context.Context) *GetBackendStatusResponse
 }
 
 type commonService struct {

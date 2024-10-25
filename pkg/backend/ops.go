@@ -262,6 +262,14 @@ type GetBackendInfoResponse struct {
 	Version     string
 	SessionId   string
 }
+
+type GetBackendStatusResponse struct {
+	FoundRootService bool
+	FoundSession     bool
+	SessionId        string
+	RedfishSessionId string
+}
+
 type GetRootServiceRequest struct {
 }
 

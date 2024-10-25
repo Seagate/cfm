@@ -87,7 +87,7 @@ func (h *Host) CheckSync(ctx context.Context) bool {
 	logger := klog.FromContext(ctx)
 	logger.V(2).Info(">>>>>> CheckSyncFlag(Host): ", "hostId", h.Id)
 
-	if time.Since(h.lastSyncTimeStamp).Seconds() > common.SyncChekTimeoutSeconds {
+	if time.Since(h.lastSyncTimeStamp).Seconds() > common.SyncCheckTimeoutSeconds {
 		return false
 	} else {
 		h.SetSync(ctx) // renew the timestamp

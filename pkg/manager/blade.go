@@ -83,20 +83,19 @@ func NewBlade(ctx context.Context, r *RequestNewBlade) (*Blade, error) {
 
 func (b *Blade) SetSync(ctx context.Context) {
 	logger := klog.FromContext(ctx)
-	logger.V(3).Info(">>>>>> SetSyncFlag(Blade): ", "bladeId", b.Id)
+	logger.V(4).Info(">>>>>> SetSync: ", "bladeId", b.Id)
 	b.lastSyncTimeStamp = time.Now()
 }
 
 func (b *Blade) CheckSync(ctx context.Context) bool {
 	logger := klog.FromContext(ctx)
-	logger.V(2).Info(">>>>>> CheckSyncFlag(Blade): ", "bladeId", b.Id)
+	logger.V(4).Info(">>>>>> CheckSync: ", "bladeId", b.Id)
 
-	if time.Since(b.lastSyncTimeStamp).Seconds() > common.SyncChekTimeoutSeconds {
-		return false
-	} else {
+	if time.Since(b.lastSyncTimeStamp).Seconds() > common.SyncCheckTimeoutSeconds {
 		b.SetSync(ctx) // renew the timestamp
 		return true
 	}
+	return false
 }
 
 type RequestAssignMemory struct {
@@ -654,17 +653,20 @@ func (b *Blade) IsOnline(ctx context.Context) bool {
 	return b.Status == common.ONLINE
 }
 
-// UpdateConnectionStatusBackend - Query the blade root service to verify continued connection and update the object status accordingly.
+// UpdateConnectionStatusBackend - Query the blade for backend root and sesssion status and then update the manager's blade status accordingly.
 func (b *Blade) UpdateConnectionStatusBackend(ctx context.Context) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> UpdateConnectionStatusBackend: ", "bladeId", b.Id)
 
-	req := backend.GetRootServiceRequest{}
-	response, err := b.backendOps.GetRootService(ctx, &backend.ConfigurationSettings{}, &req)
-	if err != nil || response == nil {
-		b.Status = common.OFFLINE
+	status := b.backendOps.GetBackendStatus(ctx)
+	if status.FoundRootService {
+		if status.FoundSession {
+			b.Status = common.ONLINE
+		} else {
+			b.Status = common.FOUND
+		}
 	} else {
-		b.Status = common.ONLINE
+		b.Status = common.OFFLINE
 	}
 
 	// Update datastore status
@@ -673,7 +675,7 @@ func (b *Blade) UpdateConnectionStatusBackend(ctx context.Context) {
 	bladeDatum.SetConnectionStatus(&b.Status)
 	datastore.DStore().Store()
 
-	logger.V(2).Info("update blade status(backend)", "status", b.Status, "bladeId", b.Id)
+	logger.V(2).Info("success: update blade status(backend)", "status", b.Status, "bladeId", b.Id)
 }
 
 /////////////////////////////////////
