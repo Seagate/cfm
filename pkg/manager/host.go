@@ -79,20 +79,19 @@ func NewHost(ctx context.Context, r *RequestNewHost) (*Host, error) {
 
 func (h *Host) SetSync(ctx context.Context) {
 	logger := klog.FromContext(ctx)
-	logger.V(3).Info(">>>>>> SetSyncFlag(Host): ", "hostId", h.Id)
+	logger.V(4).Info(">>>>>> SetSync: ", "hostId", h.Id)
 	h.lastSyncTimeStamp = time.Now()
 }
 
 func (h *Host) CheckSync(ctx context.Context) bool {
 	logger := klog.FromContext(ctx)
-	logger.V(2).Info(">>>>>> CheckSyncFlag(Host): ", "hostId", h.Id)
+	logger.V(4).Info(">>>>>> CheckSync: ", "hostId", h.Id)
 
 	if time.Since(h.lastSyncTimeStamp).Seconds() > common.SyncCheckTimeoutSeconds {
-		return false
-	} else {
 		h.SetSync(ctx) // renew the timestamp
 		return true
 	}
+	return false
 }
 
 func (h *Host) ComposeMemory(ctx context.Context, r *RequestComposeMemory) (*openapi.MemoryRegion, error) {
@@ -503,12 +502,15 @@ func (h *Host) UpdateConnectionStatusBackend(ctx context.Context) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> UpdateConnectionStatusBackend: ", "hostId", h.Id)
 
-	req := backend.GetRootServiceRequest{}
-	response, err := h.backendOps.GetRootService(ctx, &backend.ConfigurationSettings{}, &req)
-	if err != nil || response == nil {
-		h.Status = common.OFFLINE
+	status := h.backendOps.GetBackendStatus(ctx)
+	if status.FoundRootService {
+		if status.FoundSession {
+			h.Status = common.ONLINE
+		} else {
+			h.Status = common.FOUND
+		}
 	} else {
-		h.Status = common.ONLINE
+		h.Status = common.OFFLINE
 	}
 
 	// Update datastore status
@@ -516,7 +518,7 @@ func (h *Host) UpdateConnectionStatusBackend(ctx context.Context) {
 	hostDatum.SetConnectionStatus(&h.Status)
 	datastore.DStore().Store()
 
-	logger.V(2).Info("update host status(backend)", "status", h.Status, "hostId", h.Id)
+	logger.V(2).Info("success: update host status(backend)", "status", h.Status, "hostId", h.Id)
 }
 
 /////////////////////////////////////

@@ -164,10 +164,10 @@ func (a *Appliance) AddBlade(ctx context.Context, c *openapi.Credentials) (*Blad
 	return blade, nil
 }
 
-// UpdateBlade: Open a new session with a blade, create the new Blade object and then cache it
+// UpdateBladeById: Open a new session with a blade, create the new Blade object and then cache it
 func (a *Appliance) UpdateBladeById(ctx context.Context, bladeId string) (*Blade, error) {
 	logger := klog.FromContext(ctx)
-	logger.V(4).Info(">>>>>> UpdateBlade: ", "applianceId", a.Id, "bladeId", bladeId)
+	logger.V(4).Info(">>>>>> UpdateBladeById: ", "applianceId", a.Id, "bladeId", bladeId)
 
 	// query for blade
 	blade, ok := a.Blades[bladeId]
@@ -217,12 +217,12 @@ func (a *Appliance) UpdateBladeById(ctx context.Context, bladeId string) (*Blade
 		response, deleErr := ops.DeleteSession(ctx, &settings, &req)
 		if deleErr != nil || response == nil {
 			newErr := fmt.Errorf("failed to delete session [%s:%d] after failed blade [%s] object creation: %w", creds.IpAddress, creds.Port, bladeId, err)
-			logger.Error(newErr, "failure: add blade")
+			logger.Error(newErr, "failure: update blade by id")
 			return nil, &common.RequestError{StatusCode: common.StatusBladeDeleteSessionFailure, Err: newErr}
 		}
 
 		newErr := fmt.Errorf("appliance [%s] new blade object creation failure: %w", a.Id, err)
-		logger.Error(newErr, "failure: add blade")
+		logger.Error(newErr, "failure: update blade by id")
 		return nil, &common.RequestError{StatusCode: common.StatusManagerInitializationFailure, Err: newErr}
 	}
 
@@ -235,7 +235,7 @@ func (a *Appliance) UpdateBladeById(ctx context.Context, bladeId string) (*Blade
 	applianceDatum.AddBladeDatum(creds)
 	datastore.DStore().Store()
 
-	logger.V(2).Info("success: update blade", "bladeId", updatedBlade.Id, "applianceId", a.Id)
+	logger.V(2).Info("success: update blade by id", "bladeId", updatedBlade.Id, "applianceId", a.Id)
 
 	return updatedBlade, nil
 }
@@ -252,20 +252,19 @@ func (a *Appliance) DeleteAllBlades(ctx context.Context) {
 }
 
 // DeleteBladeById: Delete the blade from: backend, deviceCache and datastore
+// Function is designed to always delete the corresponding bladeId from ALL these locations, regardless of error.
 func (a *Appliance) DeleteBladeById(ctx context.Context, bladeId string) (*Blade, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> DeleteBladeById: ", "bladeId", bladeId, "applianceId", a.Id)
 
+	// Currently, backend ALWAYS deletes the blade session from the backend map.  Do the same in this (manager) layer too
+	defer a.DeleteBladeByIdManager(ctx, bladeId) //Ensure this ALWAYS runs
+
 	blade, err := a.DeleteBladeByIdBackend(ctx, bladeId)
 	if err != nil || blade == nil {
-		// Currently, backend ALWAYS deletes the blade session from the backend map.  Do the same in the this (manager) layer
-		logger.V(2).Info("force complete appliance blade deletion after backend session failure", "bladeId", blade.Id, "applianceId", a.Id)
-		a.DeleteBladeByIdManager(ctx, bladeId)
-
+		logger.V(2).Info("success: delete blade by id after backend session failure", "bladeId", blade.Id, "applianceId", a.Id)
 		return blade, err
 	}
-
-	a.DeleteBladeByIdManager(ctx, bladeId)
 
 	logger.V(2).Info("success: delete blade by id", "bladeId", blade.Id, "applianceId", a.Id)
 
@@ -306,7 +305,7 @@ func (a *Appliance) DeleteBladeByIdBackend(ctx context.Context, bladeId string) 
 	return blade, nil
 }
 
-// DeleteBladeByIdManager: Delete the blade from manager layer (appliance blade map and datastore)
+// DeleteBladeByIdManager: Delete the blade from manager layer only (appliance blade map and datastore)
 func (a *Appliance) DeleteBladeByIdManager(ctx context.Context, bladeId string) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> DeleteBladeByIdManager: ", "bladeId", bladeId, "applianceId", a.Id)
@@ -344,7 +343,7 @@ func (a *Appliance) GetBladeById(ctx context.Context, bladeId string) (*Blade, e
 
 	// Check for resync
 	if blade.CheckSync(ctx) {
-		logger.V(2).Info("GetBladeById: blade might be out of sync", "bladeId", bladeId, "applianceId", a.Id)
+		logger.V(4).Info("initiating auto-resync check", "bladeId", bladeId, "applianceId", a.Id)
 		blade.UpdateConnectionStatusBackend(ctx)
 		if blade.Status == common.FOUND { // good power, bad session
 			blade, err = a.ResyncBladeById(ctx, bladeId)
@@ -448,19 +447,19 @@ func (a *Appliance) ResyncBladeById(ctx context.Context, bladeId string) (*Blade
 
 	blade, err := a.DeleteBladeByIdBackend(ctx, bladeId)
 	if err != nil {
-		logger.Error(err, "resync blade: ignoring delete blade failure")
+		logger.Error(err, "resync blade by id: ignoring delete blade by id beackend failure")
 	}
 
 	blade.UpdateConnectionStatusBackend(ctx) // update status here in case of failure during update
 
 	blade, err = a.UpdateBladeById(ctx, blade.Id)
 	if err != nil {
-		newErr := fmt.Errorf("failed to resync blade(add): appliance [%s] blade [%s]: %w", a.Id, bladeId, err)
-		logger.Error(newErr, "failure: resync blade")
+		newErr := fmt.Errorf("failed to resync blade(update): appliance [%s] blade [%s]: %w", a.Id, bladeId, err)
+		logger.Error(newErr, "failure: resync blade by id")
 		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
 
-	logger.V(2).Info("success: resync blade", "status", blade.Status, "bladeId", bladeId, "applianceId", a.Id)
+	logger.V(2).Info("success: resync blade by id", "status", blade.Status, "bladeId", bladeId, "applianceId", a.Id)
 
 	return blade, nil
 }

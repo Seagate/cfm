@@ -335,7 +335,7 @@ func AddHost(ctx context.Context, c *openapi.Credentials) (*Host, error) {
 	}
 
 	// Add host to device cache
-	deviceCache.AddHost(host) // ignore error, duplicate check done above
+	deviceCache.AddHost(host, false) // ignore error, duplicate check done above
 
 	// Add host to datastore
 	datastore.DStore().GetDataStore().AddHostDatum(c)
@@ -344,6 +344,79 @@ func AddHost(ctx context.Context, c *openapi.Credentials) (*Host, error) {
 	logger.V(2).Info("success: add host", "hostId", host.Id)
 
 	return host, nil
+}
+
+// UpdateHostById: Open a new session with a blade, create the new Blade object and then cache it
+func UpdateHostById(ctx context.Context, hostId string) (*Host, error) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info(">>>>>> UpdateHostById: ", "hostId", hostId)
+
+	// query for host
+	host, ok := deviceCache.GetHostByIdOk(hostId)
+	if !ok {
+		newErr := fmt.Errorf("failed to get host [%s]", hostId)
+		logger.Error(newErr, "failure: delete host by id")
+		return nil, &common.RequestError{StatusCode: common.StatusHostIdDoesNotExist, Err: newErr}
+	}
+
+	creds := host.creds
+	ops := host.backendOps
+
+	req := backend.CreateSessionRequest{
+		Ip:       creds.IpAddress,
+		Port:     creds.Port,
+		Username: creds.Username,
+		Password: creds.Password,
+		Insecure: creds.Insecure,
+		Protocol: creds.Protocol,
+	}
+
+	settings := backend.ConfigurationSettings{}
+
+	// Create a new session
+	response, err := ops.CreateSession(ctx, &settings, &req)
+	if err != nil || response == nil {
+		newErr := fmt.Errorf("create session failure at [%s:%d] using interface [%s]: %w", creds.IpAddress, creds.Port, ops.GetBackendInfo(ctx).BackendName, err)
+		logger.Error(newErr, "failure: update host by id")
+		return nil, &common.RequestError{StatusCode: common.StatusHostCreateSessionFailure, Err: newErr}
+	}
+
+	// Create the new Blade
+	r := RequestNewHost{
+		HostId:     hostId,
+		Ip:         creds.IpAddress,
+		Status:     common.ONLINE,
+		Port:       uint16(creds.Port),
+		BackendOps: ops,
+		Creds:      creds,
+	}
+
+	updatedHost, err := NewHost(ctx, &r)
+	if err != nil || updatedHost == nil {
+		req := backend.DeleteSessionRequest{}
+		response, deleErr := ops.DeleteSession(ctx, &settings, &req)
+		if deleErr != nil || response == nil {
+			newErr := fmt.Errorf("failed to delete session [%s:%d] after failed host [%s] object creation: %w", creds.IpAddress, creds.Port, hostId, err)
+			logger.Error(newErr, "failure: update host by id")
+			return nil, &common.RequestError{StatusCode: common.StatusHostDeleteSessionFailure, Err: newErr}
+		}
+
+		newErr := fmt.Errorf("new host object creation failure: %w", err)
+		logger.Error(newErr, "failure: update host by id")
+		return nil, &common.RequestError{StatusCode: common.StatusManagerInitializationFailure, Err: newErr}
+	}
+
+	// Replace host in device cache
+	deviceCache.AddHost(updatedHost, true)
+
+	// Replace host in datastore
+	datastore.DStore().GetDataStore().DeleteHostDatumById(host.Id)
+	datastore.DStore().GetDataStore().AddHostDatum(creds)
+	datastore.DStore().Store()
+
+	logger.V(2).Info("success: update host by id", "hostId", updatedHost.Id)
+
+	return updatedHost, nil
 }
 
 func RenameHost(ctx context.Context, host *Host, newHostId string) (*Host, error) {
@@ -374,43 +447,69 @@ func RenameHost(ctx context.Context, host *Host, newHostId string) (*Host, error
 	return newHost, nil
 }
 
+// DeleteHostById: Delete the host from: backend, deviceCache and datastore.
+// Function is designed to always delete the corresponding hostId from ALL these locations, regardless of error.
 func DeleteHostById(ctx context.Context, hostId string) (*Host, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> DeleteHostById: ", "hostId", hostId)
 
-	// query cache
+	// Currently, backend ALWAYS deletes the host session from the backend map.  Do the same in this (manager) layer too
+	defer DeleteHostByIdManager(ctx, hostId) //Ensure this ALWAYS runs
+
+	host, err := DeleteHostByIdBackend(ctx, hostId)
+	if err != nil || host == nil {
+		logger.V(2).Info("success: delete host by id after backend session failure", "hostId", host.Id)
+		return host, err
+	}
+
+	logger.V(2).Info("success: delete host by id", "hostId", host.Id)
+
+	return host, nil
+}
+
+// DeleteHostByIdBackend: Delete the host from backend only
+func DeleteHostByIdBackend(ctx context.Context, hostId string) (*Host, error) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info(">>>>>> DeleteHostByIdBackend: ", "hostId", hostId)
+
 	host, ok := deviceCache.GetHostByIdOk(hostId)
 	if !ok {
-		newErr := fmt.Errorf("failed to get host [%s]", hostId)
-		logger.Error(newErr, "failure: delete host by id")
+		newErr := fmt.Errorf("failed to get host by id [%s]", hostId)
+		logger.Error(newErr, "failure: delete host by id (backend)")
 		return nil, &common.RequestError{StatusCode: common.StatusHostIdDoesNotExist, Err: newErr}
 	}
 
+	// get host backend
 	ops := host.backendOps
 
-	// delete the session
+	// delete the host session
 	settings := backend.ConfigurationSettings{}
 	req := backend.DeleteSessionRequest{}
 
 	response, err := ops.DeleteSession(ctx, &settings, &req)
 	if err != nil || response == nil {
 		newErr := fmt.Errorf("failed to delete host [%s] backend [%s] session [%s]: %w", host.Id, ops.GetBackendInfo(ctx).BackendName, host.Socket.String(), err)
-		logger.Error(newErr, "failure: delete host by id")
-
-		// Currently, backend ALWAYS deletes the host session from the backend map.
-		// Delete host from manager cache and datastore as well
-		logger.V(2).Info("force host deletion after backend delete session failure", "hostId", host.Id)
-
-		deleteHost(host.Id)
+		logger.Error(newErr, "failure: delete host by id (backend)")
 
 		return host, &common.RequestError{StatusCode: common.StatusHostDeleteSessionFailure, Err: newErr} // Still return the host for recovery
 	}
 
-	deleteHost(host.Id)
-
-	logger.V(2).Info("success: delete host by id", "hostId", host.Id)
+	logger.V(2).Info("success: delete host by id (backend)", "hostId", host.Id)
 
 	return host, nil
+}
+
+// DeleteHostByIdManager: Delete the host from manager layer only (deviceCache and datastore)
+func DeleteHostByIdManager(ctx context.Context, hostId string) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info(">>>>>> DeleteHostByIdManager: ", "hostId", hostId)
+
+	// delete host from manager cache
+	deviceCache.DeleteHostById(hostId)
+
+	// delete host from datastore
+	datastore.DStore().GetDataStore().DeleteHostDatumById(hostId)
+	datastore.DStore().Store()
 }
 
 func GetAllHostIds() []string {
@@ -430,24 +529,22 @@ func GetHostById(ctx context.Context, hostId string) (*Host, error) {
 	}
 
 	// Check for resync
-	if !host.CheckSync(ctx) {
-		logger.V(2).Info("GetHostById: host might be out of sync", "hostId", hostId)
-		ok := host.backendOps.CheckSession(ctx)
-		if !ok {
+	if host.CheckSync(ctx) {
+		logger.V(4).Info("initiating auto-resync check", "hostId", hostId)
+		host.UpdateConnectionStatusBackend(ctx)
+		if host.Status == common.FOUND { // good power, bad session
 			host, err = ResyncHostById(ctx, hostId)
 			if err != nil {
-				newErr := fmt.Errorf("failed to resync host(add): host [%s]: %w", hostId, err)
-				logger.Error(newErr, "failure: resync host")
+				newErr := fmt.Errorf("failed to resync host by id [%s]: %w", hostId, err)
+				logger.Error(newErr, "failure: get host by id")
 				return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
-			} else {
-				logger.V(2).Info("success: auto resync host", "hostId", hostId)
 			}
+
+			logger.V(2).Info("success: auto resync host", "hostId", hostId)
 		} else {
 			host.SetSync(ctx)
 		}
 	}
-
-	host.UpdateConnectionStatusBackend(ctx)
 
 	logger.V(2).Info("success: get host by id", "status", host.Status, "hostId", host.Id)
 
@@ -477,9 +574,21 @@ func ResyncHostById(ctx context.Context, hostId string) (*Host, error) {
 		return nil, &common.RequestError{StatusCode: common.StatusHostIdDoesNotExist, Err: newErr}
 	}
 
-	host.UpdateConnectionStatusBackend(ctx)
+	host, err := DeleteHostByIdBackend(ctx, hostId)
+	if err != nil {
+		logger.Error(err, "resync host by id: ignoring delete host by id beackend failure")
+	}
 
-	logger.V(2).Info("success: resync host", "status", host.Status, "hostId", host.Id)
+	host.UpdateConnectionStatusBackend(ctx) // update status here in case of failure during update
+
+	host, err = UpdateHostById(ctx, host.Id)
+	if err != nil {
+		newErr := fmt.Errorf("failed to resync host(update): host [%s]: %w", hostId, err)
+		logger.Error(newErr, "failure: resync host by id")
+		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
+	}
+
+	logger.V(2).Info("success: resync host by id", "status", host.Status, "hostId", host.Id)
 
 	return host, nil
 }
@@ -487,14 +596,3 @@ func ResyncHostById(ctx context.Context, hostId string) (*Host, error) {
 ////////////////////////////////////
 //////// Helper Functions //////////
 ////////////////////////////////////
-
-func deleteHost(hostId string) *Host {
-	// delete host from manager cache
-	h := deviceCache.DeleteHostById(hostId)
-
-	// delete host from datastore
-	datastore.DStore().GetDataStore().DeleteHostDatumById(hostId)
-	datastore.DStore().Store()
-
-	return h
-}
