@@ -49,6 +49,34 @@ paths:
               schema:
                 $ref: "#/components/schemas/serviceInformation"
 
+  /cfm/v1/discover:
+    get:
+      description: Discover devices on the network.
+      operationId: discoverDevices
+      parameters:
+        - name: type
+          in: query
+          description: Filter devices by type (either 'cma' or 'cxl-host')
+          required: true
+          schema:
+            type: string
+            enum: [cma, cxl-host]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/device'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+
   # Memory Appliances
   /cfm/v1/appliances:
     get:
@@ -1630,3 +1658,15 @@ components:
         description:
           type: string
           description: The description of service(s) offered by the URI
+    device:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        port:
+          type: integer
+        type:
+          type: string
+
