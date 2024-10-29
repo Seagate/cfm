@@ -576,7 +576,7 @@ func ResyncHostById(ctx context.Context, hostId string) (*Host, error) {
 
 	host, err := DeleteHostByIdBackend(ctx, hostId)
 	if err != nil {
-		logger.Error(err, "resync host by id: ignoring delete host by id beackend failure")
+		logger.Error(err, "resync host by id: ignoring delete host by id backend failure")
 	}
 
 	host.UpdateConnectionStatusBackend(ctx) // update status here in case of failure during update

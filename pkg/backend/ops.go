@@ -269,11 +269,3 @@ type GetBackendStatusResponse struct {
 	SessionId        string
 	RedfishSessionId string
 }
-
-type GetRootServiceRequest struct {
-}
-
-type GetRootServiceResponse struct {
-	Name string
-	Uuid string
-}
