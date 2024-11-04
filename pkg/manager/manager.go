@@ -346,16 +346,17 @@ func AddHost(ctx context.Context, c *openapi.Credentials) (*Host, error) {
 	return host, nil
 }
 
-// UpdateHostById: Open a new session with a blade, create the new Blade object and then cache it
-func UpdateHostById(ctx context.Context, hostId string) (*Host, error) {
+// ReplaceHostById: Replace a pre-existing cached host object with a new one.
+// This function is used when a new backend session is required for the host.
+func ReplaceHostById(ctx context.Context, hostId string) (*Host, error) {
 	logger := klog.FromContext(ctx)
-	logger.V(4).Info(">>>>>> UpdateHostById: ", "hostId", hostId)
+	logger.V(4).Info(">>>>>> ReplaceHostById: ", "hostId", hostId)
 
 	// query for host
 	host, ok := deviceCache.GetHostByIdOk(hostId)
 	if !ok {
 		newErr := fmt.Errorf("failed to get host [%s]", hostId)
-		logger.Error(newErr, "failure: delete host by id")
+		logger.Error(newErr, "failure: replace host by id")
 		return nil, &common.RequestError{StatusCode: common.StatusHostIdDoesNotExist, Err: newErr}
 	}
 
@@ -377,7 +378,7 @@ func UpdateHostById(ctx context.Context, hostId string) (*Host, error) {
 	response, err := ops.CreateSession(ctx, &settings, &req)
 	if err != nil || response == nil {
 		newErr := fmt.Errorf("create session failure at [%s:%d] using interface [%s]: %w", creds.IpAddress, creds.Port, ops.GetBackendInfo(ctx).BackendName, err)
-		logger.Error(newErr, "failure: update host by id")
+		logger.Error(newErr, "failure: replace host by id")
 		return nil, &common.RequestError{StatusCode: common.StatusHostCreateSessionFailure, Err: newErr}
 	}
 
@@ -391,32 +392,32 @@ func UpdateHostById(ctx context.Context, hostId string) (*Host, error) {
 		Creds:      creds,
 	}
 
-	updatedHost, err := NewHost(ctx, &r)
-	if err != nil || updatedHost == nil {
+	replacementHost, err := NewHost(ctx, &r)
+	if err != nil || replacementHost == nil {
 		req := backend.DeleteSessionRequest{}
 		response, deleErr := ops.DeleteSession(ctx, &settings, &req)
 		if deleErr != nil || response == nil {
 			newErr := fmt.Errorf("failed to delete session [%s:%d] after failed host [%s] object creation: %w", creds.IpAddress, creds.Port, hostId, err)
-			logger.Error(newErr, "failure: update host by id")
+			logger.Error(newErr, "failure: replace host by id")
 			return nil, &common.RequestError{StatusCode: common.StatusHostDeleteSessionFailure, Err: newErr}
 		}
 
 		newErr := fmt.Errorf("new host object creation failure: %w", err)
-		logger.Error(newErr, "failure: update host by id")
+		logger.Error(newErr, "failure: replace host by id")
 		return nil, &common.RequestError{StatusCode: common.StatusManagerInitializationFailure, Err: newErr}
 	}
 
 	// Replace host in device cache
-	deviceCache.AddHost(updatedHost, true)
+	deviceCache.AddHost(replacementHost, true)
 
 	// Replace host in datastore
 	datastore.DStore().GetDataStore().DeleteHostDatumById(host.Id)
 	datastore.DStore().GetDataStore().AddHostDatum(creds)
 	datastore.DStore().Store()
 
-	logger.V(2).Info("success: update host by id", "hostId", updatedHost.Id)
+	logger.V(2).Info("success: replace host by id", "hostId", replacementHost.Id)
 
-	return updatedHost, nil
+	return replacementHost, nil
 }
 
 func RenameHost(ctx context.Context, host *Host, newHostId string) (*Host, error) {
@@ -579,11 +580,11 @@ func ResyncHostById(ctx context.Context, hostId string) (*Host, error) {
 		logger.Error(err, "resync host by id: ignoring delete host by id backend failure")
 	}
 
-	host.UpdateConnectionStatusBackend(ctx) // update status here in case of failure during update
+	host.UpdateConnectionStatusBackend(ctx) // update status here in case of failure during replace
 
-	host, err = UpdateHostById(ctx, host.Id)
+	host, err = ReplaceHostById(ctx, host.Id)
 	if err != nil {
-		newErr := fmt.Errorf("failed to resync host(update): host [%s]: %w", hostId, err)
+		newErr := fmt.Errorf("failed to replace host by id: host [%s]: %w", hostId, err)
 		logger.Error(newErr, "failure: resync host by id")
 		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}

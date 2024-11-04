@@ -164,16 +164,17 @@ func (a *Appliance) AddBlade(ctx context.Context, c *openapi.Credentials) (*Blad
 	return blade, nil
 }
 
-// UpdateBladeById: Open a new session with a blade, create the new Blade object and then cache it
-func (a *Appliance) UpdateBladeById(ctx context.Context, bladeId string) (*Blade, error) {
+// ReplaceBladeById: Replace a pre-existing cached blade object with a new one.
+// This function is used when a new new backend session is required for the blade.
+func (a *Appliance) ReplaceBladeById(ctx context.Context, bladeId string) (*Blade, error) {
 	logger := klog.FromContext(ctx)
-	logger.V(4).Info(">>>>>> UpdateBladeById: ", "applianceId", a.Id, "bladeId", bladeId)
+	logger.V(4).Info(">>>>>> ReplaceBladeById: ", "applianceId", a.Id, "bladeId", bladeId)
 
 	// query for blade
 	blade, ok := a.Blades[bladeId]
 	if !ok {
-		newErr := fmt.Errorf("appliance [%s] blade [%s] not found during update by id", bladeId, a.Id)
-		logger.Error(newErr, "failure: update blade by id")
+		newErr := fmt.Errorf("appliance [%s] blade [%s] not found during replace by id", bladeId, a.Id)
+		logger.Error(newErr, "failure: replace blade by id")
 
 		return nil, &common.RequestError{StatusCode: common.StatusBladeIdDoesNotExist, Err: newErr}
 	}
@@ -196,7 +197,7 @@ func (a *Appliance) UpdateBladeById(ctx context.Context, bladeId string) (*Blade
 	response, err := ops.CreateSession(ctx, &settings, &req)
 	if err != nil || response == nil {
 		newErr := fmt.Errorf("create session failure at [%s:%d] using interface [%s]: %w", creds.IpAddress, creds.Port, ops.GetBackendInfo(ctx).BackendName, err)
-		logger.Error(newErr, "failure: update blade by id")
+		logger.Error(newErr, "failure: replace blade by id")
 		return nil, &common.RequestError{StatusCode: common.StatusBladeCreateSessionFailure, Err: newErr}
 	}
 
@@ -211,23 +212,23 @@ func (a *Appliance) UpdateBladeById(ctx context.Context, bladeId string) (*Blade
 		Creds:       creds,
 	}
 
-	updatedBlade, err := NewBlade(ctx, &r)
-	if err != nil || updatedBlade == nil {
+	replacementBlade, err := NewBlade(ctx, &r)
+	if err != nil || replacementBlade == nil {
 		req := backend.DeleteSessionRequest{}
 		response, deleErr := ops.DeleteSession(ctx, &settings, &req)
 		if deleErr != nil || response == nil {
 			newErr := fmt.Errorf("failed to delete session [%s:%d] after failed blade [%s] object creation: %w", creds.IpAddress, creds.Port, bladeId, err)
-			logger.Error(newErr, "failure: update blade by id")
+			logger.Error(newErr, "failure: replace blade by id")
 			return nil, &common.RequestError{StatusCode: common.StatusBladeDeleteSessionFailure, Err: newErr}
 		}
 
 		newErr := fmt.Errorf("appliance [%s] new blade object creation failure: %w", a.Id, err)
-		logger.Error(newErr, "failure: update blade by id")
+		logger.Error(newErr, "failure: replace blade by id")
 		return nil, &common.RequestError{StatusCode: common.StatusManagerInitializationFailure, Err: newErr}
 	}
 
 	// Replace blade in appliance
-	a.Blades[blade.Id] = updatedBlade
+	a.Blades[blade.Id] = replacementBlade
 
 	// Replace blade in datastore
 	applianceDatum, _ := datastore.DStore().GetDataStore().GetApplianceDatumById(a.Id)
@@ -235,9 +236,9 @@ func (a *Appliance) UpdateBladeById(ctx context.Context, bladeId string) (*Blade
 	applianceDatum.AddBladeDatum(creds)
 	datastore.DStore().Store()
 
-	logger.V(2).Info("success: update blade by id", "bladeId", updatedBlade.Id, "applianceId", a.Id)
+	logger.V(2).Info("success: replace blade by id", "bladeId", replacementBlade.Id, "applianceId", a.Id)
 
-	return updatedBlade, nil
+	return replacementBlade, nil
 }
 
 func (a *Appliance) DeleteAllBlades(ctx context.Context) {
@@ -450,11 +451,11 @@ func (a *Appliance) ResyncBladeById(ctx context.Context, bladeId string) (*Blade
 		logger.Error(err, "resync blade by id: ignoring delete blade by id beackend failure")
 	}
 
-	blade.UpdateConnectionStatusBackend(ctx) // update status here in case of failure during update
+	blade.UpdateConnectionStatusBackend(ctx) // update status here in case of failure during replacement
 
-	blade, err = a.UpdateBladeById(ctx, blade.Id)
+	blade, err = a.ReplaceBladeById(ctx, blade.Id)
 	if err != nil {
-		newErr := fmt.Errorf("failed to resync blade(update): appliance [%s] blade [%s]: %w", a.Id, bladeId, err)
+		newErr := fmt.Errorf("failed to replace blade by id: appliance [%s] blade [%s]: %w", a.Id, bladeId, err)
 		logger.Error(newErr, "failure: resync blade by id")
 		return nil, &common.RequestError{StatusCode: err.(*common.RequestError).StatusCode, Err: newErr}
 	}
