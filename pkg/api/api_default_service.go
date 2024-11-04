@@ -13,11 +13,14 @@ package api
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
-	"os/exec"
 	"sort"
-	"strconv"
 	"strings"
+	"time"
+
+	"github.com/godbus/dbus/v5"
+	"github.com/holoplot/go-avahi"
 
 	"cfm/pkg/common"
 	"cfm/pkg/manager"
@@ -1188,59 +1191,82 @@ func (cfm *CfmApiService) DiscoverDevices(ctx context.Context, type_ string) (op
 		return formatErrorResp(ctx, &err)
 	}
 
-	// Construct the full command with grep for type filter
-	var typeFilter string
-	if type_ == "cma" {
-		typeFilter = "grep -B 4 \"cma=true\""
-	} else if type_ == "cxl-host" {
-		typeFilter = "grep -B 4 \"cxl-host=true\""
-	}
-	// Some devices have more than one interface, we only want to see the main one (ipv4).
-	// Main interface filter
-	ipv4Filter := "grep -A 4 \"IPv4\""
-	// Run the command
-	cmd := exec.Command("sh", "-c", "avahi-browse -r _obmc_redfish._tcp -t | "+typeFilter+"|"+ipv4Filter)
-	output, err := cmd.Output()
+	conn, err := dbus.SystemBus()
 	if err != nil {
-		err := common.RequestError{
+		return formatErrorResp(ctx, &common.RequestError{
 			StatusCode: http.StatusInternalServerError,
-			Err:        fmt.Errorf("failed to run avahi-browse"),
-		}
-		return formatErrorResp(ctx, &err)
+			Err:        fmt.Errorf("cannot get system bus: %v", err),
+		})
 	}
 
-	lines := strings.Split(string(output), "\n")
+	server, err := avahi.ServerNew(conn)
+	if err != nil {
+		return formatErrorResp(ctx, &common.RequestError{
+			StatusCode: http.StatusInternalServerError,
+			Err:        fmt.Errorf("avahi new failed: %v", err),
+		})
+	}
+
+	// Specify avahi.ProtoInet for IPv4
+	sb, err := server.ServiceBrowserNew(avahi.InterfaceUnspec, avahi.ProtoInet, "_obmc_redfish._tcp", "local", 0)
+	if err != nil {
+		return formatErrorResp(ctx, &common.RequestError{
+			StatusCode: http.StatusInternalServerError,
+			Err:        fmt.Errorf("service browser new failed: %v", err),
+		})
+	}
+
 	var devices []Device
-	var currentDevice Device
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
-	for _, line := range lines {
-		if strings.Contains(line, "hostname = [") {
-			currentDevice.Hostname = extractValue(line)
-		} else if strings.Contains(line, "address = [") {
-			currentDevice.Address = extractValue(line)
-		} else if strings.Contains(line, "port = [") {
-			currentDevice.Port = extractPort(line)
-		} else if strings.Contains(line, "txt = [\"cma=true\"]") && type_ == "cma" {
-			currentDevice.Type = "cma"
-			devices = append(devices, currentDevice)
-		} else if strings.Contains(line, "txt = [\"cxl-host=true\"]") && type_ == "cxl-host" {
-			currentDevice.Type = "cxl-host"
-			devices = append(devices, currentDevice)
+	// Channel to signal when no new services are found
+	noNewServices := make(chan struct{})
+
+	go func() {
+		for {
+			select {
+			case <-time.After(500 * time.Millisecond):
+				close(noNewServices)
+				return
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	for {
+		select {
+		case service := <-sb.AddChannel:
+			log.Println("ServiceBrowser ADD: ", service)
+
+			resolvedService, err := server.ResolveService(service.Interface, service.Protocol, service.Name,
+				service.Type, service.Domain, avahi.ProtoInet, 0)
+			if err == nil {
+				// filter the servers by type_
+				if strings.Contains(string(resolvedService.Txt[0]), type_) {
+					currentDevice := Device{
+						Hostname: resolvedService.Host,
+						Address:  resolvedService.Address,
+						Port:     int(resolvedService.Port),
+						Type:     type_,
+					}
+					devices = append(devices, currentDevice)
+				}
+
+			} else {
+				log.Printf("Failed to resolve service: %v", err)
+			}
+
+		case service := <-sb.RemoveChannel:
+			log.Println("ServiceBrowser REMOVE: ", service)
+
+		case <-noNewServices:
+			log.Println("No new services found, stopping discovery")
+			cancel()
+
+		case <-ctx.Done():
+			return openapi.Response(http.StatusOK, devices), nil
 		}
 	}
-
-	return openapi.Response(http.StatusOK, devices), nil
-}
-
-func extractValue(line string) string {
-	start := strings.Index(line, "[") + 1
-	end := strings.Index(line, "]")
-	return line[start:end]
-}
-
-func extractPort(line string) int {
-	start := strings.Index(line, "[") + 1
-	end := strings.Index(line, "]")
-	port, _ := strconv.Atoi(line[start:end])
-	return port
 }
