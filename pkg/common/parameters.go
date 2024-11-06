@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	NumUuidCharsForId = 4 // Number of chars to strip from an interally generated uuid (starting from the right) for use in the internally generated ID's for appliance, blade and host
+	NumUuidCharsForId       = 4    // Number of chars to strip from an interally generated uuid (starting from the right) for use in the internally generated ID's for appliance, blade and host
+	SyncCheckTimeoutSeconds = 15.0 // Number of seconds to check session timeout
 )
 const (
 	DefaultBackend        = "httpfish" // Default backend interface
