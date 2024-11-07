@@ -1038,11 +1038,13 @@ export default {
       const hostPortStore = useHostPortStore();
       const hostMemoryStore = useHostMemoryStore();
       const hostMemoryDeviceStore = useHostMemoryDeviceStore();
+      const hostStore = useHostStore();
 
       await Promise.all([
         hostPortStore.hostPortStore(hostId),
         hostMemoryStore.hostMemoryStore(hostId),
         hostMemoryDeviceStore.hostMemoryDeviceStore(hostId),
+        hostStore.fetchHostById(hostId),
       ]);
     },
 
@@ -1130,6 +1132,7 @@ export default {
             hostPortStore.hostPortStore(newHostId),
             hostMemoryStore.hostMemoryStore(newHostId),
             hostMemoryDeviceStore.hostMemoryDeviceStore(newHostId),
+            hostStore.fetchHostById(newHostId)
           ]);
 
           // Update the URL with the new host ID

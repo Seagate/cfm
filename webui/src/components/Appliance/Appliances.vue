@@ -1985,6 +1985,7 @@ export default {
               applianceStore.selectedApplianceId,
               newBladeId
             ),
+            bladeStore.fetchBladeById(applianceStore.selectedApplianceId, newBladeId),
           ]);
           // Update the URL with the new blade ID
           updateUrlWithBladeId(applianceStore.selectedApplianceId, newBladeId);

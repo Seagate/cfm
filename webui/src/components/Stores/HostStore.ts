@@ -52,6 +52,22 @@ export const useHostStore = defineStore('host', {
             }
         },
 
+        async fetchHostById(hostId: string) {
+            try {
+                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
+                const detailsResponseOfHost = await defaultApi.hostsGetById(
+                    hostId
+                );
+
+                const host = detailsResponseOfHost.data;
+                this.updateSelectHostStatus(host.status)
+
+                return host;
+            } catch (error) {
+                console.error("Error fetching host by id:", error);
+            }
+        },
+
         async addNewHost(newHost: Credentials) {
             this.addHostError = "";
             try {
@@ -163,5 +179,8 @@ export const useHostStore = defineStore('host', {
             this.selectedHostLocalMemory = selectedHostLocalMemory;
             this.selectedHostStatus = status
         },
+        updateSelectHostStatus(status: string | undefined) {
+            this.selectedHostStatus = status
+        }
     }
 })
