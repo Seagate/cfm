@@ -63,6 +63,8 @@ export const useBladeStore = defineStore('blade', {
                 // Update the memory for the memory chart because the chart is decided by the blade store not the blade memory store
                 this.updateSelectedBladeMemory(blade.totalMemoryAvailableMiB, blade.totalMemoryAllocatedMiB)
 
+                this.updateSelectedBladeStatus(blade.status)
+
                 return blade;
             } catch (error) {
                 console.error("Error fetching blade by id:", error);
@@ -71,7 +73,7 @@ export const useBladeStore = defineStore('blade', {
 
         async renameBlade(applianceId: string, bladeId: string, newBladeId: string) {
             this.renameBladeError = "";
-            
+
             try {
                 const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
                 const response = await defaultApi.bladesUpdateById(applianceId, bladeId, newBladeId);
@@ -184,6 +186,10 @@ export const useBladeStore = defineStore('blade', {
             this.selectedBladePortNum = selectBladePortNum;
             this.selectedBladeTotalMemoryAvailableMiB = selectedBladeTotalMemoryAvailableMiB;
             this.selectedBladeTotalMemoryAllocatedMiB = selectedBladeTotalMemoryAllocatedMiB;
+            this.selectedBladeStatus = status;
+        },
+
+        updateSelectedBladeStatus(status: string | undefined) {
             this.selectedBladeStatus = status;
         },
 
