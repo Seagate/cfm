@@ -1425,12 +1425,18 @@ type Device struct {
 
 // DiscoverDevices -
 func (cfm *CfmApiService) DiscoverDevices(ctx context.Context, deviceType string) (openapi.ImplResponse, error) {
-	if deviceType != "cma" && deviceType != "cxl-host" {
+	if deviceType != "blade" && deviceType != "cxl-host" {
 		err := common.RequestError{
 			StatusCode: http.StatusBadRequest,
 			Err:        fmt.Errorf("invalid type parameter"),
 		}
 		return formatErrorResp(ctx, &err)
+	}
+
+	// Save the input deviceType to originDeviceType and change the deviceType to match service.txt
+	originDeviceType := deviceType
+	if deviceType == "blade" {
+		deviceType = "cma"
 	}
 
 	conn, err := dbus.SystemBus()
@@ -1491,7 +1497,7 @@ func (cfm *CfmApiService) DiscoverDevices(ctx context.Context, deviceType string
 						Hostname: resolvedService.Host,
 						Address:  resolvedService.Address,
 						Port:     int(resolvedService.Port),
-						Type:     deviceType,
+						Type:     originDeviceType,
 					}
 					devices = append(devices, currentDevice)
 				}

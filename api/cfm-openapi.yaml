@@ -1241,13 +1241,13 @@ components:
       schema:
         $ref: "#/components/schemas/id"
     deviceType:
-      description: Filter devices by type (either 'cma' or 'cxl-host')
+      description: Filter devices by type (either 'blade' or 'cxl-host')
       name: deviceType
       in: query
       required: true
       schema:
         type: string
-        enum: [cma, cxl-host]
+        enum: [blade, cxl-host]
 
   schemas:
     collection:
@@ -1671,4 +1671,4 @@ components:
           type: integer
         type:
           type: string
-          enum: [cma, cxl-host]
+          enum: [blade, cxl-host]
