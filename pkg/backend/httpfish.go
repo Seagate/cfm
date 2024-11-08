@@ -1108,26 +1108,80 @@ func (service *httpfishService) GetMemoryResourceBlocks(ctx context.Context, set
 	session := service.service.session.(*Session)
 
 	response := session.query(HTTPOperation.GET, session.redfishPaths[ResourceBlocksKey])
-
 	if response.err != nil {
 		return &MemoryResourceBlocksResponse{Status: "Failure"}, response.err
 	}
 
 	resourceBlocks, _ := response.arrayFromJSON("Members")
-
 	for _, resourceBlock := range resourceBlocks {
-		blockDetails := session.query(HTTPOperation.GET, resourceBlock.(map[string]interface{})["@odata.id"].(string))
-
-		if !(blockDetails.err == nil && blockDetails.isMemoryResourceBlock()) {
-			continue
-		}
-
-		uri, _ := blockDetails.stringFromJSON("@odata.id")
+		uri := resourceBlock.(map[string]interface{})["@odata.id"].(string)
 
 		memoryResources = append(memoryResources, getIdFromOdataId(uri))
 	}
 
 	return &MemoryResourceBlocksResponse{MemoryResources: memoryResources, Status: "Success"}, nil
+}
+
+// GetMemoryResourceBlocks: Request Memory Resource Block information from the backends
+// For backward compatibility, in the response:
+//
+//	If CompositionStatuses == nil ==> BMC code does NOT return statuses
+//	If CompositionStatuses != nil ==> BMC code DOES return statuses
+func (service *httpfishService) GetMemoryResourceBlockStatuses(ctx context.Context, settings *ConfigurationSettings, req *MemoryResourceBlockStatusesRequest) (*MemoryResourceBlockStatusesResponse, error) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("====== GetMemoryResourceBlockStatuses ======")
+	logger.V(4).Info("memory resource block statuses", "request", req)
+
+	session := service.service.session.(*Session)
+
+	response := session.query(HTTPOperation.GET, session.redfishPaths[ResourceBlocksKey])
+	if response.err != nil {
+		return &MemoryResourceBlockStatusesResponse{Status: "Failure"}, response.err
+	}
+
+	seagateOem := extractSeagateOemMap(ctx, response)
+	if seagateOem == nil {
+		return &MemoryResourceBlockStatusesResponse{Status: "Failure"}, response.err
+	}
+
+	// Extract composition status
+	// Example partial redfish response showing Oem-Seagate format:
+	/*
+		{
+			"Oem": {
+			"Seagate": {
+				"@odata.id": "/redfish/v1/CompositionService#/Oem/Seagate",
+				"@odata.type": "#SeagateCompositionService.v1_0_0.CompositionService",
+				"CompositionStatus": [
+				{
+					"@odata.id": "/redfish/v1/CompositionService/ResourceBlocks/resourceblock0",
+					"CompositionState": "Composed",
+					"Reserved": true
+				},
+							:
+							:
+				]}
+			}
+		}
+	*/
+	statusesArray := seagateOem["CompositionStatus"].(([]interface{}))
+	compositionStatuses := make(map[string]MemoryResourceBlockCompositionStatus, len(statusesArray))
+	for _, statusInterface := range statusesArray {
+		statusesMap := statusInterface.((map[string]interface{}))
+
+		uri := statusesMap["@odata.id"].(string)
+		id := getIdFromOdataId(uri)
+
+		compositionState := statusesMap["CompositionState"].(string)
+		reserved := statusesMap["Reserved"].(bool)
+
+		resourceState := findResourceState(&compositionState, reserved)
+		compositionStatuses[id] = MemoryResourceBlockCompositionStatus{
+			CompositionState: *resourceState,
+		}
+	}
+
+	return &MemoryResourceBlockStatusesResponse{CompositionStatuses: compositionStatuses, Status: "Success"}, nil
 }
 
 // GetMemoryResourceBlockById: Request a particular Memory Resource Block information by ID from the backends
@@ -1158,7 +1212,6 @@ func (service *httpfishService) GetMemoryResourceBlockById(ctx context.Context, 
 		reserved := compositionStatus.(map[string]interface{})["Reserved"].(bool)
 
 		resourceState := findResourceState(&compositionState, reserved)
-
 		memoryResourceBlock.CompositionStatus.CompositionState = *resourceState
 	}
 
@@ -1627,21 +1680,41 @@ func (service *httpfishService) GetMemoryById(ctx context.Context, setting *Conf
 
 	if strings.Contains(path, "CXL") { // host cxl memory
 		memoryRegion.Type = MemoryType(MEMORYTYPE_MEMORY_TYPE_CXL)
-		// Check if performacne metric is reported
-		oemField, _ := response.valueFromJSON("Oem")
-		if oemField != nil {
-			// Example response from redfish
-			/*     "Oem": {
-				  	"Seagate": {
-			 		"Bandwidth": "8.34 GiB/s",
-			 		"Latency": "514 ns"
-						}
-					},
+		// // Check if performance metric is reported
+		// oemField, _ := response.valueFromJSON("Oem")
+		// if oemField != nil {
+		// Example partial redfish response showing Oem-Seagate format:
+		// 	/*     "Oem": {
+		// 		  	"Seagate": {
+		// 	 		"Bandwidth": "8.34 GiB/s",
+		// 	 		"Latency": "514 ns"
+		// 				}
+		// 			},
+		// 	*/
+		// 	bwStr := oemField.(map[string]interface{})["Seagate"].(map[string]interface{})["Bandwidth"].(string)
+		// 	bwFloat, _ := strconv.ParseFloat(strings.Split(bwStr, " ")[0], 64)
+		// 	memoryRegion.Bandwidth = int32(bwFloat)
+		// 	latStr := oemField.(map[string]interface{})["Seagate"].(map[string]interface{})["Latency"].(string)
+		// 	latInt64, _ := strconv.ParseInt(strings.Split(latStr, " ")[0], 10, 64)
+		// 	memoryRegion.Latency = int32(latInt64)
+		// }
+
+		seagateOem := extractSeagateOemMap(ctx, response)
+		if seagateOem != nil {
+			// Extract performance metrics
+			// Example partial redfish response showing Oem-Seagate format:
+			/*
+				"Oem": {
+					"Seagate": {
+				 		"Bandwidth": "8.34 GiB/s",
+				 		"Latency": "514 ns"
+							}
+						},
 			*/
-			bwStr := oemField.(map[string]interface{})["Seagate"].(map[string]interface{})["Bandwidth"].(string)
+			bwStr, _ := seagateOem["Bandwidth"].(string)
 			bwFloat, _ := strconv.ParseFloat(strings.Split(bwStr, " ")[0], 64)
 			memoryRegion.Bandwidth = int32(bwFloat)
-			latStr := oemField.(map[string]interface{})["Seagate"].(map[string]interface{})["Latency"].(string)
+			latStr, _ := seagateOem["Latency"].(string)
 			latInt64, _ := strconv.ParseInt(strings.Split(latStr, " ")[0], 10, 64)
 			memoryRegion.Latency = int32(latInt64)
 		}
@@ -1833,4 +1906,51 @@ func (service *httpfishService) GetBackendStatus(ctx context.Context) *GetBacken
 	logger.V(4).Info("GetBackendStatus", "found service root", status.FoundRootService, "found service session", status.FoundSession)
 
 	return &status
+}
+
+//extractSeagateOemMap - Extracts Seagate's Oem map from the provided session response.
+// If not present, returns nil.
+//
+// Example partial redfish response showing Oem-Seagate format:
+/*
+	"Oem": {
+		"Seagate": {
+			SeagateKey1 : SeagateValue1,
+			SeagateKey2 : SeagateValue2,
+			etc
+			}
+		},
+*/
+// NOTE: The returned map is the "value" of the "Seagate":"value" key-value pair
+func extractSeagateOemMap(ctx context.Context, response Response) map[string]interface{} {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("====== extractSeagateOemMap ======")
+
+	var seagateOem map[string]interface{}
+
+	oem, err := response.valueFromJSON("Oem")
+	if err != nil {
+		logger.V(4).Info("      ERROR: oem NOT ok", "oem", oem)
+	}
+	if oem != nil {
+		oemMap, ok := oem.(map[string]interface{})
+		if !ok {
+			logger.V(4).Info("      ERROR: oemMap NOT ok", "oemMap", oemMap)
+		}
+
+		oemMapSeagateKey, ok := oemMap["Seagate"]
+		if !ok {
+			logger.V(4).Info("      ERROR: oemMapSeagateKey NOT ok", "oemMapSeagateKey", oemMapSeagateKey)
+		}
+
+		seagateOem, ok = oemMapSeagateKey.(map[string]interface{})
+		if !ok {
+			logger.V(4).Info("      ERROR: seagateOem NOT ok", "seagateOem", seagateOem)
+		}
+	}
+
+	logger.V(4).Info("      DEBUG: success: seagateOem", "seagateOem", seagateOem)
+
+	//TODO: Make this an "Ok" function
+	return seagateOem
 }

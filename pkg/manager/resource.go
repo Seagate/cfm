@@ -147,6 +147,11 @@ func (r *BladeResource) InvalidateCache() {
 	r.cacheUpdated = false
 }
 
+// UpdateDetails - Update object with new backend information
+func (r *BladeResource) UpdateDetails(status *backend.MemoryResourceBlockCompositionStatus) {
+	r.details.CompositionStatus.CompositionState = status.CompositionState.String()
+}
+
 func (r *BladeResource) ValidateCache() {
 	r.cacheUpdated = true
 }
