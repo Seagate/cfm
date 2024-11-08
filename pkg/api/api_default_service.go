@@ -1416,13 +1416,6 @@ func (cfm *CfmApiService) RootGet(ctx context.Context) (openapi.ImplResponse, er
 	return openapi.Response(http.StatusOK, response), nil
 }
 
-type Device struct {
-	Hostname string `json:"hostname"`
-	Address  string `json:"address"`
-	Port     int    `json:"port"`
-	Type     string `json:"type"`
-}
-
 // DiscoverDevices -
 func (cfm *CfmApiService) DiscoverDevices(ctx context.Context, deviceType string) (openapi.ImplResponse, error) {
 	if deviceType != "blade" && deviceType != "cxl-host" {
@@ -1464,7 +1457,7 @@ func (cfm *CfmApiService) DiscoverDevices(ctx context.Context, deviceType string
 		})
 	}
 
-	var devices []Device
+	var devices []*openapi.DiscoveredDevice
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -1493,10 +1486,10 @@ func (cfm *CfmApiService) DiscoverDevices(ctx context.Context, deviceType string
 			if err == nil {
 				// filter the servers by deviceType
 				if strings.Contains(string(resolvedService.Txt[0]), deviceType) {
-					currentDevice := Device{
-						Hostname: resolvedService.Host,
+					currentDevice := &openapi.DiscoveredDevice{
+						Name: resolvedService.Host,
 						Address:  resolvedService.Address,
-						Port:     int(resolvedService.Port),
+						Port:     int32(resolvedService.Port),
 						Type:     originDeviceType,
 					}
 					devices = append(devices, currentDevice)
