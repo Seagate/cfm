@@ -1487,10 +1487,10 @@ func (cfm *CfmApiService) DiscoverDevices(ctx context.Context, deviceType string
 				// filter the servers by deviceType
 				if strings.Contains(string(resolvedService.Txt[0]), deviceType) {
 					currentDevice := &openapi.DiscoveredDevice{
-						Name: resolvedService.Host,
-						Address:  resolvedService.Address,
-						Port:     int32(resolvedService.Port),
-						Type:     originDeviceType,
+						Name:    resolvedService.Host,
+						Address: resolvedService.Address,
+						Port:    int32(resolvedService.Port),
+						Type:    originDeviceType,
 					}
 					devices = append(devices, currentDevice)
 				}
