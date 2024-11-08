@@ -6,13 +6,13 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
+	"k8s.io/klog/v2"
+
 	"cfm/pkg/backend"
 	"cfm/pkg/common"
 	"cfm/pkg/common/datastore"
 	"cfm/pkg/openapi"
-
-	"github.com/google/uuid"
-	"k8s.io/klog/v2"
 )
 
 const ID_PREFIX_APPLIANCE_DFLT string = "memory-appliance"
@@ -413,25 +413,6 @@ func (a *Appliance) InvalidateCache() {
 	for _, b := range a.Blades {
 		b.InvalidateCache()
 	}
-}
-
-func (a *Appliance) AddBladeBack(ctx context.Context, c *openapi.Credentials) (*Blade, error) {
-	logger := klog.FromContext(ctx)
-	logger.V(4).Info(">>>>>> Add Blade Back: ", "bladeId", c.CustomId, "applianceId", a.Id)
-
-	// add blade back
-	blade, err := a.AddBlade(ctx, c)
-	if err != nil {
-		newErr := fmt.Errorf("failed to add blade [%s] back", c.CustomId)
-		logger.Error(newErr, "failure: add blade back")
-		return nil, &common.RequestError{StatusCode: common.StatusBladeCreateSessionFailure, Err: newErr}
-	}
-
-	blade.UpdateConnectionStatusBackend(ctx)
-
-	logger.V(2).Info("success: add blade back", "status", blade.Status, "bladeId", blade.Id, "applianceId", a.Id)
-
-	return blade, nil
 }
 
 func (a *Appliance) ResyncBladeById(ctx context.Context, bladeId string) (*Blade, error) {

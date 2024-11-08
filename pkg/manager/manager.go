@@ -6,12 +6,12 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/klog/v2"
+
 	"cfm/pkg/backend"
 	"cfm/pkg/common"
 	"cfm/pkg/common/datastore"
 	"cfm/pkg/openapi"
-
-	"k8s.io/klog/v2"
 )
 
 /////////////
@@ -148,7 +148,7 @@ func RenameAppliance(ctx context.Context, appliance *Appliance, newApplianceId s
 
 	// Add blades back to the new appliance
 	for id, blade := range bladesInfo {
-		_, err := newAppliance.AddBladeBack(ctx, blade.creds)
+		_, err := newAppliance.AddBlade(ctx, blade.creds)
 		if err != nil {
 			newErr := fmt.Errorf("add blade by id [%s] failure: appliance [%s]: %w", id, newApplianceId, err)
 			logger.Error(newErr, "failure: add blade to new appliance: handle and continue")
