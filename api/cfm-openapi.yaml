@@ -54,13 +54,7 @@ paths:
       description: Discover devices on the network.
       operationId: discoverDevices
       parameters:
-        - name: type
-          in: query
-          description: Filter devices by type (either 'cma' or 'cxl-host')
-          required: true
-          schema:
-            type: string
-            enum: [cma, cxl-host]
+        - $ref: "#/components/parameters/deviceType"
       responses:
         "200":
           description: OK
@@ -69,7 +63,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/device'
+                  $ref: '#/components/schemas/discoveredDevice'
         "500":
           description: Internal Server Error
           content:
@@ -1246,6 +1240,14 @@ components:
       required: true
       schema:
         $ref: "#/components/schemas/id"
+    deviceType:
+      description: Filter devices by type (either 'cma' or 'cxl-host')
+      name: deviceType
+      in: query
+      required: true
+      schema:
+        type: string
+        enum: [cma, cxl-host]
 
   schemas:
     collection:
@@ -1658,7 +1660,7 @@ components:
         description:
           type: string
           description: The description of service(s) offered by the URI
-    device:
+    discoveredDevice:
       type: object
       properties:
         name:
@@ -1669,4 +1671,4 @@ components:
           type: integer
         type:
           type: string
-
+          enum: [cma, cxl-host]

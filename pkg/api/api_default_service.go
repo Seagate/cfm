@@ -1182,8 +1182,8 @@ type Device struct {
 }
 
 // DiscoverDevices -
-func (cfm *CfmApiService) DiscoverDevices(ctx context.Context, type_ string) (openapi.ImplResponse, error) {
-	if type_ != "cma" && type_ != "cxl-host" {
+func (cfm *CfmApiService) DiscoverDevices(ctx context.Context, deviceType string) (openapi.ImplResponse, error) {
+	if deviceType != "cma" && deviceType != "cxl-host" {
 		err := common.RequestError{
 			StatusCode: http.StatusBadRequest,
 			Err:        fmt.Errorf("invalid type parameter"),
@@ -1243,13 +1243,13 @@ func (cfm *CfmApiService) DiscoverDevices(ctx context.Context, type_ string) (op
 			resolvedService, err := server.ResolveService(service.Interface, service.Protocol, service.Name,
 				service.Type, service.Domain, avahi.ProtoInet, 0)
 			if err == nil {
-				// filter the servers by type_
-				if strings.Contains(string(resolvedService.Txt[0]), type_) {
+				// filter the servers by deviceType
+				if strings.Contains(string(resolvedService.Txt[0]), deviceType) {
 					currentDevice := Device{
 						Hostname: resolvedService.Host,
 						Address:  resolvedService.Address,
 						Port:     int(resolvedService.Port),
-						Type:     type_,
+						Type:     deviceType,
 					}
 					devices = append(devices, currentDevice)
 				}
