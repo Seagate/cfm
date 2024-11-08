@@ -298,7 +298,7 @@ func (session *Session) queryWithJSON(operation HTTPOperationType, path string, 
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: session.insecure},
 		}
 
-		session.client = &http.Client{Transport: tr, Timeout: 10 * time.Second}
+		session.client = &http.Client{Transport: tr, Timeout: 10 * time.Second} //device power off will present as timeout
 	}
 	httpresponse, err := session.client.Do(request)
 	if err != nil {
@@ -319,19 +319,6 @@ func (session *Session) queryWithJSON(operation HTTPOperationType, path string, 
 		fmt.Println("HTTP: Error decode json response")
 		response.err = fmt.Errorf("http error: Error decode json response")
 		return response
-	}
-
-	// check for error due to session timeout ( service would return error code 401)
-	if session.xToken != "" && response.StatusCode == http.StatusUnauthorized {
-		// Re-authenticate
-		fmt.Print("Redfish session might have timed out. Re-authenticate. Warning! infinite loop might occur if the issue is from the redfish server.\n")
-		session.client = nil
-		session.xToken = ""
-		err := session.auth()
-		if err == nil {
-			path = session.buildPath(SessionServiceKey, session.RedfishSessionId)
-			response = session.queryWithJSON(operation, path, jsonData)
-		}
 	}
 
 	return response
@@ -490,21 +477,6 @@ func (session *Session) auth() error {
 	return response.err
 }
 
-// GetRootService: Retrieve root service from endpoint
-func (service *httpfishService) GetRootService(ctx context.Context, settings *ConfigurationSettings, req *GetRootServiceRequest) (*GetRootServiceResponse, error) {
-	session := service.service.session.(*Session)
-
-	response := session.query(HTTPOperation.GET, redfish_serviceroot)
-	if response.err != nil {
-		return nil, fmt.Errorf("failed to get root service: %w", response.err)
-	}
-
-	name, _ := response.stringFromJSON("Name")
-	uuid, _ := response.stringFromJSON("UUID")
-
-	return &GetRootServiceResponse{Name: name, Uuid: uuid}, nil
-}
-
 // CreateSession: Create a new session with an endpoint service
 func (service *httpfishService) CreateSession(ctx context.Context, settings *ConfigurationSettings, req *CreateSessionRequest) (*CreateSessionResponse, error) {
 	logger := klog.FromContext(ctx)
@@ -573,13 +545,17 @@ func (service *httpfishService) DeleteSession(ctx context.Context, settings *Con
 	// CloseIdleConnections closes the idle connections that a session client may make use of
 	// session.CloseIdleConnections()
 	delete(activeSessions, session.SessionId)
+	deletedId := session.SessionId
+
+	service.service.session.(*Session).SessionId = ""
+	service.service.session.(*Session).RedfishSessionId = ""
 
 	// Let user know of delete backend failure.
 	if response.err != nil {
-		return &DeleteSessionResponse{SessionId: session.SessionId, IpAddress: session.ip, Port: int32(session.port), Status: "Failure"}, response.err
+		return &DeleteSessionResponse{SessionId: deletedId, IpAddress: session.ip, Port: int32(session.port), Status: "Failure"}, response.err
 	}
 
-	return &DeleteSessionResponse{SessionId: session.SessionId, IpAddress: session.ip, Port: int32(session.port), Status: "Success"}, nil
+	return &DeleteSessionResponse{SessionId: deletedId, IpAddress: session.ip, Port: int32(session.port), Status: "Success"}, nil
 }
 
 // This struct holds the detail info of a specific resource block
@@ -1829,4 +1805,32 @@ func (service *httpfishService) GetMemory(ctx context.Context, settings *Configu
 // GetBackendInfo: Get the information of this backend
 func (service *httpfishService) GetBackendInfo(ctx context.Context) *GetBackendInfoResponse {
 	return &GetBackendInfoResponse{BackendName: "httpfish", Version: "0.1", SessionId: service.service.session.(*Session).SessionId}
+}
+
+// GetBackendInfo: Get the information of this backend
+func (service *httpfishService) GetBackendStatus(ctx context.Context) *GetBackendStatusResponse {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("====== GetBackendStatus ======")
+
+	status := GetBackendStatusResponse{}
+	session := service.service.session.(*Session)
+
+	response := session.query(HTTPOperation.GET, redfish_serviceroot)
+	status.FoundRootService = response.err == nil
+
+	if status.FoundRootService {
+		response := session.query(HTTPOperation.GET, session.buildPath(SessionServiceKey, session.RedfishSessionId))
+		status.FoundSession = response.err == nil
+
+		if status.FoundSession {
+			status.SessionId = session.SessionId
+			status.RedfishSessionId = session.RedfishSessionId
+		}
+
+		logger.V(4).Info("GetBackendStatus", "session id", status.SessionId, "redfish session id", status.RedfishSessionId)
+	}
+
+	logger.V(4).Info("GetBackendStatus", "found service root", status.FoundRootService, "found service session", status.FoundSession)
+
+	return &status
 }

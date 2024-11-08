@@ -17,10 +17,12 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/godbus/dbus/v5"
 	"github.com/holoplot/go-avahi"
+	"k8s.io/klog/v2"
 
 	"cfm/pkg/common"
 	"cfm/pkg/manager"
@@ -32,6 +34,12 @@ const (
 	MAX_COUNT_BLADES     = 8
 	MAX_COUNT_HOSTS      = 32
 )
+
+// cfm-service code is not currently designed for multiple, simultaneous asynchronous api calls.
+// This mutex forces all calls into cfm-service to be synchronous (so, one-at-a-time)
+// Initial implementation of this mutex created an order of magnitude faster response to webui updating.
+// However, as the software matures, usage of this mutex may need to be re-evaluted.
+var mu sync.Mutex
 
 // CfmApiService is a service that implements the logic for the cfm-service.
 // This service should implement the business logic for every endpoint for the DefaultAPI API.
@@ -47,6 +55,12 @@ func NewCfmApiService(version string) openapi.DefaultAPIServicer {
 
 // AppliancesDeleteById -
 func (cfm *CfmApiService) AppliancesDeleteById(ctx context.Context, applianceId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### AppliancesDeleteById: ", "applianceId", applianceId)
+
 	var a openapi.Appliance
 
 	appliance, err := manager.DeleteApplianceById(ctx, applianceId)
@@ -73,6 +87,12 @@ func (cfm *CfmApiService) AppliancesDeleteById(ctx context.Context, applianceId 
 
 // AppliancesGet -
 func (cfm *CfmApiService) AppliancesGet(ctx context.Context) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### AppliancesGet")
+
 	// order returned uris by appliance id
 	applianceIds := manager.GetAllApplianceIds()
 	sort.Strings(applianceIds)
@@ -93,6 +113,12 @@ func (cfm *CfmApiService) AppliancesGet(ctx context.Context) (openapi.ImplRespon
 
 // AppliancesGetById -
 func (cfm *CfmApiService) AppliancesGetById(ctx context.Context, applianceId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### AppliancesGetById: ", "applianceId", applianceId)
+
 	appliance, err := manager.GetApplianceById(ctx, applianceId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -120,6 +146,12 @@ func (cfm *CfmApiService) AppliancesGetById(ctx context.Context, applianceId str
 
 // AppliancesPost -
 func (cfm *CfmApiService) AppliancesPost(ctx context.Context, credentials openapi.Credentials) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### AppliancesPost")
+
 	appliances := manager.GetAppliances(ctx)
 	if len(appliances) >= MAX_COUNT_APPLIANCES {
 		err := common.RequestError{
@@ -151,6 +183,12 @@ func (cfm *CfmApiService) AppliancesPost(ctx context.Context, credentials openap
 
 // AppliancesUpdateById -
 func (cfm *CfmApiService) AppliancesUpdateById(ctx context.Context, applianceId string, newApplianceId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### AppliancesUpdateById: ", "applianceId", applianceId)
+
 	// Make sure the newApplianceId doesn't exist
 	_, exist := manager.GetApplianceById(ctx, newApplianceId)
 	if exist == nil {
@@ -190,6 +228,12 @@ func (cfm *CfmApiService) AppliancesUpdateById(ctx context.Context, applianceId 
 
 // AppliancesResync -
 func (cfm *CfmApiService) AppliancesResyncById(ctx context.Context, applianceId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### AppliancesResyncById: ", "applianceId", applianceId)
+
 	appliance, err := manager.ResyncApplianceById(ctx, applianceId)
 
 	if err != nil {
@@ -222,6 +266,12 @@ func (cfm *CfmApiService) AppliancesResyncById(ctx context.Context, applianceId 
 
 // BladesAssignMemoryById - Assign\Unassign the specified memory region (iedntified via memoryId) to\from the specified portId.  Assign\Unassigned is set in request's Operation parameter.
 func (cfm *CfmApiService) BladesAssignMemoryById(ctx context.Context, applianceId string, bladeId string, memoryId string, assignMemoryRequest openapi.AssignMemoryRequest) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### BladesAssignMemoryById: ", "applianceId", applianceId, "bladeId", bladeId, "memoryId", memoryId)
+
 	appliance, err := manager.GetApplianceById(ctx, applianceId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -248,6 +298,12 @@ func (cfm *CfmApiService) BladesAssignMemoryById(ctx context.Context, applianceI
 
 // BladesComposeMemory - Using available blade resources, provision a new blade memory region and assign it to the designated port [Note: provision + assign = compose]. If composeMemoryRequest.Port == nil, provision only.
 func (cfm *CfmApiService) BladesComposeMemory(ctx context.Context, applianceId string, bladeId string, composeMemoryRequest openapi.ComposeMemoryRequest) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### BladesComposeMemory: ", "applianceId", applianceId, "bladeId", bladeId)
+
 	appliance, err := manager.GetApplianceById(ctx, applianceId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -278,6 +334,12 @@ func (cfm *CfmApiService) BladesComposeMemory(ctx context.Context, applianceId s
 
 // BladesComposeMemoryByResource -
 func (cfm *CfmApiService) BladesComposeMemoryByResource(ctx context.Context, applianceId string, bladeId string, composeMemoryByResourceRequest openapi.ComposeMemoryByResourceRequest) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### BladesComposeMemoryByResource: ", "applianceId", applianceId, "bladeId", bladeId)
+
 	appliance, err := manager.GetApplianceById(ctx, applianceId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -302,6 +364,12 @@ func (cfm *CfmApiService) BladesComposeMemoryByResource(ctx context.Context, app
 
 // BladesDeleteById - As long as the appliance id is valid, guarenteed blade deletion from service
 func (cfm *CfmApiService) BladesDeleteById(ctx context.Context, applianceId string, bladeId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### BladesDeleteById: ", "applianceId", applianceId, "bladeId", bladeId)
+
 	var b openapi.Blade
 
 	appliance, err := manager.GetApplianceById(ctx, applianceId)
@@ -339,6 +407,12 @@ func (cfm *CfmApiService) BladesDeleteById(ctx context.Context, applianceId stri
 
 // BladesFreeMemoryById -
 func (cfm *CfmApiService) BladesFreeMemoryById(ctx context.Context, applianceId string, bladeId string, memoryId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### BladesFreeMemoryById: ", "applianceId", applianceId, "bladeId", bladeId, "memoryId", memoryId)
+
 	appliance, err := manager.GetApplianceById(ctx, applianceId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -359,6 +433,12 @@ func (cfm *CfmApiService) BladesFreeMemoryById(ctx context.Context, applianceId 
 
 // BladesGet -
 func (cfm *CfmApiService) BladesGet(ctx context.Context, applianceId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### BladesGet: ", "applianceId", applianceId)
+
 	appliance, err := manager.GetApplianceById(ctx, applianceId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -384,6 +464,12 @@ func (cfm *CfmApiService) BladesGet(ctx context.Context, applianceId string) (op
 
 // BladesGetById -
 func (cfm *CfmApiService) BladesGetById(ctx context.Context, applianceId string, bladeId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### BladesGetById: ", "applianceId", applianceId, "bladeId", bladeId)
+
 	appliance, err := manager.GetApplianceById(ctx, applianceId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -422,6 +508,12 @@ func (cfm *CfmApiService) BladesGetById(ctx context.Context, applianceId string,
 
 // BladesGetMemory -
 func (cfm *CfmApiService) BladesGetMemory(ctx context.Context, applianceId string, bladeId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### BladesGetMemory: ", "applianceId", applianceId, "bladeId", bladeId)
+
 	appliance, err := manager.GetApplianceById(ctx, applianceId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -452,6 +544,12 @@ func (cfm *CfmApiService) BladesGetMemory(ctx context.Context, applianceId strin
 
 // BladesGetMemoryById -
 func (cfm *CfmApiService) BladesGetMemoryById(ctx context.Context, applianceId string, bladeId string, memoryId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### BladesGetMemoryById: ", "applianceId", applianceId, "bladeId", bladeId, "memoryId", memoryId)
+
 	appliance, err := manager.GetApplianceById(ctx, applianceId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -482,6 +580,12 @@ func (cfm *CfmApiService) BladesGetMemoryById(ctx context.Context, applianceId s
 
 // BladesGetPortById -
 func (cfm *CfmApiService) BladesGetPortById(ctx context.Context, applianceId string, bladeId string, portId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### BladesGetPortById: ", "applianceId", applianceId, "bladeId", bladeId, "portId", portId)
+
 	appliance, err := manager.GetApplianceById(ctx, applianceId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -512,6 +616,12 @@ func (cfm *CfmApiService) BladesGetPortById(ctx context.Context, applianceId str
 
 // BladesGetPorts -
 func (cfm *CfmApiService) BladesGetPorts(ctx context.Context, applianceId string, bladeId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### BladesGetPorts: ", "applianceId", applianceId, "bladeId", bladeId)
+
 	appliance, err := manager.GetApplianceById(ctx, applianceId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -542,6 +652,12 @@ func (cfm *CfmApiService) BladesGetPorts(ctx context.Context, applianceId string
 
 // BladesUpdateById -
 func (cfm *CfmApiService) BladesUpdateById(ctx context.Context, applianceId string, bladeId string, newBladeId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### BladesUpdateById: ", "applianceId", applianceId, "bladeId", bladeId)
+
 	appliance, err := manager.GetApplianceById(ctx, applianceId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -600,6 +716,12 @@ func (cfm *CfmApiService) BladesUpdateById(ctx context.Context, applianceId stri
 
 // BladesGetResourceById -
 func (cfm *CfmApiService) BladesGetResourceById(ctx context.Context, applianceId string, bladeId string, resourceId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### BladesGetResourceById: ", "applianceId", applianceId, "bladeId", bladeId, "resourceId", resourceId)
+
 	appliance, err := manager.GetApplianceById(ctx, applianceId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -630,6 +752,12 @@ func (cfm *CfmApiService) BladesGetResourceById(ctx context.Context, applianceId
 
 // BladesGetResources -
 func (cfm *CfmApiService) BladesGetResources(ctx context.Context, applianceId string, bladeId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### BladesGetResources: ", "applianceId", applianceId, "bladeId", bladeId)
+
 	appliance, err := manager.GetApplianceById(ctx, applianceId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -660,6 +788,12 @@ func (cfm *CfmApiService) BladesGetResources(ctx context.Context, applianceId st
 
 // BladesPost -
 func (cfm *CfmApiService) BladesPost(ctx context.Context, applianceId string, credentials openapi.Credentials) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### BladesPost: ", "applianceId", applianceId)
+
 	appliance, err := manager.GetApplianceById(ctx, applianceId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -706,6 +840,12 @@ func (cfm *CfmApiService) BladesPost(ctx context.Context, applianceId string, cr
 
 // BladesResync -
 func (cfm *CfmApiService) BladesResyncById(ctx context.Context, applianceId string, bladeId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### BladesResyncById: ", "applianceId", applianceId, "bladeId", bladeId)
+
 	appliance, err := manager.GetApplianceById(ctx, applianceId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -744,6 +884,12 @@ func (cfm *CfmApiService) BladesResyncById(ctx context.Context, applianceId stri
 
 // HostGetMemory -
 func (cfm *CfmApiService) HostGetMemory(ctx context.Context, hostId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### HostGetMemory: ", "hostId", hostId)
+
 	host, err := manager.GetHostById(ctx, hostId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -769,6 +915,12 @@ func (cfm *CfmApiService) HostGetMemory(ctx context.Context, hostId string) (ope
 
 // HostsComposeMemory -
 func (cfm *CfmApiService) HostsComposeMemory(ctx context.Context, hostId string, composeMemoryRequest openapi.ComposeMemoryRequest) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### HostsComposeMemory: ", "hostId", hostId)
+
 	host, err := manager.GetHostById(ctx, hostId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -790,6 +942,12 @@ func (cfm *CfmApiService) HostsComposeMemory(ctx context.Context, hostId string,
 
 // HostsDeleteById - Guarenteed host deletion from service.
 func (cfm *CfmApiService) HostsDeleteById(ctx context.Context, hostId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### HostsDeleteById: ", "hostId", hostId)
+
 	var h openapi.Host
 
 	host, err := manager.DeleteHostById(ctx, hostId)
@@ -822,6 +980,12 @@ func (cfm *CfmApiService) HostsDeleteById(ctx context.Context, hostId string) (o
 
 // HostsFreeMemoryById -
 func (cfm *CfmApiService) HostsFreeMemoryById(ctx context.Context, hostId string, memoryId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### HostsFreeMemoryById: ", "hostId", hostId, "memoryId", memoryId)
+
 	host, err := manager.GetHostById(ctx, hostId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -837,6 +1001,12 @@ func (cfm *CfmApiService) HostsFreeMemoryById(ctx context.Context, hostId string
 
 // HostsGet - Get CXL Host information.
 func (cfm *CfmApiService) HostsGet(ctx context.Context) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### HostsGet")
+
 	// order returned uris by host id
 	hostIds := manager.GetAllHostIds()
 	sort.Strings(hostIds)
@@ -857,6 +1027,12 @@ func (cfm *CfmApiService) HostsGet(ctx context.Context) (openapi.ImplResponse, e
 
 // HostsGetById - Get information for a single CXL Host.
 func (cfm *CfmApiService) HostsGetById(ctx context.Context, hostId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### HostsGetById: ", "hostId", hostId)
+
 	host, err := manager.GetHostById(ctx, hostId)
 	if err != nil || host == nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -890,6 +1066,12 @@ func (cfm *CfmApiService) HostsGetById(ctx context.Context, hostId string) (open
 
 // HostsGetMemoryById -
 func (cfm *CfmApiService) HostsGetMemoryById(ctx context.Context, hostId string, memoryId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### HostsGetMemoryById: ", "hostId", hostId, "memoryId", memoryId)
+
 	host, err := manager.GetHostById(ctx, hostId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -910,6 +1092,12 @@ func (cfm *CfmApiService) HostsGetMemoryById(ctx context.Context, hostId string,
 
 // HostsGetMemoryDeviceById -
 func (cfm *CfmApiService) HostsGetMemoryDeviceById(ctx context.Context, hostId string, memorydeviceId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### HostsGetMemoryDeviceById: ", "hostId", hostId, "memorydeviceId", memorydeviceId)
+
 	host, err := manager.GetHostById(ctx, hostId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -930,6 +1118,12 @@ func (cfm *CfmApiService) HostsGetMemoryDeviceById(ctx context.Context, hostId s
 
 // HostsGetMemoryDevices -
 func (cfm *CfmApiService) HostsGetMemoryDevices(ctx context.Context, hostId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### HostsGetMemoryDevices: ", "hostId", hostId)
+
 	host, err := manager.GetHostById(ctx, hostId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -955,6 +1149,12 @@ func (cfm *CfmApiService) HostsGetMemoryDevices(ctx context.Context, hostId stri
 
 // HostsGetPortById -
 func (cfm *CfmApiService) HostsGetPortById(ctx context.Context, hostId string, portId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### HostsGetPortById: ", "hostId", hostId, "portId", portId)
+
 	host, err := manager.GetHostById(ctx, hostId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -975,6 +1175,12 @@ func (cfm *CfmApiService) HostsGetPortById(ctx context.Context, hostId string, p
 
 // HostsGetPorts -
 func (cfm *CfmApiService) HostsGetPorts(ctx context.Context, hostId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### HostsGetPorts: ", "hostId", hostId)
+
 	host, err := manager.GetHostById(ctx, hostId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -1000,6 +1206,12 @@ func (cfm *CfmApiService) HostsGetPorts(ctx context.Context, hostId string) (ope
 
 // HostsPost - Add a CXL host to be managed by CFM.
 func (cfm *CfmApiService) HostsPost(ctx context.Context, credentials openapi.Credentials) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### HostsPost")
+
 	hosts := manager.GetHosts(ctx)
 	if len(hosts) >= MAX_COUNT_HOSTS {
 		err := common.RequestError{
@@ -1037,6 +1249,12 @@ func (cfm *CfmApiService) HostsPost(ctx context.Context, credentials openapi.Cre
 
 // HostsUpdateById -
 func (cfm *CfmApiService) HostsUpdateById(ctx context.Context, hostId string, newHostId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### HostsUpdateById: ", "hostId", hostId)
+
 	// Make sure the hostId exists
 	// Get the host information from the manager level and is used for renaming
 	host, err := manager.GetHostById(ctx, hostId)
@@ -1088,6 +1306,12 @@ func (cfm *CfmApiService) HostsUpdateById(ctx context.Context, hostId string, ne
 
 // HostsResync -
 func (cfm *CfmApiService) HostsResyncById(ctx context.Context, hostId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### HostsResyncById: ", "hostId", hostId)
+
 	host, err := manager.ResyncHostById(ctx, hostId)
 	if err != nil {
 		return formatErrorResp(ctx, err.(*common.RequestError))
@@ -1133,6 +1357,12 @@ type CfmVersionType struct {
 
 // CfmGet -
 func (cfm *CfmApiService) CfmGet(ctx context.Context) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### CfmGet")
+
 	response := CfmVersionType{
 		Version: "/cfm/v1",
 	}
@@ -1142,6 +1372,12 @@ func (cfm *CfmApiService) CfmGet(ctx context.Context) (openapi.ImplResponse, err
 
 // CfmV1Get -
 func (cfm *CfmApiService) CfmV1Get(ctx context.Context) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### CfmV1Get")
+
 	response := openapi.ServiceInformation{
 		Version: cfm.Version,
 	}
@@ -1163,6 +1399,12 @@ func (cfm *CfmApiService) CfmV1Get(ctx context.Context) (openapi.ImplResponse, e
 
 // RootGet -
 func (cfm *CfmApiService) RootGet(ctx context.Context) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### RootGet")
+
 	response := openapi.StatusMessage{
 		Uri:     "/",
 		Details: fmt.Sprintf("Composable Fabric Manager (CFM) Service API. Use 'http get /cfm' to see supported versions."),

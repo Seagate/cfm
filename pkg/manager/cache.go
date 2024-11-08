@@ -229,9 +229,9 @@ func (c *DevicesCache) GetBladeResourcesOk(applianceId, bladeId string) (map[str
 // Host Functions //
 ////////////////////
 
-func (c *DevicesCache) AddHost(host *Host) error {
+func (c *DevicesCache) AddHost(host *Host, force bool) error {
 	_, ok := c.hosts[host.Id]
-	if ok {
+	if ok && !force {
 		return fmt.Errorf("cache already contains host with id [%s]", host.Id)
 	}
 
@@ -283,7 +283,7 @@ func (c *DevicesCache) GetHosts() map[string]*Host {
 	return c.hosts
 }
 
-//There are no "add" or "delete" HostMempry functions.  Add\Delete is handled within each Host object.
+//There are no "add" or "delete" HostMemory functions.  Add\Delete is handled within each Host object.
 
 func (c *DevicesCache) GetHostMemoryById(hostId, memoryId string) (*HostMemory, error) {
 	memory, ok := c.GetHostMemoryByIdOk(hostId, memoryId)

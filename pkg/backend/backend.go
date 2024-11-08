@@ -10,7 +10,6 @@ import (
 type BackendOperations interface {
 	CreateSession(context.Context, *ConfigurationSettings, *CreateSessionRequest) (*CreateSessionResponse, error)
 	DeleteSession(context.Context, *ConfigurationSettings, *DeleteSessionRequest) (*DeleteSessionResponse, error)
-	GetRootService(context.Context, *ConfigurationSettings, *GetRootServiceRequest) (*GetRootServiceResponse, error)
 	GetMemoryResourceBlocks(context.Context, *ConfigurationSettings, *MemoryResourceBlocksRequest) (*MemoryResourceBlocksResponse, error)
 	GetMemoryResourceBlockById(context.Context, *ConfigurationSettings, *MemoryResourceBlockByIdRequest) (*MemoryResourceBlockByIdResponse, error)
 	GetPorts(context.Context, *ConfigurationSettings, *GetPortsRequest) (*GetPortsResponse, error)
@@ -27,6 +26,7 @@ type BackendOperations interface {
 	UnassignMemory(context.Context, *ConfigurationSettings, *UnassignMemoryRequest) (*UnassignMemoryResponse, error)
 	GetMemoryById(context.Context, *ConfigurationSettings, *GetMemoryByIdRequest) (*GetMemoryByIdResponse, error)
 	GetBackendInfo(context.Context) *GetBackendInfoResponse
+	GetBackendStatus(context.Context) *GetBackendStatusResponse
 }
 
 type commonService struct {
