@@ -1680,25 +1680,7 @@ func (service *httpfishService) GetMemoryById(ctx context.Context, setting *Conf
 
 	if strings.Contains(path, "CXL") { // host cxl memory
 		memoryRegion.Type = MemoryType(MEMORYTYPE_MEMORY_TYPE_CXL)
-		// // Check if performance metric is reported
-		// oemField, _ := response.valueFromJSON("Oem")
-		// if oemField != nil {
-		// Example partial redfish response showing Oem-Seagate format:
-		// 	/*     "Oem": {
-		// 		  	"Seagate": {
-		// 	 		"Bandwidth": "8.34 GiB/s",
-		// 	 		"Latency": "514 ns"
-		// 				}
-		// 			},
-		// 	*/
-		// 	bwStr := oemField.(map[string]interface{})["Seagate"].(map[string]interface{})["Bandwidth"].(string)
-		// 	bwFloat, _ := strconv.ParseFloat(strings.Split(bwStr, " ")[0], 64)
-		// 	memoryRegion.Bandwidth = int32(bwFloat)
-		// 	latStr := oemField.(map[string]interface{})["Seagate"].(map[string]interface{})["Latency"].(string)
-		// 	latInt64, _ := strconv.ParseInt(strings.Split(latStr, " ")[0], 10, 64)
-		// 	memoryRegion.Latency = int32(latInt64)
-		// }
-
+		// Check if performance metric is reported
 		seagateOem := extractSeagateOemMap(ctx, response)
 		if seagateOem != nil {
 			// Extract performance metrics
