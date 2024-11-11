@@ -605,14 +605,20 @@ func (b *Blade) GetResourcesBackend(ctx context.Context) ([]string, error) {
 	return response.MemoryResources, nil
 }
 
-// GetResourcesBackend - Returns slice of hardware resource id's
+// GetResourceStatusesBackend - Returns collection of resources statuses
+// Note that an empty collection indicates that consolidated status information is NOT avaiable and each resource must be interrogated directly.
 func (b *Blade) GetResourceStatusesBackend(ctx context.Context) (*openapi.BladesMemoryResourceStatusCollection, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(">>>>>> GetResourceStatusesBackend: ", "bladeId", b.Id, "applianceId", b.ApplianceId)
 
+	collection := &openapi.BladesMemoryResourceStatusCollection{
+		StatusCount:      0,
+		ResourceStatuses: make([]openapi.BladesResourceStatus, 0),
+	}
+
 	if !b.IsOnline(ctx) {
 		// If blade not online, not an error.  Just no information to return.
-		return &openapi.BladesMemoryResourceStatusCollection{StatusCount: 0, ResourceStatuses: make([]openapi.BladesResourceStatus, 0)}, nil
+		return collection, nil
 	}
 
 	req := backend.MemoryResourceBlockStatusesRequest{}
@@ -623,8 +629,9 @@ func (b *Blade) GetResourceStatusesBackend(ctx context.Context) (*openapi.Blades
 		return nil, &common.RequestError{StatusCode: common.StatusBladeGetMemoryResourceBlocksFailure, Err: newErr}
 	}
 
-	// update manager's blade resource map
 	if response.CompositionStatuses != nil {
+
+		// Update blade map
 		for resourceId, status := range response.CompositionStatuses {
 			resource, ok := b.Resources[resourceId]
 			if !ok {
@@ -634,38 +641,35 @@ func (b *Blade) GetResourceStatusesBackend(ctx context.Context) (*openapi.Blades
 
 			resource.UpdateDetails(&status)
 		}
-	} else {
-		// For legacy BMC versions that didn't contain "OEM" and "Seagate" keys
-		logger.V(4).Info("get resource statuses(backend): no consolidated resources statuses found.  Returning last known statuses")
-	}
 
-	// build openapi collection from BladeResources
-	collection := openapi.BladesMemoryResourceStatusCollection{
-		StatusCount:      0,
-		ResourceStatuses: make([]openapi.BladesResourceStatus, 0, len(b.Resources)),
-	}
-
-	resourceIds := b.GetAllResourceIds(ctx)
-	natsort.Sort(resourceIds)
-
-	for _, resourceId := range resourceIds {
-		resource := b.Resources[resourceId]
-
-		resourceStatus := openapi.BladesResourceStatus{
-			Uri: GetCfmUriBladeResourceId(b.ApplianceId, b.Id, resource.Id),
-			Id:  resource.Id,
-			CompositionStatus: openapi.MemoryResourceBlockCompositionStatus{
-				CompositionState: resource.GetCompositionState(),
-			},
+		// build openapi collection
+		collection = &openapi.BladesMemoryResourceStatusCollection{
+			StatusCount:      0,
+			ResourceStatuses: make([]openapi.BladesResourceStatus, 0, len(b.Resources)),
 		}
 
-		collection.StatusCount += 1
-		collection.ResourceStatuses = append(collection.ResourceStatuses, resourceStatus)
+		resourceIds := b.GetAllResourceIds(ctx)
+		natsort.Sort(resourceIds)
+
+		for _, resourceId := range resourceIds {
+			resource := b.Resources[resourceId]
+
+			resourceStatus := openapi.BladesResourceStatus{
+				Uri: GetCfmUriBladeResourceId(b.ApplianceId, b.Id, resource.Id),
+				Id:  resource.Id,
+				CompositionStatus: openapi.MemoryResourceBlockCompositionStatus{
+					CompositionState: resource.GetCompositionState(),
+				},
+			}
+
+			collection.StatusCount += 1
+			collection.ResourceStatuses = append(collection.ResourceStatuses, resourceStatus)
+		}
 	}
 
 	logger.V(2).Info("success: get resource statuses(backend)", "resource count", collection.StatusCount, "bladeId", b.Id, "applianceId", b.ApplianceId)
 
-	return &collection, nil
+	return collection, nil
 }
 
 func (b *Blade) GetResourceTotals(ctx context.Context) (*ResponseResourceTotals, error) {
