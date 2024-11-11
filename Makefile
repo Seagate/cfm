@@ -89,12 +89,16 @@ validate:
 	docker run --rm -v ${PWD}:/local openapitools/openapi-generator-cli:v7.0.0 validate -i /local/$(OPENAPI_YAML)
 
 generate-openapi:
+	@echo "Clean up openapi server generated code (service)"
+	rm -rf ./pkg/openapi/
 	@echo "Generating $(OPENAPI_YAML) go server using openapi-generator-cli"
 	docker run -u $(GENERATE_USER) --rm -v ${PWD}:/local openapitools/openapi-generator-cli:v7.0.0 generate -i /local/$(OPENAPI_YAML) -g go-server -o /local/pkg/openapi --additional-properties=sourceFolder=,outputAsLibrary=true,router=mux,serverPort=8080,enumClassPrefix=true -t /local/api/templates/go-server --skip-validate-spec
 	@echo "Format files after generation to conform to project standard"
 	docker run --rm -v ${PWD}:/local golang:$(GO_VERSION) $(GOFMT_OPTS)
 
 generate-client:
+	@echo "Clean up openapi client generated code (service)"
+	rm -rf ./pkg/client/
 	@echo "Generating $(OPENAPI_YAML) go client using openapi-generator-cli"
 	docker run -u $(GENERATE_USER) --rm -v ${PWD}:/local openapitools/openapi-generator-cli:v7.0.0 generate -i /local/$(OPENAPI_YAML) -g go -o /local/pkg/client -p isGoSubmodule=true,withGoMod=false --package-name client --ignore-file-override /local/api/ignore/.openapi-generator-ignore-client -t /local/api/templates/go
 	# workaround for withGoMod=false not functioning with openapi-generator
@@ -105,6 +109,8 @@ generate-client:
 	docker run --rm -v ${PWD}:/local golang:$(GO_VERSION) $(GOFMT_OPTS)
 
 generate-redfish:
+	@echo "Clean up redfishapi generated code (service)"
+	rm -rf ./pkg/redfishapi/
 	@echo "Generating $(OPENAPI_YAML) redfish server using openapi-generator-cli"
 	docker run -u $(GENERATE_USER) --rm -v ${PWD}:/local openapitools/openapi-generator-cli:v7.0.0 generate -i /local/$(OPENAPI_REDFISH_YAML) -g go-server -o /local/pkg/redfishapi --package-name redfishapi --additional-properties=sourceFolder=,outputAsLibrary=true,router=mux,serverPort=8080,enumClassPrefix=true -t /local/api/templates/go-server --skip-validate-spec
 	@echo "Format files after generation to conform to project standard"
@@ -113,6 +119,8 @@ generate-redfish:
 	git apply api/patch/*.redfish.patch
 
 generate-axios:
+	@echo "Clean up axios generated code (webui)"
+	rm -rf ./webui/src/axios/
 	@echo "Generating $(OPENAPI_YAML) axios server using openapi-generator-cli"
 	docker run -u $(GENERATE_USER) --rm -v ${PWD}:/local openapitools/openapi-generator-cli:v7.0.0 generate -i /local/$(OPENAPI_YAML) -g typescript-axios -o /local/webui/src/axios --skip-validate-spec
 
