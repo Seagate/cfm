@@ -13,15 +13,20 @@ package api
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"sort"
+	"strings"
 	"sync"
+	"time"
+
+	"github.com/godbus/dbus/v5"
+	"github.com/holoplot/go-avahi"
+	"k8s.io/klog/v2"
 
 	"cfm/pkg/common"
 	"cfm/pkg/manager"
 	"cfm/pkg/openapi"
-
-	"k8s.io/klog/v2"
 )
 
 const (
@@ -1409,4 +1414,100 @@ func (cfm *CfmApiService) RootGet(ctx context.Context) (openapi.ImplResponse, er
 		},
 	}
 	return openapi.Response(http.StatusOK, response), nil
+}
+
+// DiscoverDevices -
+func (cfm *CfmApiService) DiscoverDevices(ctx context.Context, deviceType string) (openapi.ImplResponse, error) {
+	if deviceType != "blade" && deviceType != "cxl-host" {
+		err := common.RequestError{
+			StatusCode: http.StatusBadRequest,
+			Err:        fmt.Errorf("invalid type parameter"),
+		}
+		return formatErrorResp(ctx, &err)
+	}
+
+	// Save the input deviceType to originDeviceType and change the deviceType to match service.txt
+	originDeviceType := deviceType
+	if deviceType == "blade" {
+		deviceType = "cma"
+	}
+
+	conn, err := dbus.SystemBus()
+	if err != nil {
+		return formatErrorResp(ctx, &common.RequestError{
+			StatusCode: http.StatusInternalServerError,
+			Err:        fmt.Errorf("cannot get system bus: %v", err),
+		})
+	}
+
+	server, err := avahi.ServerNew(conn)
+	if err != nil {
+		return formatErrorResp(ctx, &common.RequestError{
+			StatusCode: http.StatusInternalServerError,
+			Err:        fmt.Errorf("avahi new failed: %v", err),
+		})
+	}
+
+	// Specify avahi.ProtoInet for IPv4
+	sb, err := server.ServiceBrowserNew(avahi.InterfaceUnspec, avahi.ProtoInet, "_obmc_redfish._tcp", "local", 0)
+	if err != nil {
+		return formatErrorResp(ctx, &common.RequestError{
+			StatusCode: http.StatusInternalServerError,
+			Err:        fmt.Errorf("service browser new failed: %v", err),
+		})
+	}
+
+	var devices []*openapi.DiscoveredDevice
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Channel to signal when no new services are found
+	noNewServices := make(chan struct{})
+
+	go func() {
+		for {
+			select {
+			case <-time.After(500 * time.Millisecond):
+				close(noNewServices)
+				return
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	for {
+		select {
+		case service := <-sb.AddChannel:
+			log.Println("ServiceBrowser ADD: ", service)
+
+			resolvedService, err := server.ResolveService(service.Interface, service.Protocol, service.Name,
+				service.Type, service.Domain, avahi.ProtoInet, 0)
+			if err == nil {
+				// filter the servers by deviceType
+				if strings.Contains(string(resolvedService.Txt[0]), deviceType) {
+					currentDevice := &openapi.DiscoveredDevice{
+						Name:    resolvedService.Host,
+						Address: resolvedService.Address,
+						Port:    int32(resolvedService.Port),
+						Type:    originDeviceType,
+					}
+					devices = append(devices, currentDevice)
+				}
+
+			} else {
+				log.Printf("Failed to resolve service: %v", err)
+			}
+
+		case service := <-sb.RemoveChannel:
+			log.Println("ServiceBrowser REMOVE: ", service)
+
+		case <-noNewServices:
+			log.Println("No new services found, stopping discovery")
+			cancel()
+
+		case <-ctx.Done():
+			return openapi.Response(http.StatusOK, devices), nil
+		}
+	}
 }
