@@ -1803,7 +1803,7 @@ components:
         id:
           $ref: "#/components/schemas/id"
     bladesMemoryResourceStatusCollection:
-      description: Collection for blade port status updates
+      description: Collection for blade memory resource block status updates
       type: object
       required: [statusCount, resourceStatuses]
       properties:
@@ -1829,7 +1829,7 @@ components:
         compositionStatus:
           $ref: '#/components/schemas/memoryResourceBlockCompositionStatus'
     bladesStatusCollection:
-      description: Collection for blade port status updates
+      description: Collection for blade status updates
       type: object
       required: [statusCount, bladeStatus]
       properties:
