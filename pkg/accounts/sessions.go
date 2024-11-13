@@ -38,36 +38,43 @@ var sessions map[string]*SessionInformation
 func init() {
 	sessions = make(map[string]*SessionInformation)
 }
+var (
+	ErrInvalidCredentials = errors.New("invalid user credentials")
+	ErrGenerateSessionId  = errors.New("session id creation failure")
+)
 
 // CreateSession: create a new session and return it's information
-func CreateSession(ctx context.Context, username, password string) *SessionInformation {
+func CreateSession(ctx context.Context, username, password string) (*SessionInformation, error) {
 	logger := klog.FromContext(ctx)
 
 	var session *SessionInformation
 
 	// Validate user credentials
 	valid, err := AccountsHandler().ValidAccount(username, password)
-	if valid && err == nil {
-		// Example uuid: ee0328d9-258a-4e81-976e-b75aa4a2d8f5
-		token := uuid.New().String()
-		token = strings.ReplaceAll(token, "-", "")
-
-		// Generate a new session id
-		id, err := GenerateSessionId()
-		if err != nil || len(id) == 0 {
-			logger.V(1).Error(err, "failure: create session", "username", username)
-			return nil
-		}
-
-		// Store the session information using the session id
-		created := time.Now()
-		session := &SessionInformation{Id: id, Token: token, Created: created, Updated: created, Username: username, Timeout: defaultSessionSeconds}
-		sessions[id] = session
+	if !valid || err != nil {
+		logger.V(1).Error(err, "failure: create session", "username", username)
+		return nil, ErrInvalidCredentials
 	}
+
+	// Example uuid: ee0328d9-258a-4e81-976e-b75aa4a2d8f5
+	token := uuid.New().String()
+	token = strings.ReplaceAll(token, "-", "")
+
+	// Generate a new session id
+	id, err := GenerateSessionId()
+	if err != nil {
+		logger.V(1).Error(err, "failure: generate session id", "username", username)
+		return nil, ErrGenerateSessionId
+	}
+
+	// Store the session information using the session id
+	created := time.Now()
+	session = &SessionInformation{Id: id, Token: token, Created: created, Updated: created, Username: username, Timeout: defaultSessionSeconds}
+	sessions[id] = session
 
 	logger.V(1).Info("success: created session:", "session", session)
 
-	return session
+	return session, nil
 }
 
 // GetSessions: retrieve the map of all sessions
@@ -180,7 +187,7 @@ func generateUniqueKey(r *rand.Rand, length int, existingMap map[string]interfac
 			return key, nil
 		}
 	}
-	return "", errors.New("failed to generate a unique key after maximum attempts")
+	return "", fmt.Errorf("failed to generate a unique key after maximum attempts")
 }
 
 // GenerateSessionId - Generates a new session id, consisting of 10 random alpha-numeric chars
