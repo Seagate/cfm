@@ -1796,7 +1796,8 @@ components:
           type: integer
         type:
           type: string
-          enum: [blade, cxl-host]    bladesMemoryStatusCollection:
+          enum: [blade, cxl-host]
+    bladesMemoryStatusCollection:
       description: Collection for blade memory status updates
       type: object
       required: [statusCount, memoryStatuses]
