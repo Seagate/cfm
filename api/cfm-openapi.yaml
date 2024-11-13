@@ -49,6 +49,28 @@ paths:
               schema:
                 $ref: "#/components/schemas/serviceInformation"
 
+  /cfm/v1/discover:
+    get:
+      description: Discover devices on the network.
+      operationId: discoverDevices
+      parameters:
+        - $ref: "#/components/parameters/deviceType"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/discoveredDevice'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+
   # Memory Appliances
   /cfm/v1/appliances:
     get:
@@ -1340,6 +1362,14 @@ components:
       required: true
       schema:
         $ref: "#/components/schemas/id"
+    deviceType:
+      description: Filter devices by type (either 'blade' or 'cxl-host')
+      name: deviceType
+      in: query
+      required: true
+      schema:
+        type: string
+        enum: [blade, cxl-host]
 
   schemas:
     collection:
@@ -1755,7 +1785,18 @@ components:
         description:
           type: string
           description: The description of service(s) offered by the URI
-    bladesMemoryStatusCollection:
+    discoveredDevice:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        port:
+          type: integer
+        type:
+          type: string
+          enum: [blade, cxl-host]    bladesMemoryStatusCollection:
       description: Collection for blade memory status updates
       type: object
       required: [statusCount, memoryStatuses]
