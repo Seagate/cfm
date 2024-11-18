@@ -148,6 +148,22 @@ func (a *Appliance) AddBlade(ctx context.Context, c *openapi.Credentials) (*Blad
 
 		newErr := fmt.Errorf("appliance [%s] new blade object creation failure: %w", a.Id, err)
 		logger.Error(newErr, "failure: add blade")
+
+		// Continue adding the failed blade to the datastore, but update the connection status to unavailable
+		applianceDatum, _ := datastore.DStore().GetDataStore().GetApplianceDatumById(a.Id)
+		applianceDatum.AddBladeDatum(c)
+		OfflineBlade, _ := applianceDatum.GetBladeDatumById(ctx, c.CustomId)
+		OfflineBlade.ConnectionStatus = common.UNAVAILABLE
+		datastore.DStore().Store()
+		
+		var newBlade = &Blade{
+			Id:          OfflineBlade.Credentials.CustomId,
+			Uri:         GetCfmUriBladeId(a.Id, OfflineBlade.Credentials.CustomId),
+			Status:      OfflineBlade.ConnectionStatus,
+			ApplianceId: a.Id,
+		}
+		a.Blades[newBlade.Id] = newBlade
+
 		return nil, &common.RequestError{StatusCode: common.StatusManagerInitializationFailure, Err: newErr}
 	}
 

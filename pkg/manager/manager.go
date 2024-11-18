@@ -331,6 +331,13 @@ func AddHost(ctx context.Context, c *openapi.Credentials) (*Host, error) {
 
 		newErr := fmt.Errorf("new host object creation failure: %w", err)
 		logger.Error(newErr, "failure: add host")
+
+		// Continue adding the failed host to the datastore, but update the connection status to offline
+		datastore.DStore().GetDataStore().AddHostDatum(c)
+		offlineHost, _ := datastore.DStore().GetDataStore().GetHostDatumById(c.CustomId)
+		offlineHost.ConnectionStatus = common.UNAVAILABLE
+		datastore.DStore().Store()
+
 		return nil, &common.RequestError{StatusCode: common.StatusManagerInitializationFailure, Err: newErr}
 	}
 
