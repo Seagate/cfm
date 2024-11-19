@@ -1122,10 +1122,10 @@ func (service *httpfishService) GetMemoryResourceBlocks(ctx context.Context, set
 	return &MemoryResourceBlocksResponse{MemoryResources: memoryResources, Status: "Success"}, nil
 }
 
-// GetMemoryResourceBlocks: Request Memory Resource Block information from the backends
-// For backward compatibility, in the response:
+// GetMemoryResourceBlockStatuses: Request Memory Resource Block statuses from the backends
+// For BMC backward compatibility, in the response:
 //
-//	If CompositionStatuses == nil ==> BMC code does NOT return statuses
+//	If CompositionStatuses == nil ==> BMC code does NOT return statuses  <--deprecated in BMC firmware
 //	If CompositionStatuses != nil ==> BMC code DOES return statuses
 func (service *httpfishService) GetMemoryResourceBlockStatuses(ctx context.Context, settings *ConfigurationSettings, req *MemoryResourceBlockStatusesRequest) (*MemoryResourceBlockStatusesResponse, error) {
 	logger := klog.FromContext(ctx)
