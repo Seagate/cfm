@@ -694,9 +694,13 @@ func (s *CxlHostApiService) RedfishV1SessionServiceSessionsPost(ctx context.Cont
 	}
 
 	// Create the session
-	session := accounts.CreateSession(ctx, *sessionV171Session.UserName, *sessionV171Session.Password)
-	if session == nil {
-		return redfishapi.Response(http.StatusUnauthorized, nil), errors.New("Invalid user credentials")
+	session, err := accounts.CreateSession(ctx, *sessionV171Session.UserName, *sessionV171Session.Password)
+	if err != nil {
+		if errors.Is(err, accounts.ErrInvalidCredentials) {
+			return redfishapi.Response(http.StatusUnauthorized, nil), err
+		} else if errors.Is(err, accounts.ErrGenerateSessionId) {
+			return redfishapi.Response(http.StatusInternalServerError, nil), err
+		}
 	}
 
 	resource := FillInSessionResource(session.Id, session, true)

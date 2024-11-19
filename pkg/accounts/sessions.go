@@ -4,9 +4,9 @@ package accounts
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"math"
-	"strconv"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -16,11 +16,7 @@ import (
 
 const (
 	defaultSessionSeconds float64 = 60 * 30.0
-	maxSessionId          int     = math.MaxInt
 )
-
-// Track the last session id used, increment until a max is reached, then reset to 1
-var activeSessionId int = 0
 
 type SessionInformation struct {
 	Id       string
@@ -38,42 +34,43 @@ func init() {
 	sessions = make(map[string]*SessionInformation)
 }
 
+var (
+	ErrInvalidCredentials = errors.New("invalid user credentials")
+	ErrGenerateSessionId  = errors.New("session id creation failure")
+)
+
 // CreateSession: create a new session and return it's information
-func CreateSession(ctx context.Context, username, password string) *SessionInformation {
+func CreateSession(ctx context.Context, username, password string) (*SessionInformation, error) {
+	logger := klog.FromContext(ctx)
 
 	var session *SessionInformation
 
 	// Validate user credentials
 	valid, err := AccountsHandler().ValidAccount(username, password)
-	if valid && err == nil {
-		session = CreateSessionToken(ctx, username)
+	if !valid || err != nil {
+		logger.V(1).Error(err, "failure: create session", "username", username)
+		return nil, ErrInvalidCredentials
 	}
-
-	return session
-}
-
-// CreateSessionToken: create a token and add it to the map, return a new session id
-func CreateSessionToken(ctx context.Context, user string) *SessionInformation {
-	logger := klog.FromContext(ctx)
 
 	// Example uuid: ee0328d9-258a-4e81-976e-b75aa4a2d8f5
 	token := uuid.New().String()
 	token = strings.ReplaceAll(token, "-", "")
 
-	// Determine the next session id to use
-	activeSessionId += 1
-	if activeSessionId > maxSessionId {
-		logger.V(1).Info("session id was reset", "maxSessionId", maxSessionId)
-		activeSessionId = 1
+	// Generate a new session id
+	id, err := GenerateSessionId()
+	if err != nil {
+		logger.V(1).Error(err, "failure: generate session id", "username", username)
+		return nil, ErrGenerateSessionId
 	}
-	id := strconv.Itoa(activeSessionId)
 
-	// Store the session information using the session id (an integer from 1..max)
+	// Store the session information using the session id
 	created := time.Now()
-	session := &SessionInformation{Id: id, Token: token, Created: created, Updated: created, Username: user, Timeout: defaultSessionSeconds}
+	session = &SessionInformation{Id: id, Token: token, Created: created, Updated: created, Username: username, Timeout: defaultSessionSeconds}
 	sessions[id] = session
 
-	return session
+	logger.V(1).Info("success: created session:", "session", session)
+
+	return session, nil
 }
 
 // GetSessions: retrieve the map of all sessions
@@ -164,4 +161,49 @@ func DeleteSession(ctx context.Context, id string) *SessionInformation {
 		delete(sessions, id)
 		return info
 	}
+}
+
+const randomCharset = "abcdefghijklmnopqrstuvwxyz" +
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+	"0123456789"
+
+func randomString(r *rand.Rand, length int) string {
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = randomCharset[r.Intn(len(randomCharset))]
+	}
+	return string(b)
+}
+
+// generateUniqueKey - Generic function for generating a unique key for an existing map
+func generateUniqueKey(r *rand.Rand, length int, existingMap map[string]interface{}, maxAttempts int) (string, error) {
+	for attempts := 0; attempts < maxAttempts; attempts++ {
+		key := randomString(r, length)
+		if _, exists := existingMap[key]; !exists {
+			return key, nil
+		}
+	}
+	return "", fmt.Errorf("failed to generate a unique key after maximum attempts")
+}
+
+// GenerateSessionId - Generates a new session id, consisting of 10 random alpha-numeric chars
+func GenerateSessionId() (string, error) {
+	seed := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(seed)
+	maxAttempts := 100
+	keyLength := 10
+
+	// Convert sessions map to map[string]interface{}
+	interfaceMap := make(map[string]interface{})
+	for k, v := range sessions {
+		interfaceMap[k] = v
+	}
+
+	// Example of generating and storing unique keys
+	id, err := generateUniqueKey(r, keyLength, interfaceMap, maxAttempts)
+	if err != nil {
+		return "", fmt.Errorf("failure: session id generation: %s", err)
+	}
+
+	return id, nil
 }
