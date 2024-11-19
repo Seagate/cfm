@@ -15,6 +15,7 @@ import (
 	"cfm/pkg/common/datastore"
 	"cfm/pkg/openapi"
 
+	"github.com/facette/natsort"
 	"k8s.io/klog/v2"
 )
 
@@ -421,7 +422,7 @@ func (b *Blade) GetMemoryById(ctx context.Context, memoryId string) (*BladeMemor
 	logger.V(4).Info(">>>>>> GetMemoryById: ", "memoryId", memoryId, "bladeId", b.Id, "applianceId", b.ApplianceId)
 
 	if !b.IsOnline(ctx) {
-		// If blade offline, not an error.  Just no information to return.
+		// If blade not online, not an error.  Just no information to return.
 		return nil, nil
 	}
 
@@ -442,7 +443,7 @@ func (b *Blade) GetMemory(ctx context.Context) map[string]*BladeMemory {
 	logger.V(4).Info(">>>>>> GetMemory: ", "bladeId", b.Id, "applianceId", b.ApplianceId)
 
 	if !b.IsOnline(ctx) {
-		// If blade offline, not an error.  Just no information to return.
+		// If blade not online, not an error.  Just no information to return.
 		return make(map[string]*BladeMemory)
 	}
 
@@ -459,7 +460,7 @@ func (b *Blade) GetMemoryBackend(ctx context.Context) ([]string, error) {
 	logger.V(4).Info(">>>>>> GetMemoryBackend: ", "bladeId", b.Id, "applianceId", b.ApplianceId)
 
 	if !b.IsOnline(ctx) {
-		// If blade offline, not an error.  Just no information to return.
+		// If blade not online, not an error.  Just no information to return.
 		return make([]string, 0), nil
 	}
 
@@ -489,7 +490,7 @@ func (b *Blade) GetPortById(ctx context.Context, portId string) (*CxlBladePort, 
 	logger.V(4).Info(">>>>>> GetPortById: ", "portId", portId, "bladeId", b.Id, "applianceId", b.ApplianceId)
 
 	if !b.IsOnline(ctx) {
-		// If blade offline, not an error.  Just no information to return.
+		// If blade not online, not an error.  Just no information to return.
 		return nil, nil
 	}
 
@@ -510,7 +511,7 @@ func (b *Blade) GetPorts(ctx context.Context) map[string]*CxlBladePort {
 	logger.V(4).Info(">>>>>> GetPorts: ", "bladeId", b.Id, "applianceId", b.ApplianceId)
 
 	if !b.IsOnline(ctx) {
-		// If blade offline, not an error.  Just no information to return.
+		// If blade not online, not an error.  Just no information to return.
 		return make(map[string]*CxlBladePort)
 	}
 
@@ -527,7 +528,7 @@ func (b *Blade) GetPortsBackend(ctx context.Context) ([]string, error) {
 	logger.V(4).Info(">>>>>> GetPortsBackend: ", "bladeId", b.Id, "applianceId", b.ApplianceId)
 
 	if !b.IsOnline(ctx) {
-		// If blade offline, not an error.  Just no information to return.
+		// If blade not online, not an error.  Just no information to return.
 		return make([]string, 0), nil
 	}
 
@@ -549,7 +550,7 @@ func (b *Blade) GetResourceById(ctx context.Context, resourceId string) (*BladeR
 	logger.V(4).Info(">>>>>> GetResourceById: ", "resourceId", resourceId, "bladeId", b.Id, "applianceId", b.ApplianceId)
 
 	if !b.IsOnline(ctx) {
-		// If blade offline, not an error.  Just no information to return.
+		// If blade not online, not an error.  Just no information to return.
 		return nil, nil
 	}
 
@@ -570,7 +571,7 @@ func (b *Blade) GetResources(ctx context.Context) map[string]*BladeResource {
 	logger.V(4).Info(">>>>>> GetResources: ", "bladeId", b.Id, "applianceId", b.ApplianceId)
 
 	if !b.IsOnline(ctx) {
-		// If blade offline, not an error.  Just no information to return.
+		// If blade not online, not an error.  Just no information to return.
 		return make(map[string]*BladeResource)
 	}
 
@@ -587,7 +588,7 @@ func (b *Blade) GetResourcesBackend(ctx context.Context) ([]string, error) {
 	logger.V(4).Info(">>>>>> GetResourcesBackend: ", "bladeId", b.Id, "applianceId", b.ApplianceId)
 
 	if !b.IsOnline(ctx) {
-		// If blade offline, not an error.  Just no information to return.
+		// If blade not online, not an error.  Just no information to return.
 		return make([]string, 0), nil
 	}
 
@@ -602,6 +603,73 @@ func (b *Blade) GetResourcesBackend(ctx context.Context) ([]string, error) {
 	logger.V(2).Info("success: get resources(backend)", "resourceIds", response.MemoryResources, "bladeId", b.Id, "applianceId", b.ApplianceId)
 
 	return response.MemoryResources, nil
+}
+
+// GetResourceStatusesBackend - Returns collection of resources statuses
+// Note that an empty collection indicates that consolidated status information is NOT avaiable and each resource must be interrogated directly.
+func (b *Blade) GetResourceStatusesBackend(ctx context.Context) (*openapi.BladesMemoryResourceStatusCollection, error) {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info(">>>>>> GetResourceStatusesBackend: ", "bladeId", b.Id, "applianceId", b.ApplianceId)
+
+	collection := &openapi.BladesMemoryResourceStatusCollection{
+		StatusCount:      0,
+		ResourceStatuses: make([]openapi.BladesResourceStatus, 0),
+	}
+
+	if !b.IsOnline(ctx) {
+		// If blade not online, not an error.  Just no information to return.
+		return collection, nil
+	}
+
+	req := backend.MemoryResourceBlockStatusesRequest{}
+	response, err := b.backendOps.GetMemoryResourceBlockStatuses(ctx, &backend.ConfigurationSettings{}, &req)
+	if err != nil || response == nil {
+		newErr := fmt.Errorf("get resource statuses (backend) [%s] failure on blade [%s]: %w", b.backendOps.GetBackendInfo(ctx).BackendName, b.Id, err)
+		logger.Error(newErr, "failure: get resource statuses(backend)")
+		return nil, &common.RequestError{StatusCode: common.StatusBladeGetMemoryResourceBlocksFailure, Err: newErr}
+	}
+
+	if response.CompositionStatuses != nil {
+
+		// Update blade map
+		for resourceId, status := range response.CompositionStatuses {
+			resource, ok := b.Resources[resourceId]
+			if !ok {
+				logger.V(2).Info("warning: get resource statuses(backend): unrecognized resourceId detected", "resourceId", resourceId)
+				continue
+			}
+
+			resource.UpdateDetails(&status)
+		}
+
+		// build openapi collection
+		collection = &openapi.BladesMemoryResourceStatusCollection{
+			StatusCount:      0,
+			ResourceStatuses: make([]openapi.BladesResourceStatus, 0, len(b.Resources)),
+		}
+
+		resourceIds := b.GetAllResourceIds(ctx)
+		natsort.Sort(resourceIds)
+
+		for _, resourceId := range resourceIds {
+			resource := b.Resources[resourceId]
+
+			resourceStatus := openapi.BladesResourceStatus{
+				Uri: GetCfmUriBladeResourceId(b.ApplianceId, b.Id, resource.Id),
+				Id:  resource.Id,
+				CompositionStatus: openapi.MemoryResourceBlockCompositionStatus{
+					CompositionState: resource.GetCompositionState(),
+				},
+			}
+
+			collection.StatusCount += 1
+			collection.ResourceStatuses = append(collection.ResourceStatuses, resourceStatus)
+		}
+	}
+
+	logger.V(2).Info("success: get resource statuses(backend)", "resource count", collection.StatusCount, "bladeId", b.Id, "applianceId", b.ApplianceId)
+
+	return collection, nil
 }
 
 func (b *Blade) GetResourceTotals(ctx context.Context) (*ResponseResourceTotals, error) {

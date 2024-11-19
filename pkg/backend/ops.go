@@ -78,14 +78,6 @@ type UnassignMemoryResponse struct {
 	Status string // The status of the request
 }
 
-type MemoryResourceBlocksRequest struct {
-}
-
-type MemoryResourceBlocksResponse struct {
-	MemoryResources []string // Array to hold ids of memory resources, get from memory appliance
-	Status          string   // The status of the request
-}
-
 type GetPortsRequest struct {
 }
 
@@ -154,10 +146,6 @@ type GetMemoryDeviceDetailsResponse struct {
 	Status        string                  // The status of the request
 }
 
-type MemoryResourceBlockByIdRequest struct {
-	ResourceId string // Resource ID for a particular memory resource, for example, resource01
-}
-
 type ResourceState int32
 
 const (
@@ -193,8 +181,8 @@ type MemoryResourceBlockCompositionStatus struct {
 type MemoryResourceBlock struct {
 	Id                 string // The id of this resource
 	CompositionStatus  MemoryResourceBlockCompositionStatus
-	CapacityMiB        int32  // The number of compositions in which this resource block is currently participating
-	DataWidthBits      int32  // The number of compositions in which this resource block is currently participating
+	CapacityMiB        int32  // Memory capacity of this resource block
+	DataWidthBits      int32  //
 	MemoryType         string // The type of memory device
 	MemoryDeviceType   string // Type details of the memory device
 	Manufacturer       string // The memory device manufacturer
@@ -204,6 +192,26 @@ type MemoryResourceBlock struct {
 	RankCount          int32  // Number of ranks available in the memory device
 	ChannelId          int32  // The id of the hardware channel associated with this resource
 	ChannelResourceIdx int32  // The index for this single resource within the given channel (designated by "ChannelId")
+}
+
+type MemoryResourceBlocksRequest struct {
+}
+
+type MemoryResourceBlocksResponse struct {
+	MemoryResources []string // Array to hold ids of memory resources, get from memory appliance
+	Status          string   // The status of the request
+}
+
+type MemoryResourceBlockStatusesRequest struct {
+}
+
+type MemoryResourceBlockStatusesResponse struct {
+	CompositionStatuses map[string]MemoryResourceBlockCompositionStatus // Array to memory resource block composition statuses
+	Status              string                                          // The status of the request
+}
+
+type MemoryResourceBlockByIdRequest struct {
+	ResourceId string // Resource ID for a particular memory resource, for example, resource01
 }
 
 type MemoryResourceBlockByIdResponse struct {

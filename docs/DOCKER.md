@@ -36,7 +36,7 @@ docker logs --follow <container-name>
 docker restart <container-name>
 ```
 
-## Excute CLI tool
+## Execute CLI tool
 
 The user can interact with the running cfm docker container (running cfm-service) to utilize the cli tool.
 

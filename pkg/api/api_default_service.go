@@ -12,6 +12,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -506,6 +507,23 @@ func (cfm *CfmApiService) BladesGetById(ctx context.Context, applianceId string,
 	return openapi.Response(http.StatusOK, b), nil
 }
 
+// BladesGetMemoryStatus - Get blades memory chunk status
+func (cfm *CfmApiService) BladesGetMemoryStatus(ctx context.Context, applianceId string, bladeId string) (openapi.ImplResponse, error) {
+	// TODO - update BladesGetMemoryStatus with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, []BladesMemoryStatus{}) or use other options such as http.Ok ...
+	// return Response(200, []BladesMemoryStatus{}), nil
+
+	// TODO: Uncomment the next line to return response Response(404, StatusMessage{}) or use other options such as http.Ok ...
+	// return Response(404, StatusMessage{}), nil
+
+	// TODO: Uncomment the next line to return response Response(500, StatusMessage{}) or use other options such as http.Ok ...
+	// return Response(500, StatusMessage{}), nil
+
+	return openapi.Response(http.StatusNotImplemented, nil), errors.New("BladesGetMemoryStatus method not implemented")
+}
+
 // BladesGetMemory -
 func (cfm *CfmApiService) BladesGetMemory(ctx context.Context, applianceId string, bladeId string) (openapi.ImplResponse, error) {
 	mu.Lock()
@@ -612,6 +630,23 @@ func (cfm *CfmApiService) BladesGetPortById(ctx context.Context, applianceId str
 	} else {
 		return openapi.Response(http.StatusOK, openapi.PortInformation{}), nil
 	}
+}
+
+// BladesGetPortStatus - Get blades port status
+func (cfm *CfmApiService) BladesGetPortStatus(ctx context.Context, applianceId string, bladeId string) (openapi.ImplResponse, error) {
+	// TODO - update BladesGetPortStatus with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, []BladesPortStatus{}) or use other options such as http.Ok ...
+	// return Response(200, []BladesPortStatus{}), nil
+
+	// TODO: Uncomment the next line to return response Response(404, StatusMessage{}) or use other options such as http.Ok ...
+	// return Response(404, StatusMessage{}), nil
+
+	// TODO: Uncomment the next line to return response Response(500, StatusMessage{}) or use other options such as http.Ok ...
+	// return Response(500, StatusMessage{}), nil
+
+	return openapi.Response(http.StatusNotImplemented, nil), errors.New("BladesGetPortStatus method not implemented")
 }
 
 // BladesGetPorts -
@@ -750,6 +785,32 @@ func (cfm *CfmApiService) BladesGetResourceById(ctx context.Context, applianceId
 	}
 }
 
+// BladesGetResourceStatus - Get blades memory resource status
+func (cfm *CfmApiService) BladesGetResourceStatus(ctx context.Context, applianceId string, bladeId string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### BladesGetResourceStatus: ", "applianceId", applianceId, "bladeId", bladeId)
+
+	appliance, err := manager.GetApplianceById(ctx, applianceId)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	blade, err := appliance.GetBladeById(ctx, bladeId)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	collection, err := blade.GetResourceStatusesBackend(ctx)
+	if err != nil {
+		return formatErrorResp(ctx, err.(*common.RequestError))
+	}
+
+	return openapi.Response(http.StatusOK, collection), nil
+}
+
 // BladesGetResources -
 func (cfm *CfmApiService) BladesGetResources(ctx context.Context, applianceId string, bladeId string) (openapi.ImplResponse, error) {
 	mu.Lock()
@@ -784,6 +845,23 @@ func (cfm *CfmApiService) BladesGetResources(ctx context.Context, applianceId st
 	}
 
 	return openapi.Response(http.StatusOK, response), nil
+}
+
+// BladesGetStatus - Get blade status
+func (cfm *CfmApiService) BladesGetStatus(ctx context.Context, applianceId string, bladeId string) (openapi.ImplResponse, error) {
+	// TODO - update BladesGetStatus with the required logic for this service method.
+	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+
+	// TODO: Uncomment the next line to return response Response(200, BladesStatus{}) or use other options such as http.Ok ...
+	// return Response(200, BladesStatus{}), nil
+
+	// TODO: Uncomment the next line to return response Response(404, StatusMessage{}) or use other options such as http.Ok ...
+	// return Response(404, StatusMessage{}), nil
+
+	// TODO: Uncomment the next line to return response Response(500, StatusMessage{}) or use other options such as http.Ok ...
+	// return Response(500, StatusMessage{}), nil
+
+	return openapi.Response(http.StatusNotImplemented, nil), errors.New("BladesGetStatus method not implemented")
 }
 
 // BladesPost -

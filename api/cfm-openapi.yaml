@@ -8,7 +8,7 @@ info:
   license:
     name: Apache-2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
-  version: 1.6.8
+  version: 1.7.0
 
 servers:
 - url: http://localhost:8080/
@@ -409,6 +409,128 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/statusMessage'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
+  # Single Blade Status
+  /cfm/v1/appliances/{applianceId}/blades/{bladeId}/status:
+    get:
+      summary: Get blade status
+      description: Retrieve the hardware status of a specific blade, including memory, ports and resources.
+      operationId: bladesGetStatus
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      - $ref: "#/components/parameters/bladeId"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bladesStatusCollection'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
+  # Single Blade Memory Chunk Status
+  /cfm/v1/appliances/{applianceId}/blades/{bladeId}/statusmemory:
+    get:
+      summary: Get blades memory chunk status
+      description: Retrieve the status of memory on a specific blade.
+      operationId: bladesGetMemoryStatus
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      - $ref: "#/components/parameters/bladeId"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/bladesMemoryStatus'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
+  # Single Blade Port Status
+  /cfm/v1/appliances/{applianceId}/blades/{bladeId}/statusports:
+    get:
+      summary: Get blades port status
+      description: Retrieve the status of ports on a specific blade.
+      operationId: bladesGetPortStatus
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      - $ref: "#/components/parameters/bladeId"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/bladesPortStatus'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/statusMessage'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statusMessage"
+
+  # Single Blade Memory Resource Status
+  /cfm/v1/appliances/{applianceId}/blades/{bladeId}/statusresources:
+    get:
+      summary: Get blades memory resource status
+      description: Retrieve the status of resources on a specific blade.
+      operationId: bladesGetResourceStatus
+      parameters:
+      - $ref: "#/components/parameters/applianceId"
+      - $ref: "#/components/parameters/bladeId"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/bladesResourceStatus'
         "404":
           description: Not Found
           content:
@@ -1455,26 +1577,29 @@ components:
           $ref: "#/components/schemas/mebibytes"
         remoteMemoryMiB:
           $ref: "#/components/schemas/mebibytes"
+    memoryResourceBlockCompositionStatus:
+      description: Composition status information for the memory resource block
+      type: object
+      required: [compositionState]
+      properties:
+        compositionState:
+          type: string
+          description: The current state of the resource block from a composition perspective
+        maxCompositions:
+          type: integer
+          description: The maximum number of compositions in which this resource block can participate simultaneously
+        numberOfCompositions:
+          type: integer
+          description: The number of compositions in which this resource block is currently participating
     memoryResourceBlock:
       type: object
-      required: [id,compositionStatus,channelId,channelResourceIndex]
+      required: [id, compositionStatus, channelId, channelResourceIndex]
       properties:
         id:
           type: string
           description: The id of this resource
         compositionStatus:
-          type: object
-          required: [compositionState]
-          properties:
-            compositionState:
-              type: string
-              description: The current state of the resource block from a composition perspective
-            maxCompositions:
-              type: integer
-              description: The maximum number of compositions in which this resource block can participate simultaneously
-            numberOfCompositions:
-              type: integer
-              description: The number of compositions in which this resource block is currently participating
+          $ref: '#/components/schemas/memoryResourceBlockCompositionStatus'
         capacityMiB:
           type: integer
           description: The number of compositions in which this resource block is currently participating
@@ -1672,3 +1797,106 @@ components:
         type:
           type: string
           enum: [blade, cxl-host]
+    bladesMemoryStatusCollection:
+      description: Collection for blade memory status updates
+      type: object
+      required: [statusCount, memoryStatuses]
+      properties:
+        statusCount:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        memoryStatuses:
+          type: array
+          minItems: 0
+          maxItems: 10000
+          items:
+            $ref: "#/components/schemas/bladesMemoryStatus"
+    bladesMemoryStatus:
+      type: object
+      description: Status of a single memory chunk
+      required: [uri, id]
+      properties:
+        uri:
+          $ref: "#/components/schemas/uri"
+        id:
+          $ref: "#/components/schemas/id"
+    bladesPortStatusCollection:
+      description: Collection for blade port status updates
+      type: object
+      required: [statusCount, portStatuses]
+      properties:
+        statusCount:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        portStatuses:
+          type: array
+          minItems: 0
+          maxItems: 10000
+          items:
+            $ref: "#/components/schemas/bladesPortStatus"
+    bladesPortStatus:
+      type: object
+      description: Status of a single port
+      properties:
+        uri:
+          $ref: "#/components/schemas/uri"
+        id:
+          $ref: "#/components/schemas/id"
+    bladesMemoryResourceStatusCollection:
+      description: Collection for blade memory resource block status updates
+      type: object
+      required: [statusCount, resourceStatuses]
+      properties:
+        statusCount:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        resourceStatuses:
+          type: array
+          minItems: 0
+          maxItems: 10000
+          items:
+            $ref: "#/components/schemas/bladesResourceStatus"
+    bladesResourceStatus:
+      type: object
+      description: Status of a single memory resource block
+      required: [uri, id, compositionStatus]
+      properties:
+        uri:
+          $ref: "#/components/schemas/uri"
+        id:
+          $ref: "#/components/schemas/id"
+        compositionStatus:
+          $ref: '#/components/schemas/memoryResourceBlockCompositionStatus'
+    bladesStatusCollection:
+      description: Collection for blade status updates
+      type: object
+      required: [statusCount, bladeStatus]
+      properties:
+        statusCount:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        bladeStatus:
+          type: array
+          minItems: 0
+          maxItems: 10000
+          items:
+            $ref: "#/components/schemas/bladeStatus"
+    bladeStatus:
+      type: object
+      description: Status of a single blade
+      required: [uri, id, memoryStatus, portStatus, resourceStatus]
+      properties:
+        uri:
+          $ref: "#/components/schemas/uri"
+        id:
+          $ref: "#/components/schemas/id"
+        memoryStatus:
+          $ref: '#/components/schemas/bladesMemoryStatusCollection'
+        portStatus:
+          $ref: '#/components/schemas/bladesPortStatusCollection'
+        resourceStatus:
+          $ref: '#/components/schemas/bladesMemoryResourceStatusCollection'
