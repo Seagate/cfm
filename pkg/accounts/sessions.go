@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"math/rand"
 	"strings"
 	"time"
@@ -17,11 +16,7 @@ import (
 
 const (
 	defaultSessionSeconds float64 = 60 * 30.0
-	maxSessionId          int     = math.MaxInt
 )
-
-// Track the last session id used, increment until a max is reached, then reset to 1
-var activeSessionId int = 0
 
 type SessionInformation struct {
 	Id       string
@@ -38,6 +33,7 @@ var sessions map[string]*SessionInformation
 func init() {
 	sessions = make(map[string]*SessionInformation)
 }
+
 var (
 	ErrInvalidCredentials = errors.New("invalid user credentials")
 	ErrGenerateSessionId  = errors.New("session id creation failure")
