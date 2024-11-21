@@ -3,28 +3,65 @@
 package serviceWrap
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/netip"
+	"os"
 	"strings"
+	"time"
 
+	"cfm/cli/pkg/serviceLib/flags"
 	service "cfm/pkg/client"
 
 	"github.com/google/uuid"
 	"k8s.io/klog/v2"
 )
 
-func GetServiceClient(ip string, networkPort uint16) *service.APIClient {
+const (
+	SEAGATE_CFM_SERVICE_CRT_FILEPATH = "/usr/local/share/ca-certificates/github_com_seagate_cfm-self-signed.crt"
+)
+
+func GetServiceClient(ip string, networkPort uint16, insecure bool, protocol string) *service.APIClient {
 	// Instantiate new configuration using openapi funciton.
 	config := service.NewConfiguration()
 
-	// Create, then pass, string for IP Address and Network port like "127.0.0.1:8080"
+	// Setup config basics
 	config.Host = fmt.Sprintf("%s:%d", ip, networkPort)
+	config.Scheme = protocol
+
 	//TODO: Add this back in??  Check to see where this goes and if the service code is using it
 	// // Pass debug value.
 	// config.Debug = debug
+
+	if protocol == flags.PROTOCOL_HTTPS {
+		caCertPool := x509.NewCertPool()
+
+		if !insecure {
+			// Load the cfm-service self-signed certificate
+			caCert, err := os.ReadFile(SEAGATE_CFM_SERVICE_CRT_FILEPATH)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			caCertPool.AppendCertsFromPEM(caCert)
+		}
+
+		// Create a custom HTTP client with the certificate pool
+		config.HTTPClient = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					RootCAs:            caCertPool,
+					InsecureSkipVerify: insecure,
+				},
+			},
+			Timeout: 30 * time.Second,
+		}
+	}
 
 	// This creates an API client, passing it the above configuration, and gathers a pointer to it.
 	serviceClient := service.NewAPIClient(config)

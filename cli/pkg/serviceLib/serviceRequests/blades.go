@@ -39,7 +39,7 @@ func (r *ServiceRequestAddBlade) Execute() (*service.Blade, error) {
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "BladeCred", fmt.Sprintf("%+v", *r.BladeCred))
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "BladeTcp", fmt.Sprintf("%+v", *r.BladeTcp))
 
-	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort())
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
 	insecure := r.BladeTcp.GetInsecure()
 	protocol := r.BladeTcp.GetProtocol()
@@ -82,7 +82,7 @@ func (r *ServiceRequestDeleteBlade) Execute() (*service.Blade, error) {
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ApplianceId", fmt.Sprintf("%+v", *r.ApplianceId))
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "BladeId", fmt.Sprintf("%+v", *r.BladeId))
 
-	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort())
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
 	blade, err := serviceWrap.DeleteBladeById(serviceClient, r.ApplianceId.GetId(), r.BladeId.GetId())
 	if err != nil {
@@ -123,7 +123,7 @@ func (r *ServiceRequestListBlades) Execute() (*serviceWrap.ApplianceBladeSummary
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ServiceTcp", fmt.Sprintf("%+v", *r.ServiceTcp))
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ApplianceId", fmt.Sprintf("%+v", *r.ApplianceId))
 
-	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort())
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
 	if !r.AllAppliances() && !r.AllBlades() {
 		blade, err := serviceWrap.FindBladeById_SingleAppl(serviceClient, r.ApplianceId.GetId(), r.BladeId.GetId())
@@ -201,7 +201,7 @@ func (r *ServiceRequestRenameBlade) Execute() (*service.Blade, error) {
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "BladeId", fmt.Sprintf("%+v", *r.BladeId))
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "NewBladeId", fmt.Sprintf("%+v", *r.NewBladeId))
 
-	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort())
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
 	blade, err := serviceWrap.RenameBladeById(serviceClient, r.ApplianceId.GetId(), r.BladeId.GetId(), r.NewBladeId.GetId())
 	if err != nil {
@@ -230,7 +230,7 @@ func (r *ServiceRequestResyncBlade) Execute() (*service.Blade, error) {
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ApplianceId", fmt.Sprintf("%+v", *r.ApplianceId))
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "BladeId", fmt.Sprintf("%+v", *r.BladeId))
 
-	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort())
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
 	blade, err := serviceWrap.ResyncBladeById(serviceClient, r.ApplianceId.GetId(), r.BladeId.GetId())
 	if err != nil {

@@ -24,10 +24,10 @@ func NewServiceRequestListServiceInfo(cmd *cobra.Command) *ServiceRequestListSer
 	}
 }
 
-func (s *ServiceRequestListServiceInfo) Execute() (*service.ServiceInformation, error) {
-	klog.V(4).InfoS(fmt.Sprintf("%T", *s), "ServiceTcp", fmt.Sprintf("%+v", *s.ServiceTcp))
+func (r *ServiceRequestListServiceInfo) Execute() (*service.ServiceInformation, error) {
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ServiceTcp", fmt.Sprintf("%+v", *r.ServiceTcp))
 
-	serviceClient := serviceWrap.GetServiceClient(s.ServiceTcp.GetIp(), s.ServiceTcp.GetPort())
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
 	serviceInfo, response, err := serviceClient.DefaultAPI.CfmV1Get(context.Background()).Execute()
 	if err != nil {
