@@ -46,7 +46,7 @@ RUN git apply api/patch/*.redfish.patch
 # build the excutable
 RUN make build-go
 
-FROM node:alpine as npm
+FROM node:alpine AS npm
 ENV BASEPATH=/cfm
 
 # copy source code with generated files to go image
@@ -60,6 +60,9 @@ RUN npm run build
 FROM alpine:latest
 ENV BASEPATH=/cfm
 
+# Install packages
+RUN apk add --no-cache ca-certificates openssl bash curl jq
+
 # copy source code with generated files to go image
 COPY --from=go ${BASEPATH}/cfm-service ${BASEPATH}/cfm-service
 COPY --from=go ${BASEPATH}/cfm-cli ${BASEPATH}/cfm-cli
@@ -67,7 +70,7 @@ COPY --from=npm ${BASEPATH}/webui/dist ${BASEPATH}/webui/dist
 
 RUN ln -s /local/cfmdatastore.json ${BASEPATH}/cfmdatastore.json
 
-LABEL org.opencontainers.image.source https://github.com/seagate/cfm
+LABEL org.opencontainers.image.source=https://github.com/seagate/cfm
 
 WORKDIR ${BASEPATH}
 # Start the service

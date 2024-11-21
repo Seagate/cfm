@@ -4,10 +4,12 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"strings"
 	"sync"
 
@@ -16,6 +18,7 @@ import (
 	"cfm/pkg/common/datastore"
 	"cfm/pkg/openapi"
 	"cfm/pkg/redfishapi"
+	"cfm/pkg/security"
 	"cfm/services"
 
 	"github.com/rs/cors"
@@ -88,7 +91,59 @@ func main() {
 		}
 	}
 
+	server, err := GenerateCfmServer(ctx, &settings, &handler)
+	if err != nil {
+		logger.Error(err, ", failed to generate cfm server: %s", err)
+		os.Exit(1)
+	}
+
 	// Start the main service
 	logger.V(0).Info("cfm-service web server", "port", settings.Port)
-	log.Fatal(http.ListenAndServe(":"+settings.Port, handler))
+	log.Fatal(server.ListenAndServeTLS("", ""))
+}
+
+// GenerateCfmServer - Generates the primary cfm server using a runtine-generated self-signed certificate.
+// Updates environmenetal variable SEAGATE_CFM_SERVICE_CRT_PATH.
+// Saves the certificate to the SEAGATE_CFM_SERVICE_CRT_PATH location so that it can be shared with a local client.
+func GenerateCfmServer(ctx context.Context, settings *common.Settings, handler *http.Handler) (*http.Server, error) {
+	logger := klog.FromContext(ctx)
+
+	// Set environment variable (visible to webui but not cli (runs in different shell))
+	err := os.Setenv("SEAGATE_CFM_SERVICE_CRT_PATH", security.SEAGATE_CFM_SERVICE_CRT_FILEPATH)
+	if err != nil {
+		return nil, fmt.Errorf("failure: setting environment variable: %v", err)
+	}
+
+	// Generate the keys
+	cert, certPEM, err := security.GenerateSelfSignedCert()
+	if err != nil {
+		return nil, fmt.Errorf("failure: tls (self-signed) certificate generation: %v", err)
+	}
+
+	// Write the certificate to a file
+	err = os.WriteFile(security.SEAGATE_CFM_SERVICE_CRT_FILEPATH, []byte(certPEM), 0644)
+	if err != nil {
+		return nil, fmt.Errorf("failure: tls cert file save: %v", err)
+	}
+
+	logger.V(2).Info(fmt.Sprintf("cfm tls (self-signed) cert file saved to: %s ", security.SEAGATE_CFM_SERVICE_CRT_FILEPATH))
+
+	// Update CA certificates
+	cmd := exec.Command("update-ca-certificates") // This assumes the above self-signed .crt file is written to the correct location
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("failure: update CA certificates: %v", err)
+	}
+
+	// Configure the server
+	server := &http.Server{
+		Addr: ":" + settings.Port,
+		TLSConfig: &tls.Config{
+			Certificates: []tls.Certificate{*cert},
+		},
+		Handler: *handler,
+	}
+
+	return server, nil
 }
