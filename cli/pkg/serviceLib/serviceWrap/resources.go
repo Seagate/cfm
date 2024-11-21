@@ -4,7 +4,6 @@ package serviceWrap
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	service "cfm/pkg/client"
@@ -56,19 +55,12 @@ func FindResourceBlockOnBlade(client *service.APIClient, applId, bladeId, resour
 
 	request := client.DefaultAPI.BladesGetResourceById(context.Background(), applId, bladeId, resourceId)
 	resourceBlock, response, err := request.Execute()
+	if response != nil {
+		defer response.Body.Close() // Required by http lib implementation.
+	}
 	if err != nil {
-		// Decode the JSON response into a struct
-		var status service.StatusMessage
-		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.V(4).Info(newErr)
-			return nil, newErr
-		}
-
-		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.V(4).Info(newErr)
-		return nil, newErr
+		newErr := handleServiceError(response, err)
+		return nil, fmt.Errorf("execute failure(%T): %w", request, newErr)
 	}
 
 	klog.V(3).InfoS("FindResourceBlockOnBlade success", "applId", applId, "bladeId", bladeId, "resourceId", resourceBlock.GetId())
@@ -79,21 +71,15 @@ func FindResourceBlockOnBlade(client *service.APIClient, applId, bladeId, resour
 func GetAllResourceBlocksForBlade(client *service.APIClient, applId, bladeId string) (*[]*service.MemoryResourceBlock, error) {
 	var resources []*service.MemoryResourceBlock
 
-	requestResources := client.DefaultAPI.BladesGetResources(context.Background(), applId, bladeId)
-	resourceColl, response, err := requestResources.Execute()
+	request := client.DefaultAPI.BladesGetResources(context.Background(), applId, bladeId)
+	resourceColl, response, err := request.Execute()
+	if response != nil {
+		defer response.Body.Close() // Required by http lib implementation.
+	}
 	if err != nil {
-		// Decode the JSON response into a struct
-		var status service.StatusMessage
-		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestResources, err)
-			klog.V(4).Info(newErr)
-			return nil, newErr
-		}
-
-		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-			requestResources, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.V(4).Info(newErr)
-		// return nil, newErr
+		// newErr := handleServiceError(response, err)
+		// return nil, fmt.Errorf("execute failure(%T): %w", request, newErr)
+		handleServiceError(response, err)
 		return &resources, nil //TODO: Error here instead?
 	}
 
@@ -101,21 +87,15 @@ func GetAllResourceBlocksForBlade(client *service.APIClient, applId, bladeId str
 
 	for _, res := range resourceColl.GetMembers() {
 		resourceId := ReadLastItemFromUri(res.GetUri())
-		requestResourceById := client.DefaultAPI.BladesGetResourceById(context.Background(), applId, bladeId, resourceId)
-		resourceBlock, response, err := requestResourceById.Execute()
+		request2 := client.DefaultAPI.BladesGetResourceById(context.Background(), applId, bladeId, resourceId)
+		resourceBlock, response2, err := request2.Execute()
+		if response2 != nil {
+			defer response2.Body.Close() // Required by http lib implementation.
+		}
 		if err != nil {
-			// Decode the JSON response into a struct
-			var status service.StatusMessage
-			if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-				newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestResourceById, err)
-				klog.V(4).Info(newErr)
-				return nil, newErr
-			}
-
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-				requestResourceById, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-			klog.V(4).Info(newErr)
-			// return nil, newErr
+			// newErr := handleServiceError(response2, err)
+			// return nil, fmt.Errorf("execute failure(%T): %w", request2, newErr)
+			handleServiceError(response2, err)
 			continue //TODO: Error here instead?
 		}
 

@@ -4,7 +4,6 @@ package serviceWrap
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	service "cfm/pkg/client"
@@ -56,19 +55,12 @@ func FindMemoryRegionOnBlade(client *service.APIClient, applId, bladeId, memoryI
 
 	request := client.DefaultAPI.BladesGetMemoryById(context.Background(), applId, bladeId, memoryId)
 	memoryRegion, response, err := request.Execute()
+	if response != nil {
+		defer response.Body.Close() // Required by http lib implementation.
+	}
 	if err != nil {
-		// Decode the JSON response into a struct
-		var status service.StatusMessage
-		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.V(4).Info(newErr)
-			return nil, newErr
-		}
-
-		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.V(4).Info(newErr)
-		return nil, newErr
+		newErr := handleServiceError(response, err)
+		return nil, fmt.Errorf("execute failure(%T): %w", request, newErr)
 	}
 
 	klog.V(3).InfoS("success: FindMemoryRegionOnBlade", "applId", applId, "bladeId", bladeId, "memoryId", memoryRegion.GetId())
@@ -79,21 +71,15 @@ func FindMemoryRegionOnBlade(client *service.APIClient, applId, bladeId, memoryI
 func GetAllMemoryRegionsForBlade(client *service.APIClient, applId, bladeId string) (*[]*service.MemoryRegion, error) {
 	var memoryRegions []*service.MemoryRegion
 
-	requestMemoryRegions := client.DefaultAPI.BladesGetMemory(context.Background(), applId, bladeId)
-	memoryRegionColl, response, err := requestMemoryRegions.Execute()
+	request := client.DefaultAPI.BladesGetMemory(context.Background(), applId, bladeId)
+	memoryRegionColl, response, err := request.Execute()
+	if response != nil {
+		defer response.Body.Close() // Required by http lib implementation.
+	}
 	if err != nil {
-		// Decode the JSON response into a struct
-		var status service.StatusMessage
-		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestMemoryRegions, err)
-			klog.V(4).Info(newErr)
-			return nil, newErr
-		}
-
-		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-			requestMemoryRegions, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.V(4).Info(newErr)
-		// return nil, newErr
+		// newErr := handleServiceError(response, err)
+		// return nil, fmt.Errorf("execute failure(%T): %w", request, newErr)
+		handleServiceError(response, err)
 		return &memoryRegions, nil //TODO: Error here instead?
 	}
 
@@ -101,21 +87,15 @@ func GetAllMemoryRegionsForBlade(client *service.APIClient, applId, bladeId stri
 
 	for _, res := range memoryRegionColl.GetMembers() {
 		memoryId := ReadLastItemFromUri(res.GetUri())
-		requestMemoryRegionById := client.DefaultAPI.BladesGetMemoryById(context.Background(), applId, bladeId, memoryId)
-		memoryRegion, response, err := requestMemoryRegionById.Execute()
+		request2 := client.DefaultAPI.BladesGetMemoryById(context.Background(), applId, bladeId, memoryId)
+		memoryRegion, response2, err := request2.Execute()
+		if response2 != nil {
+			defer response2.Body.Close() // Required by http lib implementation.
+		}
 		if err != nil {
-			// Decode the JSON response into a struct
-			var status service.StatusMessage
-			if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-				newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestMemoryRegionById, err)
-				klog.V(4).Info(newErr)
-				return nil, newErr
-			}
-
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-				requestMemoryRegionById, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-			klog.V(4).Info(newErr)
-			// return nil, newErr
+			// newErr := handleServiceError(response2, err)
+			// return nil, fmt.Errorf("execute failure(%T): %w", request2, newErr)
+			handleServiceError(response2, err)
 			continue //TODO: Error here instead?
 		}
 
@@ -321,26 +301,19 @@ func ComposeMemory(client *service.APIClient, applianceId, bladeId, portId strin
 	requestCompose.SetPort(portId)
 
 	// create new ApiBladesComposeMemoryRequest
-	requestApiCompose := client.DefaultAPI.BladesComposeMemory(context.Background(), applianceId, bladeId)
+	request := client.DefaultAPI.BladesComposeMemory(context.Background(), applianceId, bladeId)
 
 	// add ComposeMemoryRequest to ApiAppliancesComposeMemoryRequest
-	requestApiCompose = requestApiCompose.ComposeMemoryRequest(*requestCompose)
+	request = request.ComposeMemoryRequest(*requestCompose)
 
 	// Execute ApiAppliancesComposeMemoryRequest
-	region, response, err := requestApiCompose.Execute()
+	region, response, err := request.Execute()
+	if response != nil {
+		defer response.Body.Close() // Required by http lib implementation.
+	}
 	if err != nil {
-		// Decode the JSON response into a struct
-		var status service.StatusMessage
-		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestApiCompose, err)
-			klog.V(4).Info(newErr)
-			return nil, newErr
-		}
-
-		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-			requestApiCompose, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.V(4).Info(newErr)
-		return nil, newErr
+		newErr := handleServiceError(response, err)
+		return nil, fmt.Errorf("execute failure(%T): %w", request, newErr)
 	}
 
 	klog.V(3).InfoS("success: ComposeMemory", "region", region.GetId(), "size", region.GetSizeMiB(), "applId", applianceId, "bladeId", bladeId)
@@ -352,22 +325,15 @@ func ComposeMemory(client *service.APIClient, applianceId, bladeId, portId strin
 func FreeMemory(client *service.APIClient, applianceId, bladeId, memoryId string) (*service.MemoryRegion, error) {
 
 	// create new ApiAppliancesFreeMemoryByIdRequest
-	requestFree := client.DefaultAPI.BladesFreeMemoryById(context.Background(), applianceId, bladeId, memoryId)
+	request := client.DefaultAPI.BladesFreeMemoryById(context.Background(), applianceId, bladeId, memoryId)
 	// Execute ApiAppliancesFreeMemoryByIdRequest
-	region, response, err := requestFree.Execute()
+	region, response, err := request.Execute()
+	if response != nil {
+		defer response.Body.Close() // Required by http lib implementation.
+	}
 	if err != nil {
-		// Decode the JSON response into a struct
-		var status service.StatusMessage
-		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestFree, err)
-			klog.V(4).Info(newErr)
-			return nil, newErr
-		}
-
-		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-			requestFree, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.V(4).Info(newErr)
-		return nil, newErr
+		newErr := handleServiceError(response, err)
+		return nil, fmt.Errorf("execute failure(%T): %w", request, newErr)
 	}
 
 	klog.V(3).InfoS("success: FreeMemory", "region", region.GetId(), "size", region.GetSizeMiB(), "applId", applianceId, "bladeId", bladeId)
@@ -423,19 +389,12 @@ func FindMemoryRegionOnHost(client *service.APIClient, hostId, memoryId string) 
 
 	request := client.DefaultAPI.HostsGetMemoryById(context.Background(), hostId, memoryId)
 	memoryRegion, response, err := request.Execute()
+	if response != nil {
+		defer response.Body.Close() // Required by http lib implementation.
+	}
 	if err != nil {
-		// Decode the JSON response into a struct
-		var status service.StatusMessage
-		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.V(4).Info(newErr)
-			return nil, newErr
-		}
-
-		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.V(4).Info(newErr)
-		return nil, newErr
+		newErr := handleServiceError(response, err)
+		return nil, fmt.Errorf("execute failure(%T): %w", request, newErr)
 	}
 
 	klog.V(3).InfoS("success: FindMemoryRegionOnHost", "hostId", hostId, "memoryId", memoryRegion.GetId())
@@ -448,19 +407,13 @@ func GetAllMemoryRegionsForHost(client *service.APIClient, hostId string) (*[]*s
 
 	request := client.DefaultAPI.HostGetMemory(context.Background(), hostId)
 	memoryRegionColl, response, err := request.Execute()
+	if response != nil {
+		defer response.Body.Close() // Required by http lib implementation.
+	}
 	if err != nil {
-		// Decode the JSON response into a struct
-		var status service.StatusMessage
-		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.V(4).Info(newErr)
-			return nil, newErr
-		}
-
-		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.V(4).Info(newErr)
-		// return nil, newErr
+		// newErr := handleServiceError(response, err)
+		// return nil, fmt.Errorf("execute failure(%T): %w", request, newErr)
+		handleServiceError(response, err)
 		return &memoryRegions, nil //TODO: Error here instead?
 	}
 
@@ -468,21 +421,15 @@ func GetAllMemoryRegionsForHost(client *service.APIClient, hostId string) (*[]*s
 
 	for _, member := range memoryRegionColl.GetMembers() {
 		memoryId := ReadLastItemFromUri(member.GetUri())
-		request := client.DefaultAPI.HostsGetMemoryById(context.Background(), hostId, memoryId)
-		memoryRegion, response, err := request.Execute()
+		request2 := client.DefaultAPI.HostsGetMemoryById(context.Background(), hostId, memoryId)
+		memoryRegion, response2, err := request2.Execute()
+		if response != nil {
+			defer response2.Body.Close() // Required by http lib implementation.
+		}
 		if err != nil {
-			// Decode the JSON response into a struct
-			var status service.StatusMessage
-			if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-				newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-				klog.V(4).Info(newErr)
-				return nil, newErr
-			}
-
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-				request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-			klog.V(4).Info(newErr)
-			// return nil, newErr
+			// newErr := handleServiceError(response2, err)
+			// return nil, fmt.Errorf("execute failure(%T): %w", request2, newErr)
+			handleServiceError(response2, err)
 			continue //TODO: Error here instead?
 		}
 
@@ -500,19 +447,13 @@ func GetMemoryRegions_AllHosts(client *service.APIClient) (*HostMemoryRegionSumm
 
 	request := client.DefaultAPI.HostsGet(context.Background())
 	hostColl, response, err := request.Execute()
+	if response != nil {
+		defer response.Body.Close() // Required by http lib implementation.
+	}
 	if err != nil {
-		// Decode the JSON response into a struct
-		var status service.StatusMessage
-		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.V(4).Info(newErr)
-			return nil, newErr
-		}
-
-		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.V(4).Info(newErr)
-		// return nil, newErr
+		// newErr := handleServiceError(response, err)
+		// return nil, fmt.Errorf("execute failure(%T): %w", request, newErr)
+		handleServiceError(response, err)
 		return summary, nil //TODO: Error here instead?
 	}
 
@@ -536,19 +477,13 @@ func FindMemoryRegion_AllHosts(client *service.APIClient, memoryId string) (*Hos
 
 	request := client.DefaultAPI.HostsGet(context.Background())
 	hostColl, response, err := request.Execute()
+	if response != nil {
+		defer response.Body.Close() // Required by http lib implementation.
+	}
 	if err != nil {
-		// Decode the JSON response into a struct
-		var status service.StatusMessage
-		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.V(4).Info(newErr)
-			return nil, newErr
-		}
-
-		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.V(4).Info(newErr)
-		// return nil, newErr
+		// newErr := handleServiceError(response, err)
+		// return nil, fmt.Errorf("execute failure(%T): %w", request, newErr)
+		handleServiceError(response, err)
 		return summary, nil //TODO: Error here instead?
 	}
 
