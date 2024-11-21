@@ -139,6 +139,7 @@ func NewApplianceBladeKey(applId, bladeId string) *ApplianceBladeKey {
 	}
 }
 
+//handleServiceError - common error handler function used after all cfm-service client calls.
 func handleServiceError(response *http.Response, err error) error {
 	var status service.StatusMessage
 
