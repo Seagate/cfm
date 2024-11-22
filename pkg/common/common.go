@@ -7,7 +7,6 @@ type ConnectionStatus string
 const (
 	ONLINE         ConnectionStatus = "online"      // avahi-found, found root service, created backend session, added to service map
 	UNAVAILABLE    ConnectionStatus = "unavailable" // avahi-found AND detect root service AND !created backend session AND !added to service map
-	FOUND          ConnectionStatus = "found"       // avahi-found AND detect root service
 	OFFLINE        ConnectionStatus = "offline"     // !avahi-found (after previously adding it)
 	NOT_APPLICABLE ConnectionStatus = "n\\a"
 )

@@ -561,7 +561,7 @@ func GetHostById(ctx context.Context, hostId string) (*Host, error) {
 	if host.CheckSync(ctx) {
 		logger.V(4).Info("initiating auto-resync check", "hostId", hostId)
 		host.UpdateConnectionStatusBackend(ctx)
-		if host.Status == common.FOUND { // good power, bad session
+		if host.Status == common.UNAVAILABLE { // good power, bad session
 			host, err = ResyncHostById(ctx, hostId)
 			if err != nil {
 				newErr := fmt.Errorf("failed to resync host by id [%s]: %w", hostId, err)

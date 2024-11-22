@@ -378,7 +378,7 @@ func (a *Appliance) GetBladeById(ctx context.Context, bladeId string) (*Blade, e
 	if blade.CheckSync(ctx) {
 		logger.V(4).Info("initiating auto-resync check", "bladeId", bladeId, "applianceId", a.Id)
 		blade.UpdateConnectionStatusBackend(ctx)
-		if blade.Status == common.FOUND { // good power, bad session
+		if blade.Status == common.UNAVAILABLE { // good power, bad session
 			blade, err = a.ResyncBladeById(ctx, bladeId)
 			if err != nil {
 				newErr := fmt.Errorf("failed to resync blade by id [%s]: %w", bladeId, err)

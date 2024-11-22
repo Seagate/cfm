@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/klog/v2"
+
 	"cfm/pkg/backend"
 	"cfm/pkg/common"
 	"cfm/pkg/common/datastore"
 	"cfm/pkg/openapi"
-
-	"k8s.io/klog/v2"
 )
 
 const ID_PREFIX_BLADE_DFLT string = "blade"
@@ -663,7 +663,7 @@ func (b *Blade) UpdateConnectionStatusBackend(ctx context.Context) {
 		if status.FoundSession {
 			b.Status = common.ONLINE
 		} else {
-			b.Status = common.FOUND
+			b.Status = common.UNAVAILABLE
 		}
 	} else {
 		b.Status = common.OFFLINE
