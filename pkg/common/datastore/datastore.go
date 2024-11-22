@@ -58,6 +58,28 @@ func (c *DataStore) GetApplianceDatumById(applianceId string) (*ApplianceDatum, 
 	return datum, nil
 }
 
+// Verify if the blade exists using the ipAddress
+func (c *DataStore) GetBladeDatumByIp(IpAddress string) (*string, bool) {
+	for _, appliance := range c.ApplianceData {
+		for bladeId, blade := range appliance.BladeData {
+			if blade.Credentials.IpAddress == IpAddress {
+				return &bladeId, true
+			}
+		}
+	}
+	return nil, false
+}
+
+// Verify if the host exists using the ipAddress
+func (c *DataStore) GetHostDatumByIp(IpAddress string) (*string, bool) {
+	for hostId, host := range c.HostData {
+		if host.Credentials.IpAddress == IpAddress {
+			return &hostId, true
+		}
+	}
+	return nil, false
+}
+
 // GetHostDatumById: Retrieve a host datum from the data store
 func (c *DataStore) GetHostDatumById(hostId string) (*HostDatum, error) {
 	datum, exists := c.HostData[hostId]
@@ -109,28 +131,6 @@ func (a *ApplianceDatum) GetBladeDatumById(ctx context.Context, bladeId string) 
 	}
 
 	return blade, nil
-}
-
-// Verify if the blade exists using the ipAddress
-func (c *DataStore) GetBladeDatumByIp(IpAddress string) (*string, bool) {
-	for _, appliance := range c.ApplianceData {
-		for bladeId, blade := range appliance.BladeData {
-			if blade.Credentials.IpAddress == IpAddress {
-				return &bladeId, true
-			}
-		}
-	}
-	return nil, false
-}
-
-// Verify if the host exists using the ipAddress
-func (c *DataStore) GetHostDatumByIp(IpAddress string) (*string, bool) {
-	for hostId, host := range c.HostData {
-		if host.Credentials.IpAddress == IpAddress {
-			return &hostId, true
-		}
-	}
-	return nil, false
 }
 
 func (a *ApplianceDatum) SetConnectionStatus(status common.ConnectionStatus) {
