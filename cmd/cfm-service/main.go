@@ -11,15 +11,15 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/rs/cors"
+	"k8s.io/klog/v2"
+
 	"cfm/pkg/api"
 	"cfm/pkg/common"
 	"cfm/pkg/common/datastore"
 	"cfm/pkg/openapi"
 	"cfm/pkg/redfishapi"
 	"cfm/services"
-
-	"github.com/rs/cors"
-	"k8s.io/klog/v2"
 )
 
 var Version = "1.x.x"
@@ -67,6 +67,12 @@ func main() {
 	defaultRedfishService := api.NewRedfishApiService(Version)
 	defaultRedfishController := redfishapi.NewDefaultAPIController(defaultRedfishService)
 	api.AddRedfishRouter(ctx, router, defaultRedfishController)
+
+	// Discover devices before loading datastore
+	bladeDevices, _ := services.DiscoverDevices(ctx, defaultApiService, "blade")
+	hostDevices, _ := services.DiscoverDevices(ctx, defaultApiService, "cxl-host")
+	// Add the discovered devices into datastore
+	services.AddDiscoveredDevices(ctx, defaultApiService, bladeDevices, hostDevices)
 
 	// Load datastore
 	datastore.DStore().Restore()

@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/klog/v2"
+
 	"cfm/pkg/backend"
 	"cfm/pkg/common"
 	"cfm/pkg/common/datastore"
 	"cfm/pkg/openapi"
-
-	"k8s.io/klog/v2"
 )
 
 const ID_PREFIX_HOST_DFLT string = "host"
@@ -507,7 +507,7 @@ func (h *Host) UpdateConnectionStatusBackend(ctx context.Context) {
 		if status.FoundSession {
 			h.Status = common.ONLINE
 		} else {
-			h.Status = common.FOUND
+			h.Status = common.UNAVAILABLE
 		}
 	} else {
 		h.Status = common.OFFLINE

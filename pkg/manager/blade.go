@@ -731,7 +731,7 @@ func (b *Blade) UpdateConnectionStatusBackend(ctx context.Context) {
 		if status.FoundSession {
 			b.Status = common.ONLINE
 		} else {
-			b.Status = common.FOUND
+			b.Status = common.UNAVAILABLE
 		}
 	} else {
 		b.Status = common.OFFLINE

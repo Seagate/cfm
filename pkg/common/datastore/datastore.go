@@ -6,10 +6,10 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/klog/v2"
+
 	"cfm/pkg/common"
 	"cfm/pkg/openapi"
-
-	"k8s.io/klog/v2"
 )
 
 const (
@@ -56,6 +56,28 @@ func (c *DataStore) GetApplianceDatumById(applianceId string) (*ApplianceDatum, 
 	}
 
 	return datum, nil
+}
+
+// Verify if the blade exists using the ipAddress
+func (c *DataStore) GetBladeDatumByIp(IpAddress string) (*string, bool) {
+	for _, appliance := range c.ApplianceData {
+		for bladeId, blade := range appliance.BladeData {
+			if blade.Credentials.IpAddress == IpAddress {
+				return &bladeId, true
+			}
+		}
+	}
+	return nil, false
+}
+
+// Verify if the host exists using the ipAddress
+func (c *DataStore) GetHostDatumByIp(IpAddress string) (*string, bool) {
+	for hostId, host := range c.HostData {
+		if host.Credentials.IpAddress == IpAddress {
+			return &hostId, true
+		}
+	}
+	return nil, false
 }
 
 // GetHostDatumById: Retrieve a host datum from the data store
@@ -158,31 +180,21 @@ func ReloadDataStore(ctx context.Context, s openapi.DefaultAPIServicer, c *DataS
 	logger := klog.FromContext(ctx)
 
 	logger.V(2).Info("cfm-service: restoring saved appliances")
-	var appliancesToDelete []string
+
 	for applianceId, applianceDatum := range c.ApplianceData {
 		_, err = s.AppliancesPost(ctx, *applianceDatum.Credentials)
 		if err != nil {
 			logger.V(2).Info("cfm-service: appliance restore failure", "applianceId", applianceId)
-			appliancesToDelete = append(appliancesToDelete, applianceId)
 			continue
 		}
 
-		bladesToDelete := make(map[string]string)
 		for bladeId, bladeDatum := range applianceDatum.BladeData {
-			_, err = s.BladesPost(ctx, applianceId, *bladeDatum.Credentials)
-			if err != nil {
+			_, postErr := s.BladesPost(ctx, applianceId, *bladeDatum.Credentials)
+			if postErr != nil {
 				logger.V(2).Info("cfm-service: blade restore failure", "bladeId", bladeId, "applianceId", applianceId)
-				bladesToDelete[applianceId] = bladeId
+				continue
 			}
 		}
-
-		for applianceId, bladeId := range bladesToDelete {
-			delete(c.ApplianceData[applianceId].BladeData, bladeId)
-		}
-	}
-
-	for _, applianceId := range appliancesToDelete {
-		delete(c.ApplianceData, applianceId)
 	}
 
 	logger.V(2).Info("cfm-service: restoring saved hosts")
