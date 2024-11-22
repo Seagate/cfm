@@ -4,7 +4,6 @@ package serviceWrap
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	service "cfm/pkg/client"
@@ -16,19 +15,12 @@ func AddAppliance(client *service.APIClient, creds *service.Credentials) (*servi
 	request := client.DefaultAPI.AppliancesPost(context.Background())
 	request = request.Credentials(*creds)
 	appliance, response, err := request.Execute()
+	if response != nil {
+		defer response.Body.Close() // Required by http lib implementation.
+	}
 	if err != nil {
-		// Decode the JSON response into a struct
-		var status service.StatusMessage
-		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.V(4).Info(newErr)
-			return nil, newErr
-		}
-
-		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.V(4).Info(newErr)
-		return nil, newErr
+		newErr := handleServiceError(response, err)
+		return nil, fmt.Errorf("execute failure(%T): %w", request, newErr)
 	}
 
 	klog.V(3).InfoS("success: AddAppliance", "applianceId", appliance.GetId())
@@ -39,19 +31,12 @@ func AddAppliance(client *service.APIClient, creds *service.Credentials) (*servi
 func DeleteApplianceById(client *service.APIClient, applId string) (*service.Appliance, error) {
 	request := client.DefaultAPI.AppliancesDeleteById(context.Background(), applId)
 	appliance, response, err := request.Execute()
+	if response != nil {
+		defer response.Body.Close() // Required by http lib implementation.
+	}
 	if err != nil {
-		// Decode the JSON response into a struct
-		var status service.StatusMessage
-		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.V(4).Info(newErr)
-			return nil, newErr
-		}
-
-		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.V(4).Info(newErr)
-		return nil, newErr
+		newErr := handleServiceError(response, err)
+		return nil, fmt.Errorf("execute failure(%T): %w", request, newErr)
 	}
 
 	klog.V(3).InfoS("success: DeleteApplianceById", "applianceId", appliance.GetId())
@@ -63,42 +48,28 @@ func GetAllAppliances(client *service.APIClient) (*[]*service.Appliance, error) 
 	var appliances []*service.Appliance
 
 	//Get existing appliances
-	requestGetAppls := client.DefaultAPI.AppliancesGet(context.Background())
-	collection, response, err := requestGetAppls.Execute()
+	request := client.DefaultAPI.AppliancesGet(context.Background())
+	collection, response, err := request.Execute()
+	if response != nil {
+		defer response.Body.Close() // Required by http lib implementation.
+	}
 	if err != nil {
-		// Decode the JSON response into a struct
-		var status service.StatusMessage
-		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestGetAppls, err)
-			klog.V(4).Info(newErr)
-			return nil, newErr
-		}
-
-		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-			requestGetAppls, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.V(4).Info(newErr)
-		return nil, newErr
+		newErr := handleServiceError(response, err)
+		return nil, fmt.Errorf("execute failure(%T): %w", request, newErr)
 	}
 
 	klog.V(4).InfoS("success: AppliancesGet", "count", collection.GetMemberCount())
 
 	for _, member := range collection.GetMembers() {
 		id := ReadLastItemFromUri(member.GetUri())
-		requestGetApplById := client.DefaultAPI.AppliancesGetById(context.Background(), id)
-		appliance, response, err := requestGetApplById.Execute()
+		request2 := client.DefaultAPI.AppliancesGetById(context.Background(), id)
+		appliance, response2, err := request2.Execute()
+		if response2 != nil {
+			defer response2.Body.Close() // Required by http lib implementation.
+		}
 		if err != nil {
-			// Decode the JSON response into a struct
-			var status service.StatusMessage
-			if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-				newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestGetApplById, err)
-				klog.V(4).Info(newErr)
-				return nil, newErr
-			}
-
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-				requestGetApplById, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-			klog.V(4).Info(newErr)
-			return nil, newErr
+			newErr := handleServiceError(response2, err)
+			return nil, fmt.Errorf("execute failure(%T): %w", request2, newErr)
 		}
 
 		klog.V(4).InfoS("success: AppliancesGetById", "applianceId", appliance.GetId())
@@ -115,19 +86,12 @@ func RenameApplianceById(client *service.APIClient, applianceId string, newAppli
 	request := client.DefaultAPI.AppliancesUpdateById(context.Background(), applianceId)
 	request = request.NewApplianceId(newApplianceId)
 	appliance, response, err := request.Execute()
+	if response != nil {
+		defer response.Body.Close() // Required by http lib implementation.
+	}
 	if err != nil {
-		// Decode the JSON response into a struct
-		var status service.StatusMessage
-		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.V(4).Info(newErr)
-			return nil, newErr
-		}
-
-		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.V(4).Info(newErr)
-		return nil, newErr
+		newErr := handleServiceError(response, err)
+		return nil, fmt.Errorf("execute failure(%T): %w", request, newErr)
 	}
 
 	klog.V(3).InfoS("success: RenameApplianceById", "request", request)
@@ -138,19 +102,12 @@ func RenameApplianceById(client *service.APIClient, applianceId string, newAppli
 func ResyncApplianceById(client *service.APIClient, applianceId string) (*service.Appliance, error) {
 	request := client.DefaultAPI.AppliancesResyncById(context.Background(), applianceId)
 	appliance, response, err := request.Execute()
+	if response != nil {
+		defer response.Body.Close() // Required by http lib implementation.
+	}
 	if err != nil {
-		// Decode the JSON response into a struct
-		var status service.StatusMessage
-		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.V(4).Info(newErr)
-			return nil, newErr
-		}
-
-		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.V(4).Info(newErr)
-		return nil, newErr
+		newErr := handleServiceError(response, err)
+		return nil, fmt.Errorf("execute failure(%T): %w", request, newErr)
 	}
 
 	klog.V(3).InfoS("success: ResyncApplianceById", "applianceId", appliance.GetId())

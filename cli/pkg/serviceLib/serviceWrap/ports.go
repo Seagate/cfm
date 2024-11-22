@@ -4,7 +4,6 @@ package serviceWrap
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	service "cfm/pkg/client"
@@ -56,19 +55,12 @@ func FindPortOnBlade(client *service.APIClient, applId, bladeId, portId string) 
 
 	request := client.DefaultAPI.BladesGetPortById(context.Background(), applId, bladeId, portId)
 	port, response, err := request.Execute()
+	if response != nil {
+		defer response.Body.Close() // Required by http lib implementation.
+	}
 	if err != nil {
-		// Decode the JSON response into a struct
-		var status service.StatusMessage
-		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.V(4).Info(newErr)
-			return nil, newErr
-		}
-
-		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.V(4).Info(newErr)
-		return nil, newErr
+		newErr := handleServiceError(response, err)
+		return nil, fmt.Errorf("execute failure(%T): %w", request, newErr)
 	}
 
 	klog.V(3).InfoS("success: FindPortOnBlade", "applId", applId, "bladeId", bladeId, "portId", port.GetId())
@@ -79,21 +71,15 @@ func FindPortOnBlade(client *service.APIClient, applId, bladeId, portId string) 
 func GetAllPortsForBlade(client *service.APIClient, applId, bladeId string) (*[]*service.PortInformation, error) {
 	var ports []*service.PortInformation
 
-	requestPorts := client.DefaultAPI.BladesGetPorts(context.Background(), applId, bladeId)
-	portColl, response, err := requestPorts.Execute()
+	request := client.DefaultAPI.BladesGetPorts(context.Background(), applId, bladeId)
+	portColl, response, err := request.Execute()
+	if response != nil {
+		defer response.Body.Close() // Required by http lib implementation.
+	}
 	if err != nil {
-		// Decode the JSON response into a struct
-		var status service.StatusMessage
-		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestPorts, err)
-			klog.V(4).Info(newErr)
-			return nil, newErr
-		}
-
-		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-			requestPorts, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.V(4).Info(newErr)
-		// return nil, newErr
+		// newErr := handleServiceError(response, err)
+		// return nil, fmt.Errorf("execute failure(%T): %w", request, newErr)
+		handleServiceError(response, err)
 		return &ports, nil //TODO: Error here instead?
 	}
 
@@ -101,21 +87,15 @@ func GetAllPortsForBlade(client *service.APIClient, applId, bladeId string) (*[]
 
 	for _, res := range portColl.GetMembers() {
 		portId := ReadLastItemFromUri(res.GetUri())
-		requestPortById := client.DefaultAPI.BladesGetPortById(context.Background(), applId, bladeId, portId)
-		port, response, err := requestPortById.Execute()
+		request2 := client.DefaultAPI.BladesGetPortById(context.Background(), applId, bladeId, portId)
+		port, response2, err := request2.Execute()
+		if response2 != nil {
+			defer response2.Body.Close() // Required by http lib implementation.
+		}
 		if err != nil {
-			// Decode the JSON response into a struct
-			var status service.StatusMessage
-			if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-				newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestPortById, err)
-				klog.V(4).Info(newErr)
-				return nil, newErr
-			}
-
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-				requestPortById, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-			klog.V(4).Info(newErr)
-			// return nil, newErr
+			// newErr := handleServiceError(response2, err)
+			// return nil, fmt.Errorf("execute failure(%T): %w", request2, newErr)
+			handleServiceError(response2, err)
 			continue //TODO: Error here instead?
 		}
 
@@ -353,19 +333,12 @@ func FindPortById_SingleHost(client *service.APIClient, hostId, portId string) (
 
 	request := client.DefaultAPI.HostsGetPortById(context.Background(), hostId, portId)
 	port, response, err := request.Execute()
+	if response != nil {
+		defer response.Body.Close() // Required by http lib implementation.
+	}
 	if err != nil {
-		// Decode the JSON response into a struct
-		var status service.StatusMessage
-		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", request, err)
-			klog.V(4).Info(newErr)
-			return nil, newErr
-		}
-
-		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-			request, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.V(4).Info(newErr)
-		return nil, newErr
+		newErr := handleServiceError(response, err)
+		return nil, fmt.Errorf("execute failure(%T): %w", request, newErr)
 	}
 
 	klog.V(3).InfoS("success: HostsGetPortById", "hostId", hostId, "portId", port.GetId())
@@ -378,21 +351,14 @@ func FindPortById_AllHosts(client *service.APIClient, portId string) (*HostPortS
 	summary := NewHostPortSummary()
 
 	//Get all existing hosts
-	requestHosts := client.DefaultAPI.HostsGet(context.Background())
-	hostsColl, response, err := requestHosts.Execute()
+	request := client.DefaultAPI.HostsGet(context.Background())
+	hostsColl, response, err := request.Execute()
+	if response != nil {
+		defer response.Body.Close() // Required by http lib implementation.
+	}
 	if err != nil {
-		// Decode the JSON response into a struct
-		var status service.StatusMessage
-		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestHosts, err)
-			klog.V(4).Info(newErr)
-			return nil, newErr
-		}
-
-		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-			requestHosts, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.V(4).Info(newErr)
-		return nil, newErr
+		newErr := handleServiceError(response, err)
+		return nil, fmt.Errorf("execute failure(%T): %w", request, newErr)
 	}
 
 	klog.V(4).InfoS("success: HostsGet", "hostsColl", hostsColl.GetMemberCount())
@@ -421,21 +387,14 @@ func FindPortById_AllHosts(client *service.APIClient, portId string) (*HostPortS
 func GetAllPorts_SingleHost(client *service.APIClient, hostId string) (*[]*service.PortInformation, error) {
 	var ports []*service.PortInformation
 
-	requestPorts := client.DefaultAPI.HostsGetPorts(context.Background(), hostId)
-	portsColl, response, err := requestPorts.Execute()
+	request := client.DefaultAPI.HostsGetPorts(context.Background(), hostId)
+	portsColl, response, err := request.Execute()
+	if response != nil {
+		defer response.Body.Close() // Required by http lib implementation.
+	}
 	if err != nil {
-		// Decode the JSON response into a struct
-		var status service.StatusMessage
-		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestPorts, err)
-			klog.V(4).Info(newErr)
-			return nil, newErr
-		}
-
-		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-			requestPorts, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.V(4).Info(newErr)
-		return nil, newErr
+		newErr := handleServiceError(response, err)
+		return nil, fmt.Errorf("execute failure(%T): %w", request, newErr)
 	}
 
 	klog.V(4).InfoS("success: PortsGet", "hostId", hostId, "portsColl", portsColl.GetMemberCount())
@@ -459,21 +418,14 @@ func GetAllPorts_AllHosts(client *service.APIClient) (*HostPortSummary, error) {
 	summary := NewHostPortSummary()
 
 	//Get all existing hosts
-	requestHosts := client.DefaultAPI.HostsGet(context.Background())
-	hostColl, response, err := requestHosts.Execute()
+	request := client.DefaultAPI.HostsGet(context.Background())
+	hostColl, response, err := request.Execute()
+	if response != nil {
+		defer response.Body.Close() // Required by http lib implementation.
+	}
 	if err != nil {
-		// Decode the JSON response into a struct
-		var status service.StatusMessage
-		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", requestHosts, err)
-			klog.V(4).Info(newErr)
-			return nil, newErr
-		}
-
-		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-			requestHosts, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.V(4).Info(newErr)
-		return nil, newErr
+		newErr := handleServiceError(response, err)
+		return nil, fmt.Errorf("execute failure(%T): %w", request, newErr)
 	}
 
 	klog.V(4).InfoS("success: HostsGet", "hostColl", hostColl.GetMemberCount())
