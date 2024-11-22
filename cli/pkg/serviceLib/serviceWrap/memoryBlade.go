@@ -4,7 +4,6 @@ package serviceWrap
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	service "cfm/pkg/client"
@@ -19,26 +18,19 @@ func BladesAssignMemory(client *service.APIClient, applianceId, bladeId, memoryI
 	assignRequest := service.NewAssignMemoryRequest(portId, operation)
 
 	// create new ApiBladesAssignMemoryByIdRequest
-	bladeRequest := client.DefaultAPI.BladesAssignMemoryById(context.Background(), applianceId, bladeId, memoryId)
+	request := client.DefaultAPI.BladesAssignMemoryById(context.Background(), applianceId, bladeId, memoryId)
 
 	// add AssignMemoryRequest to ApiBladesAssignMemoryByIdRequest
-	bladeRequest = bladeRequest.AssignMemoryRequest(*assignRequest)
+	request = request.AssignMemoryRequest(*assignRequest)
 
 	// Execute ApiBladesAssignMemoryByIdRequest
-	region, response, err := bladeRequest.Execute()
+	region, response, err := request.Execute()
+	if response != nil {
+		defer response.Body.Close() // Required by http lib implementation.
+	}
 	if err != nil {
-		// Decode the JSON response into a struct
-		var status service.StatusMessage
-		if err := json.NewDecoder(response.Body).Decode(&status); err != nil {
-			newErr := fmt.Errorf("failure: Execute(%T): err(%s), error decoding response JSON", bladeRequest, err)
-			klog.V(4).Info(newErr)
-			return nil, newErr
-		}
-
-		newErr := fmt.Errorf("failure: Execute(%T): err(%s), uri(%s), details(%s), code(%d), message(%s)",
-			bladeRequest, err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
-		klog.V(4).Info(newErr)
-		return nil, newErr
+		newErr := handleServiceError(response, err)
+		return nil, fmt.Errorf("execute failure(%T): %w", request, newErr)
 	}
 
 	klog.V(3).InfoS("sucess: BladesAssignMemory", "operation", operation, "memoryId", region.GetId(), "portId", region.GetMemoryAppliancePort(), "size", region.GetSizeMiB(), "applId", region.GetMemoryApplianceId(), "bladeId", region.GetMemoryBladeId())

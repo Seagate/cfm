@@ -3,13 +3,17 @@
 package serviceWrap
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
+	"net/http"
 	"net/netip"
 	"strings"
 
 	service "cfm/pkg/client"
 
 	"github.com/google/uuid"
+	"k8s.io/klog/v2"
 )
 
 func GetServiceClient(ip string, networkPort uint16) *service.APIClient {
@@ -133,4 +137,31 @@ func NewApplianceBladeKey(applId, bladeId string) *ApplianceBladeKey {
 		ApplianceId: applId,
 		BladeId:     bladeId,
 	}
+}
+
+//handleServiceError - common error handler function used after all cfm-service client calls.
+func handleServiceError(response *http.Response, err error) error {
+	var status service.StatusMessage
+
+	if response == nil {
+		return fmt.Errorf("no response body to interrogate during error, just return the error: %s", err)
+	}
+
+	//Purposefully NOT using key\value pairing here for the "response object".
+	//  ErrorS() is interrogating the response object, in the "key" location, in such a way that it displays extra error information from within the response body that isn't visible using a basic string cast of the object.
+	//  Currently, unsure of another way to get at this info.
+	//  Note: After the json Decode() call just below, the extra error information is gone, so, must dump here.
+	//  So far, not normally needed.  Put on the verbosity flag so it's only visible when requested.
+	klog.V(4).ErrorS(errors.New(""), "failure: raw response dump: ", response)
+
+	decodeError := json.NewDecoder(response.Body).Decode(&status)
+	if decodeError != nil {
+		// code for when Decode of the service's StatusMessage type fails, which means it's another type of error (like http).
+		return fmt.Errorf("error decoding response JSON: %s: ", decodeError)
+	}
+
+	newErr := fmt.Errorf("failure: err(%s), uri(%s), details(%s), code(%d), message(%s)",
+		err, status.Uri, status.Details, status.Status.Code, status.Status.Message)
+
+	return fmt.Errorf("response error info: %s", newErr)
 }
