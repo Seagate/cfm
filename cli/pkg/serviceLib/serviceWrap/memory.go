@@ -423,7 +423,7 @@ func GetAllMemoryRegionsForHost(client *service.APIClient, hostId string) (*[]*s
 		memoryId := ReadLastItemFromUri(member.GetUri())
 		request2 := client.DefaultAPI.HostsGetMemoryById(context.Background(), hostId, memoryId)
 		memoryRegion, response2, err := request2.Execute()
-		if response != nil {
+		if response2 != nil {
 			defer response2.Body.Close() // Required by http lib implementation.
 		}
 		if err != nil {
