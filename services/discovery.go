@@ -40,7 +40,7 @@ func AddDiscoveredDevices(ctx context.Context, apiService openapi.DefaultAPIServ
 	}
 	applianceDatum, _ := datastore.DStore().GetDataStore().GetApplianceDatumById(common.DefaultApplianceCredentials.CustomId)
 	for _, bladeDevice := range bladeBodyBytes {
-		_, exist := data.CheckBladeExist(bladeDevice.Address)
+		_, exist := data.GetBladeDatumByIp(bladeDevice.Address)
 		if !exist {
 			newCredentials := *common.DefaultBladeCredentials
 			newCredentials.IpAddress = bladeDevice.Address
@@ -59,7 +59,7 @@ func AddDiscoveredDevices(ctx context.Context, apiService openapi.DefaultAPIServ
 		log.Fatalf("Response body is not []byte")
 	}
 	for _, hostDevice := range hostBodyBytes {
-		_, exist := data.CheckHostExist(hostDevice.Address)
+		_, exist := data.GetHostDatumByIp(hostDevice.Address)
 		if !exist {
 			newCredentials := *common.DefaultHostCredentials
 			newCredentials.IpAddress = hostDevice.Address

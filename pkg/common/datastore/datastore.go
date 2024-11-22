@@ -112,7 +112,7 @@ func (a *ApplianceDatum) GetBladeDatumById(ctx context.Context, bladeId string) 
 }
 
 // Verify if the blade exists using the ipAddress
-func (c *DataStore) CheckBladeExist(IpAddress string) (*string, bool) {
+func (c *DataStore) GetBladeDatumByIp(IpAddress string) (*string, bool) {
 	for _, appliance := range c.ApplianceData {
 		for bladeId, blade := range appliance.BladeData {
 			if blade.Credentials.IpAddress == IpAddress {
@@ -124,7 +124,7 @@ func (c *DataStore) CheckBladeExist(IpAddress string) (*string, bool) {
 }
 
 // Verify if the host exists using the ipAddress
-func (c *DataStore) CheckHostExist(IpAddress string) (*string, bool) {
+func (c *DataStore) GetHostDatumByIp(IpAddress string) (*string, bool) {
 	for hostId, host := range c.HostData {
 		if host.Credentials.IpAddress == IpAddress {
 			return &hostId, true
@@ -180,7 +180,7 @@ func ReloadDataStore(ctx context.Context, s openapi.DefaultAPIServicer, c *DataS
 	logger := klog.FromContext(ctx)
 
 	logger.V(2).Info("cfm-service: restoring saved appliances")
-	
+
 	for applianceId, applianceDatum := range c.ApplianceData {
 		_, err = s.AppliancesPost(ctx, *applianceDatum.Credentials)
 		if err != nil {

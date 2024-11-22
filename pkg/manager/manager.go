@@ -280,6 +280,20 @@ func AddHost(ctx context.Context, c *openapi.Credentials) (*Host, error) {
 	if err != nil || response == nil {
 		newErr := fmt.Errorf("create session failure at [%s:%d] using interface [%s]: %w", c.IpAddress, c.Port, backendName, err)
 		logger.Error(newErr, "failure: add host")
+
+		// Continue adding the failed host to the datastore, but update the connection status to unavailable
+		host := &Host{
+			Id:     c.CustomId,
+			Uri:    GetCfmUriHostId(c.CustomId),
+			Status: common.UNAVAILABLE,
+		}
+		deviceCache.AddHost(host, false)
+
+		datastore.DStore().GetDataStore().AddHostDatum(c)
+		unavailableHost, _ := datastore.DStore().GetDataStore().GetHostDatumById(c.CustomId)
+		unavailableHost.ConnectionStatus = common.UNAVAILABLE
+		datastore.DStore().Store()
+
 		return nil, &common.RequestError{StatusCode: common.StatusHostCreateSessionFailure, Err: newErr}
 	}
 
@@ -332,10 +346,17 @@ func AddHost(ctx context.Context, c *openapi.Credentials) (*Host, error) {
 		newErr := fmt.Errorf("new host object creation failure: %w", err)
 		logger.Error(newErr, "failure: add host")
 
-		// Continue adding the failed host to the datastore, but update the connection status to offline
+		// Continue adding the failed host to the datastore, but update the connection status to unavailable
+		host := &Host{
+			Id:     c.CustomId,
+			Uri:    GetCfmUriHostId(c.CustomId),
+			Status: common.UNAVAILABLE,
+		}
+		deviceCache.AddHost(host, false)
+
 		datastore.DStore().GetDataStore().AddHostDatum(c)
-		offlineHost, _ := datastore.DStore().GetDataStore().GetHostDatumById(c.CustomId)
-		offlineHost.ConnectionStatus = common.UNAVAILABLE
+		unavailableHost, _ := datastore.DStore().GetDataStore().GetHostDatumById(c.CustomId)
+		unavailableHost.ConnectionStatus = common.UNAVAILABLE
 		datastore.DStore().Store()
 
 		return nil, &common.RequestError{StatusCode: common.StatusManagerInitializationFailure, Err: newErr}

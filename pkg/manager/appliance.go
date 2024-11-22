@@ -96,6 +96,22 @@ func (a *Appliance) AddBlade(ctx context.Context, c *openapi.Credentials) (*Blad
 	if err != nil || response == nil {
 		newErr := fmt.Errorf("create session failure at [%s:%d] using interface [%s]: %w", c.IpAddress, c.Port, backendName, err)
 		logger.Error(newErr, "failure: add blade")
+
+		// Continue adding the failed blade to the datastore, but update the connection status to unavailable
+		newBlade := &Blade{
+			Id:          c.CustomId,
+			Uri:         GetCfmUriBladeId(a.Id, c.CustomId),
+			Status:      common.UNAVAILABLE,
+			ApplianceId: a.Id,
+		}
+		a.Blades[newBlade.Id] = newBlade
+
+		applianceDatum, _ := datastore.DStore().GetDataStore().GetApplianceDatumById(newBlade.ApplianceId)
+		applianceDatum.AddBladeDatum(c)
+		unavailabelBlade, _ := applianceDatum.GetBladeDatumById(ctx, c.CustomId)
+		unavailabelBlade.ConnectionStatus = common.UNAVAILABLE
+		datastore.DStore().Store()
+
 		return nil, &common.RequestError{StatusCode: common.StatusBladeCreateSessionFailure, Err: newErr}
 	}
 
@@ -150,19 +166,19 @@ func (a *Appliance) AddBlade(ctx context.Context, c *openapi.Credentials) (*Blad
 		logger.Error(newErr, "failure: add blade")
 
 		// Continue adding the failed blade to the datastore, but update the connection status to unavailable
-		applianceDatum, _ := datastore.DStore().GetDataStore().GetApplianceDatumById(a.Id)
-		applianceDatum.AddBladeDatum(c)
-		OfflineBlade, _ := applianceDatum.GetBladeDatumById(ctx, c.CustomId)
-		OfflineBlade.ConnectionStatus = common.UNAVAILABLE
-		datastore.DStore().Store()
-		
-		var newBlade = &Blade{
-			Id:          OfflineBlade.Credentials.CustomId,
-			Uri:         GetCfmUriBladeId(a.Id, OfflineBlade.Credentials.CustomId),
-			Status:      OfflineBlade.ConnectionStatus,
+		newBlade := &Blade{
+			Id:          c.CustomId,
+			Uri:         GetCfmUriBladeId(a.Id, c.CustomId),
+			Status:      common.UNAVAILABLE,
 			ApplianceId: a.Id,
 		}
 		a.Blades[newBlade.Id] = newBlade
+
+		applianceDatum, _ := datastore.DStore().GetDataStore().GetApplianceDatumById(newBlade.ApplianceId)
+		applianceDatum.AddBladeDatum(c)
+		unavailabelBlade, _ := applianceDatum.GetBladeDatumById(ctx, c.CustomId)
+		unavailabelBlade.ConnectionStatus = common.UNAVAILABLE
+		datastore.DStore().Store()
 
 		return nil, &common.RequestError{StatusCode: common.StatusManagerInitializationFailure, Err: newErr}
 	}
