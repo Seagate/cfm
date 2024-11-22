@@ -796,7 +796,7 @@ func (cfm *CfmApiService) BladesPost(ctx context.Context, applianceId string, cr
 
 	appliance, err := manager.GetApplianceById(ctx, applianceId)
 	if err != nil {
-		return openapi.Response(http.StatusBadRequest, nil), err
+		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
 	if len(appliance.Blades) == MAX_COUNT_BLADES {
@@ -804,17 +804,17 @@ func (cfm *CfmApiService) BladesPost(ctx context.Context, applianceId string, cr
 			StatusCode: common.StatusBladesExceedMaximum,
 			Err:        fmt.Errorf("cfm-service at maximum blade capacity (%d) for this appliance (%s)", MAX_COUNT_BLADES, applianceId),
 		}
-		return openapi.Response(http.StatusBadRequest, nil), &err
+		return formatErrorResp(ctx, &err)
 	}
 
 	blade, err := appliance.AddBlade(ctx, &credentials)
 	if err != nil {
-		return openapi.Response(http.StatusBadRequest, nil), err
+		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
 	totals, err := blade.GetResourceTotals(ctx)
 	if err != nil {
-		return openapi.Response(http.StatusBadRequest, nil), err
+		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
 	b := openapi.Blade{
@@ -1218,12 +1218,12 @@ func (cfm *CfmApiService) HostsPost(ctx context.Context, credentials openapi.Cre
 			StatusCode: common.StatusHostsExceedMaximum,
 			Err:        fmt.Errorf("cfm-service at maximum host capacity (%d)", MAX_COUNT_HOSTS),
 		}
-		return openapi.Response(http.StatusBadRequest, nil), &err
+		return formatErrorResp(ctx, &err)
 	}
 
 	host, err := manager.AddHost(ctx, &credentials)
 	if err != nil {
-		return openapi.Response(http.StatusBadRequest, nil), err
+		return formatErrorResp(ctx, err.(*common.RequestError))
 	}
 
 	h := openapi.Host{
