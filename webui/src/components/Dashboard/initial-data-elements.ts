@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { useApplianceStore } from "../Stores/ApplianceStore";
 import { useHostStore } from "../Stores/HostStore";
 import { useBladePortStore } from "../Stores/BladePortStore";
+import { useLayout } from "./useLayout";
 
 export const useData = () => {
     const applianceStore = useApplianceStore();
@@ -52,15 +53,24 @@ export const useData = () => {
             }
         );
 
-        const hostNodes = hostStore.hostIds.map((host, index) => ({
-            id: `host-${host}`,
-            data: { label: host, url: `/hosts/${host}` },
-            position: { x: 500, y: index * 200 },
-            style: { backgroundColor: "#d9ecd0", color: "#000" },
-            type: hostNodeType,
-            sourcePosition: 'right',
-            targetPosition: 'left',
-        }));
+        const hostNodes = hostStore.hostIds.map((host, index) => {
+            const { width, height } = useLayout().measureText(host);
+
+            return {
+                id: `host-${host}`,
+                data: { label: host, url: `/hosts/${host}` },
+                position: { x: 500, y: index * 200 },
+                style: {
+                    backgroundColor: "#d9ecd0",
+                    color: "#000",
+                    width: `${width + 20}px`, // Adding some padding
+                    height: `${height + 20}px` // Adding some padding
+                },
+                type: hostNodeType,
+                sourcePosition: 'right',
+                targetPosition: 'left',
+            };
+        });
 
         return [...applianceNodes, ...hostNodes];
     });

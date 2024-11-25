@@ -7,6 +7,19 @@ import { ref } from 'vue';
  * Composable to run the layout algorithm on the graph.
  * It uses the `dagre` library to calculate the layout of the nodes and edges.
  */
+
+export function measureText(text: string, font = '16px Arial') {
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  context!.font = font;
+  const metrics = context!.measureText(text);
+  const width = Math.max(metrics.width, 220);
+  return {
+    width: width,
+    height: parseInt(font, 10) // Assuming height is roughly the font size
+  };
+};
+
 export function useLayout() {
   const { findNode } = useVueFlow();
 
@@ -28,10 +41,13 @@ export function useLayout() {
     previousDirection.value = direction;
 
     for (const node of nodes) {
-      // Use the dimensions property of the internal node (`GraphNode` type)
-      const graphNode = findNode(node.id);
+      // Measure the text dimensions for dynamic sizing
+      const { width, height } = measureText(node.data.label);
 
-      dagreGraph.setNode(node.id, { width: graphNode?.dimensions.width || 150, height: graphNode?.dimensions.height || 50 });
+      dagreGraph.setNode(node.id, {
+        width: width + 20, // Adding some padding
+        height: height + 20 // Adding some padding
+      });
     }
 
     for (const edge of edges) {
@@ -41,7 +57,7 @@ export function useLayout() {
     dagre.layout(dagreGraph);
 
     // Set nodes with updated positions
-    return nodes.map((node: { id: string | dagre.Label; }) => {
+    return nodes.map((node: { id: string | dagre.Label; style: any; }) => {
       const nodeWithPosition = dagreGraph.node(node.id);
 
       return {
@@ -49,9 +65,14 @@ export function useLayout() {
         targetPosition: isHorizontal ? Position.Left : Position.Top,
         sourcePosition: isHorizontal ? Position.Right : Position.Bottom,
         position: { x: nodeWithPosition.x, y: nodeWithPosition.y },
+        style: {
+          ...node.style,
+          width: `${nodeWithPosition.width}px`,
+          height: `${nodeWithPosition.height}px`
+        }
       };
     });
   }
 
-  return { graph, layout, previousDirection };
+  return { graph, layout, previousDirection, measureText };
 }
