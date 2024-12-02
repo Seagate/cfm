@@ -38,9 +38,9 @@ export const useControlData = () => {
           style: { backgroundColor: "#f2ae72", color: "#000" },
           type: applianceNodeType,
         },
-        ...appliance.bladeIds.map((bladeId, bladeIndex) => ({
-          id: `blade-${bladeId}`,
-          data: { label: bladeId, url: `/appliances/${appliance.id}/blades/${bladeId}`, associatedAppliance: appliance.id },
+        ...appliance.blades.map((blade, bladeIndex) => ({
+          id: `blade-${blade.id}`,
+          data: { label: blade.id, url: `/appliances/${appliance.id}/blades/${blade.id}`, associatedAppliance: appliance.id },
           position: position,
           style: { backgroundColor: "#f2e394", color: "#000" },
           type: bladeNodeType,
@@ -49,8 +49,8 @@ export const useControlData = () => {
     );
 
     const hostNodes = hostStore.hostIds.map((host, index) => ({
-      id: `host-${host}`,
-      data: { label: host, url: `/hosts/${host}` },
+      id: `host-${host.id}`,
+      data: { label: host.id, url: `/hosts/${host.id}` },
       position: position,
       style: { backgroundColor: "#d9ecd0", color: "#000" },
       type: hostNodeType,
@@ -67,18 +67,18 @@ export const useControlData = () => {
             source: "cfm-service",
             target: `appliance-${appliance.id}`,
           },
-          ...appliance.bladeIds.map((bladeId) => ({
-            id: `appliance-blade-${appliance.id}-${bladeId}`,
+          ...appliance.blades.map((blade) => ({
+            id: `appliance-blade-${appliance.id}-${blade.id}`,
             source: `appliance-${appliance.id}`,
-            target: `blade-${bladeId}`,
+            target: `blade-${blade.id}`,
           })),
         ])
         : [];
 
       const hostEdges = hostStore.hostIds.map((host) => ({
-        id: `cfm-${host}`,
+        id: `cfm-${host.id}`,
         source: "cfm-service",
-        target: `host-${host}`,
+        target: `host-${host.id}`,
       }));
 
       return [...coreEdges, ...hostEdges];
@@ -97,19 +97,19 @@ export const useControlData = () => {
           target: `appliance-${appliance.id}`,
           animated: true,
         },
-        ...appliance.bladeIds.map((bladeId) => ({
-          id: `appliance-blade-${appliance.id}-${bladeId}`,
+        ...appliance.blades.map((blade) => ({
+          id: `appliance-blade-${appliance.id}-${blade.id}`,
           source: `appliance-${appliance.id}`,
-          target: `blade-${bladeId}`,
+          target: `blade-${blade.id}`,
           animated: true,
         })),
       ])
       : [];
 
     const hostEdges = hostStore.hostIds.map((host) => ({
-      id: `cfm-${host}`,
+      id: `cfm-${host.id}`,
       source: "cfm-service",
-      target: `host-${host}`,
+      target: `host-${host.id}`,
       animated: true,
     }));
 

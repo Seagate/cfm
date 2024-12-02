@@ -18,7 +18,7 @@ export const useData = () => {
         let currentYPosition = 0;
         const applianceNodes = applianceStore.applianceIds.flatMap(
             (appliance, index) => {
-                const bladeCount = appliance.bladeIds.length;
+                const bladeCount = appliance.blades.length;
                 const applianceHeight = 50 + bladeCount * 50; // Adjust height based on number of blades
                 const applianceWidth = 270; // Width of the appliance node
                 const bladeWidth = 250; // Width of the blade node
@@ -34,9 +34,9 @@ export const useData = () => {
                     targetPosition: 'left',
                 };
 
-                const bladeNodes = appliance.bladeIds.map((bladeId, bladeIndex) => ({
-                    id: `blade-${bladeId}`,
-                    data: { label: bladeId, url: `/appliances/${appliance.id}/blades/${bladeId}`, associatedAppliance: appliance.id },
+                const bladeNodes = appliance.blades.map((blade, bladeIndex) => ({
+                    id: `blade-${blade.id}`,
+                    data: { label: blade.id, url: `/appliances/${appliance.id}/blades/${blade.id}`, associatedAppliance: appliance.id },
                     position: { x: bladeXPosition, y: 50 + bladeIndex * 50 }, // Center blades within the appliance node
                     style: { backgroundColor: "#f2e394", color: "#000", width: `${bladeWidth}px` },
                     type: bladeNodeType,
@@ -54,11 +54,11 @@ export const useData = () => {
         );
 
         const hostNodes = hostStore.hostIds.map((host, index) => {
-            const { width, height } = useLayout().measureText(host);
+            const { width, height } = useLayout().measureText(host.id);
 
             return {
-                id: `host-${host}`,
-                data: { label: host, url: `/hosts/${host}` },
+                id: `host-${host.id}`,
+                data: { label: host.id, url: `/hosts/${host.id}` },
                 position: { x: 500, y: index * 200 },
                 style: {
                     backgroundColor: "#d9ecd0",
