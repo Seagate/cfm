@@ -1,6 +1,6 @@
 // Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
 import { defineStore } from 'pinia'
-import { Appliance, Credentials, DefaultApi } from "@/axios/api";
+import { Appliance, Credentials, DefaultApi, DiscoveredDevice } from "@/axios/api";
 import { BASE_PATH } from "@/axios/base";
 import axios from 'axios';
 
@@ -14,7 +14,30 @@ export const useApplianceStore = defineStore('appliance', {
         addApplianceError: null as unknown,
         deleteApplianceError: null as unknown,
         renameApplianceError: null as unknown,
-        applianceIds: [] as { id: string, bladeIds: string[] }[],
+        applianceIds: [] as { id: string, blades: { id: string, ipAddress: string }[] }[],
+        discoveredBlades: [] as DiscoveredDevice[],
+
+        prefixBladeId: "Discoverd_Blade_",
+        newBladeCredentials: {
+            username: "root",
+            password: "0penBmc",
+            ipAddress: "127.0.0.1",
+            port: 443,
+            insecure: true,
+            protocol: "https",
+            customId: "",
+        },
+
+        defaultApplianceId: "CMA_Discovered_Blades",
+        newApplianceCredentials: {
+            username: "root",
+            password: "0penBmc",
+            ipAddress: "127.0.0.1",
+            port: 8443,
+            insecure: true,
+            protocol: "https",
+            customId: "",
+        },
     }),
 
     actions: {
@@ -72,7 +95,7 @@ export const useApplianceStore = defineStore('appliance', {
 
                         const responseOfBlades = await defaultApi.bladesGet(applianceId);
                         const bladeCount = responseOfBlades.data.memberCount;
-                        const bladeIds = [];
+                        const associatedBlades = [];
 
                         for (let i = 0; i < bladeCount; i++) {
                             // Extract the id for each blade
@@ -80,14 +103,75 @@ export const useApplianceStore = defineStore('appliance', {
                             const bladeId: string = JSON.stringify(uri).split("/").pop()?.slice(0, -2) as string;
                             // Store blade in blades
                             if (bladeId) {
-                                bladeIds.push(bladeId);
+                                const responseOfBlade = await defaultApi.bladesGetById(applianceId, bladeId);
+                                const response = { id: responseOfBlade.data.id, ipAddress: responseOfBlade.data.ipAddress }
+                                associatedBlades.push(response);
                             }
                         }
-                        this.applianceIds.push({ id: detailsResponseOfAppliance.data.id, bladeIds });
+                        this.applianceIds.push({ id: detailsResponseOfAppliance.data.id, blades: associatedBlades });
                     }
                 }
             } catch (error) {
                 console.error("Error fetching appliances:", error);
+            }
+        },
+
+        async discoverBlades() {
+            try {
+                // Get all the existed blades
+                const existedBladeIpAddress: (string | undefined)[] = []
+                for (var i = 0; i < this.applianceIds.length; i++) {
+                    for (var j = 0; j < this.applianceIds[i].blades.length; j++) {
+                        existedBladeIpAddress.push(this.applianceIds[i].blades[j].ipAddress)
+                    }
+                }
+
+                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
+                this.discoveredBlades = [];
+                const responseOfBlade = await defaultApi.discoverDevices("blade");
+                this.discoveredBlades = responseOfBlade.data;
+
+                // Remove the existed blades from the discovered blades
+                for (var k = 0; k < this.discoveredBlades.length; k++) {
+                    for (var m = 0; m < existedBladeIpAddress.length; m++) {
+                        this.discoveredBlades = this.discoveredBlades.filter(
+                            (discoveredBlade) => discoveredBlade.address !== existedBladeIpAddress[m]
+                        );
+                    }
+                }
+
+                return this.discoveredBlades
+            } catch (error) {
+                console.error("Error discovering new devices:", error);
+            }
+        },
+
+        async addDiscoveredBlades(blade: DiscoveredDevice) {
+            const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
+            const responseOfApplianceExist = await defaultApi.appliancesGetById(this.defaultApplianceId)
+
+            // If there is no default appliance, add one
+            if (!responseOfApplianceExist) {
+                this.newApplianceCredentials.customId = this.defaultApplianceId;
+                const responseOfAppliance = await defaultApi.appliancesPost(this.newApplianceCredentials);
+                
+                // Add the new appliance to the appliances and applianceIds array
+                this.appliances.push(responseOfAppliance.data);
+                const newAppliance = { id: responseOfAppliance.data.id, blades: [] }
+                this.applianceIds.push(newAppliance)
+            }
+
+            // Add the new discovered blade to the default appliance
+            let appliance = this.applianceIds.find(appliance => appliance.id === this.defaultApplianceId);
+
+            this.newBladeCredentials.customId = this.prefixBladeId + blade.address;
+            this.newBladeCredentials.ipAddress = blade.address + "";
+
+            const responseOfBlade = await defaultApi.bladesPost(this.defaultApplianceId, this.newBladeCredentials);
+
+            if (responseOfBlade) {
+                const response = { id: responseOfBlade.data.id, ipAddress: responseOfBlade.data.ipAddress };
+                appliance!.blades.push(response);
             }
         },
 
@@ -97,7 +181,6 @@ export const useApplianceStore = defineStore('appliance', {
                 const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
                 const response = await defaultApi.appliancesPost(newAppliance);
                 const addedAppliance = response.data;
-                console.log("added appliance", addedAppliance)
                 // Add the new appliance to the appliances array
                 this.appliances.push(addedAppliance);
                 return addedAppliance;

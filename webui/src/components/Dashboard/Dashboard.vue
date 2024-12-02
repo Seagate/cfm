@@ -14,9 +14,22 @@
       {{ currentTitle }}
     </h2>
 
-    <v-btn @click="toggleGraph" style="margin-bottom: 40px" variant="tonal">
-      {{ buttonLabel }}
-    </v-btn>
+    <v-row>
+      <v-col>
+        <v-btn @click="toggleGraph" style="margin-bottom: 40px" variant="tonal">
+          {{ buttonLabel }}
+        </v-btn>
+      </v-col>
+      <v-col>
+        <v-btn
+          @click="discoverDevices"
+          style="margin-bottom: 40px"
+          variant="tonal"
+        >
+          Click to discover new devices</v-btn
+        >
+      </v-col>
+    </v-row>
 
     <div style="position: relative; width: 25%">
       <v-text-field
@@ -50,6 +63,55 @@
         </ControlButton>
       </Controls>
     </VueFlow>
+
+    <!-- The dialog of the warning before the adding the new discovered devices(blades or cxl-hosts) -->
+    <v-dialog v-model="dialogNewDiscoveredDevices" max-width="600px">
+      <v-card>
+        <v-alert
+          color="info"
+          icon="$info"
+          title="New Discovered Devices"
+          variant="tonal"
+          text="Here are the discovered devices. You can add them to CFM by selecting them and clicking the 'Add' button."
+        ></v-alert>
+        <v-card-text class="scrollable-content">
+          New Discovered Blades:
+          <v-checkbox
+            v-for="(blade, index) in discoveredBlades"
+            :key="index"
+            :label="`${blade.name} - ${blade.address}`"
+            v-model="selectedBlades"
+            :value="blade"
+          ></v-checkbox>
+          New Discovered Hosts:
+          <v-checkbox
+            v-for="(host, index) in discoveredHosts"
+            :key="index"
+            :label="`${host.name} - ${host.address}`"
+            v-model="selectedHosts"
+            :value="host"
+          ></v-checkbox>
+        </v-card-text>
+        <v-divider></v-divider>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="info"
+            variant="text"
+            id="cancelResyncBlade"
+            @click="dialogNewDiscoveredDevices = false"
+            >Cancel</v-btn
+          >
+          <v-btn
+            color="info"
+            variant="text"
+            id="confirmResyncBlade"
+            @click="addDiscoveredDevices"
+            >Add</v-btn
+          >
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -67,6 +129,43 @@ import { ControlButton, Controls } from "@vue-flow/controls";
 
 export default {
   components: { VueFlow, ControlButton, Controls },
+
+  data() {
+    return {
+      dialogNewDiscoveredDevices: false,
+
+      discoveredBlades: [],
+      discoveredHosts: [],
+
+      selectedBlades: [],
+      selectedHosts: [],
+    };
+  },
+
+  methods: {
+    async discoverDevices() {
+      const applianceStore = useApplianceStore();
+      const hostStore = useHostStore();
+
+      try {
+        const responseOfBlades = await applianceStore.discoverBlades();
+        const responseOfHosts = await hostStore.discoverHosts();
+
+        const response = (responseOfBlades || []).concat(responseOfHosts || []);
+        this.discoveredBlades = responseOfBlades || [];
+        this.discoveredHosts = responseOfHosts || [];
+
+        this.dialogNewDiscoveredDevices = true;
+
+        return response.length ? response : [];
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        return [];
+      }
+    },
+
+    addDiscoveredDevices() {},
+  },
 
   setup() {
     const applianceStore = useApplianceStore();
@@ -178,8 +277,8 @@ export default {
       await hostStore.fetchHosts();
       // Ensure blade ports are fetched after appliances, this action will create the edges for dataPlane
       for (const appliance of applianceStore.applianceIds) {
-        for (const bladeId of appliance.bladeIds) {
-          await bladePortStore.fetchBladePorts(appliance.id, bladeId);
+        for (const blade of appliance.blades) {
+          await bladePortStore.fetchBladePorts(appliance.id, blade.id);
         }
       }
     });
@@ -200,3 +299,10 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.scrollable-content {
+  max-height: 300px; /* Adjust height as needed */
+  overflow-y: auto;
+}
+</style>
