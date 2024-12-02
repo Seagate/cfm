@@ -96,6 +96,22 @@ func (a *Appliance) AddBlade(ctx context.Context, c *openapi.Credentials) (*Blad
 	if err != nil || response == nil {
 		newErr := fmt.Errorf("create session failure at [%s:%d] using interface [%s]: %w", c.IpAddress, c.Port, backendName, err)
 		logger.Error(newErr, "failure: add blade")
+
+		// Continue adding the failed blade to the datastore, but update the connection status to unavailable
+		newBlade := &Blade{
+			Id:          c.CustomId,
+			Uri:         GetCfmUriBladeId(a.Id, c.CustomId),
+			Status:      common.UNAVAILABLE,
+			ApplianceId: a.Id,
+		}
+		a.Blades[newBlade.Id] = newBlade
+
+		applianceDatum, _ := datastore.DStore().GetDataStore().GetApplianceDatumById(newBlade.ApplianceId)
+		applianceDatum.AddBladeDatum(c)
+		unavailabelBlade, _ := applianceDatum.GetBladeDatumById(ctx, c.CustomId)
+		unavailabelBlade.ConnectionStatus = common.UNAVAILABLE
+		datastore.DStore().Store()
+
 		return nil, &common.RequestError{StatusCode: common.StatusBladeCreateSessionFailure, Err: newErr}
 	}
 
@@ -148,6 +164,22 @@ func (a *Appliance) AddBlade(ctx context.Context, c *openapi.Credentials) (*Blad
 
 		newErr := fmt.Errorf("appliance [%s] new blade object creation failure: %w", a.Id, err)
 		logger.Error(newErr, "failure: add blade")
+
+		// Continue adding the failed blade to the datastore, but update the connection status to unavailable
+		newBlade := &Blade{
+			Id:          c.CustomId,
+			Uri:         GetCfmUriBladeId(a.Id, c.CustomId),
+			Status:      common.UNAVAILABLE,
+			ApplianceId: a.Id,
+		}
+		a.Blades[newBlade.Id] = newBlade
+
+		applianceDatum, _ := datastore.DStore().GetDataStore().GetApplianceDatumById(newBlade.ApplianceId)
+		applianceDatum.AddBladeDatum(c)
+		unavailabelBlade, _ := applianceDatum.GetBladeDatumById(ctx, c.CustomId)
+		unavailabelBlade.ConnectionStatus = common.UNAVAILABLE
+		datastore.DStore().Store()
+
 		return nil, &common.RequestError{StatusCode: common.StatusManagerInitializationFailure, Err: newErr}
 	}
 
@@ -346,7 +378,7 @@ func (a *Appliance) GetBladeById(ctx context.Context, bladeId string) (*Blade, e
 	if blade.CheckSync(ctx) {
 		logger.V(4).Info("initiating auto-resync check", "bladeId", bladeId, "applianceId", a.Id)
 		blade.UpdateConnectionStatusBackend(ctx)
-		if blade.Status == common.FOUND { // good power, bad session
+		if blade.Status == common.UNAVAILABLE { // good power, bad session
 			blade, err = a.ResyncBladeById(ctx, bladeId)
 			if err != nil {
 				newErr := fmt.Errorf("failed to resync blade by id [%s]: %w", bladeId, err)
