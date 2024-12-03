@@ -128,6 +128,20 @@
       </v-row>
     </v-dialog>
 
+    <v-dialog v-model="dialogDiscoverDevicesWait">
+      <v-row align-content="center" class="fill-height" justify="center">
+        <v-col cols="6">
+          <v-progress-linear color="#6ebe4a" height="50" indeterminate rounded>
+            <template v-slot:default>
+              <div class="text-center">
+                {{ discoverDevicesProgressText }}
+              </div>
+            </template>
+          </v-progress-linear>
+        </v-col>
+      </v-row>
+    </v-dialog>
+
     <v-dialog v-model="dialogAddNewDiscoveredDevicesOutput" max-width="600px">
       <v-sheet
         elevation="12"
@@ -194,10 +208,12 @@ export default {
     return {
       addNewDiscoveredDevicesProgressText:
         "Adding the selected devices, please wait...",
+      discoverDevicesProgressText:"Discovering the selected devices, please wait...",
 
       dialogNewDiscoveredDevices: false,
       dialogAddNewDiscoveredDevicesWait: false,
       dialogAddNewDiscoveredDevicesOutput: false,
+      dialogDiscoverDevicesWait: false,
 
       discoveredBlades: [],
       discoveredHosts: [],
@@ -212,6 +228,7 @@ export default {
 
   methods: {
     async discoverDevices() {
+      this.dialogDiscoverDevicesWait = true;
       const applianceStore = useApplianceStore();
       const hostStore = useHostStore();
 
@@ -224,8 +241,11 @@ export default {
         this.discoveredHosts = responseOfHosts || [];
 
         this.dialogNewDiscoveredDevices = true;
+        this.dialogDiscoverDevicesWait = false;
+
         return response.length ? response : [];
       } catch (error) {
+        this.dialogDiscoverDevicesWait = false;
         console.error("Error fetching data:", error);
         return [];
       }
