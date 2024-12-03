@@ -154,11 +154,13 @@ export const useApplianceStore = defineStore('appliance', {
             if (!responseOfApplianceExist) {
                 this.newApplianceCredentials.customId = this.defaultApplianceId;
                 const responseOfAppliance = await defaultApi.appliancesPost(this.newApplianceCredentials);
-                
+
                 // Add the new appliance to the appliances and applianceIds array
-                this.appliances.push(responseOfAppliance.data);
-                const newAppliance = { id: responseOfAppliance.data.id, blades: [] }
-                this.applianceIds.push(newAppliance)
+                if (responseOfAppliance) {
+                    this.appliances.push(responseOfAppliance.data);
+                    const newAppliance = { id: responseOfAppliance.data.id, blades: [] }
+                    this.applianceIds.push(newAppliance)
+                }
             }
 
             // Add the new discovered blade to the default appliance
@@ -173,6 +175,8 @@ export const useApplianceStore = defineStore('appliance', {
                 const response = { id: responseOfBlade.data.id, ipAddress: responseOfBlade.data.ipAddress };
                 appliance!.blades.push(response);
             }
+
+            return responseOfBlade.data;
         },
 
         async addNewAppliance(newAppliance: Credentials) {
