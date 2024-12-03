@@ -109,26 +109,21 @@ export const useHostStore = defineStore('host', {
             }
         },
 
-        async addDiscoveredHosts() {
+        async addDiscoveredHosts(host: DiscoveredDevice) {
             const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-            for (var g = 0; g < this.discoveredHosts.length; g++) {
-                try {
-                    // Add all the new didcovered hosts
-                    this.newHostCredentials.customId = this.prefixHostId + this.discoveredHosts[g].address;
-                    this.newHostCredentials.ipAddress = this.discoveredHosts[g].address + "";
-                    
-                    const responseOfHost = await defaultApi.hostsPost(this.newHostCredentials);
+            // Add all the new didcovered hosts
+            this.newHostCredentials.customId = this.prefixHostId + host.address;
+            this.newHostCredentials.ipAddress = host.address + "";
 
-                    // Update the applianceIds and appliances
-                    if (responseOfHost) {
-                        const response = { id: responseOfHost.data.id, ipAddress: responseOfHost.data.ipAddress }
-                        this.hosts.push(responseOfHost.data);
-                        this.hostIds.push(response)
-                    }
-                } catch (error) {
-                    console.error(`Error processing host ${g + 1}:`, error);
-                }
+            const responseOfHost = await defaultApi.hostsPost(this.newHostCredentials);
+
+            // Update the applianceIds and appliances
+            if (responseOfHost) {
+                const response = { id: responseOfHost.data.id, ipAddress: responseOfHost.data.ipAddress }
+                this.hosts.push(responseOfHost.data);
+                this.hostIds.push(response)
             }
+            return responseOfHost.data;
         },
 
         async addNewHost(newHost: Credentials) {
