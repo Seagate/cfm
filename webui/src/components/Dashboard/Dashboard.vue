@@ -257,6 +257,7 @@ export default {
 
       const applianceStore = useApplianceStore();
       const hostStore = useHostStore();
+      const bladePortStore = useBladePortStore();
 
       if (this.selectedBlades.length === 0) {
         console.log("No blades selected.");
@@ -290,6 +291,15 @@ export default {
           } catch (error) {
             console.error("Error adding new discovered host:", error);
           }
+        }
+      }
+
+      // Update the graph content
+      await applianceStore.fetchAppliances();
+      await hostStore.fetchHosts();
+      for (const appliance of applianceStore.applianceIds) {
+        for (const blade of appliance.blades) {
+          await bladePortStore.fetchBladePorts(appliance.id, blade.id);
         }
       }
 
