@@ -83,6 +83,7 @@
             v-model="selectedBlades"
             :value="blade"
           ></v-checkbox>
+          <br>
           New Discovered Hosts:
           <v-checkbox
             v-for="(host, index) in discoveredHosts"
@@ -412,7 +413,7 @@ export default {
 
 <style scoped>
 .scrollable-content {
-  max-height: 300px; /* Adjust height as needed */
+  max-height: 300px;
   overflow-y: auto;
 }
 </style>
