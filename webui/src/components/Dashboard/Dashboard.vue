@@ -112,6 +112,65 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-dialog v-model="dialogAddNewDiscoveredDevicesWait">
+      <v-row align-content="center" class="fill-height" justify="center">
+        <v-col cols="6">
+          <v-progress-linear color="#6ebe4a" height="50" indeterminate rounded>
+            <template v-slot:default>
+              <div class="text-center">
+                {{ addNewDiscoveredDevicesProgressText }}
+              </div>
+            </template>
+          </v-progress-linear>
+        </v-col>
+      </v-row>
+    </v-dialog>
+
+    <v-dialog v-model="dialogAddNewDiscoveredDevicesOutput" max-width="600px">
+      <v-sheet
+        elevation="12"
+        max-width="600"
+        rounded="lg"
+        width="100%"
+        class="pa-4 text-center mx-auto"
+      >
+        <v-icon
+          class="mb-5"
+          color="success"
+          icon="mdi-check-circle"
+          size="112"
+        ></v-icon>
+        <h2 class="text-h5 mb-6">Congrats! New devices were added</h2>
+        <p class="mb-4 text-medium-emphasis text-body-2">
+          New blades:
+          <ul>
+          <li v-for="(blade, index) in newBlades" :key="index">
+            {{ blade.id }}
+          </li>
+        </ul><br />New hosts: <br />
+        <ul>
+          <li v-for="(host, index) in newHosts" :key="index">
+            {{ host.id }}
+          </li>
+        </ul>
+        </p>
+        <v-divider class="mb-4"></v-divider>
+        <div class="text-end">
+          <v-btn
+            class="text-none"
+            color="success"
+            rounded
+            variant="flat"
+            width="90"
+            id="addNewApplianceSuccess"
+            @click="dialogAddNewDiscoveredDevicesOutput = false"
+          >
+            Done
+          </v-btn>
+        </div>
+      </v-sheet>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -132,13 +191,21 @@ export default {
 
   data() {
     return {
+      addNewDiscoveredDevicesProgressText:
+        "Adding the selected devices, please wait...",
+
       dialogNewDiscoveredDevices: false,
+      dialogAddNewDiscoveredDevicesWait: false,
+      dialogAddNewDiscoveredDevicesOutput: false,
 
       discoveredBlades: [],
       discoveredHosts: [],
 
       selectedBlades: [],
       selectedHosts: [],
+
+      newBlades: [],
+      newHosts: [],
     };
   },
 
@@ -156,7 +223,6 @@ export default {
         this.discoveredHosts = responseOfHosts || [];
 
         this.dialogNewDiscoveredDevices = true;
-
         return response.length ? response : [];
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -164,7 +230,51 @@ export default {
       }
     },
 
-    addDiscoveredDevices() {},
+    async addDiscoveredDevices() {
+      this.dialogNewDiscoveredDevices = false;
+      this.dialogAddNewDiscoveredDevicesWait = true;
+
+      const applianceStore = useApplianceStore();
+      const hostStore = useHostStore();
+
+      if (this.selectedBlades.length === 0) {
+        console.log("No blades selected.");
+      } else {
+        for (var i = 0; i < this.selectedBlades.length; i++) {
+          try {
+            const newAddedBlade = await applianceStore.addDiscoveredBlades(
+              this.selectedBlades[i]
+            );
+
+            if (newAddedBlade) {
+              this.newBlades.push(newAddedBlade);
+            }
+          } catch (error) {
+            console.error("Error adding new discovered blade:", error);
+          }
+        }
+      }
+
+      if (this.selectedHosts.length === 0) {
+        console.log("No hosts selected.");
+      } else {
+        for (var i = 0; i < this.selectedHosts.length; i++) {
+          try {
+            const newAddedHost = await hostStore.addDiscoveredHosts(
+              this.selectedHosts[i]
+            );
+            if (newAddedHost) {
+              this.newHosts.push(newAddedHost);
+            }
+          } catch (error) {
+            console.error("Error adding new discovered host:", error);
+          }
+        }
+      }
+
+      this.dialogAddNewDiscoveredDevicesWait = false;
+      this.dialogAddNewDiscoveredDevicesOutput = true;
+    },
   },
 
   setup() {
