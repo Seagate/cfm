@@ -51,6 +51,9 @@ docker exec -it cfm-container ./cfm-cli -h
 docker exec -it cfm-container ./cfm-cli list appliances
 ```
 
+NOTE: Currently, every cfm-cli command requires various tcpip options (e.g.: --service-net-ip) regarding the specific cfm-service that is being interacted with.
+However, using the docker container, the user can rely on the default cli settings for these cfm-service options since they point to the cfm-service running within the same docker container.
+
 ## Customization
 
 The developer could use the [DockerFile](../docker/Dockerfile) as a reference to build a new docker image using a local [cfm](https://github.com/Seagate/cfm) clone...

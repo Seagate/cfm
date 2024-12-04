@@ -5,25 +5,18 @@ package cmd
 import (
 	"cfm/cli/pkg/serviceLib/flags"
 	"cfm/cli/pkg/serviceLib/serviceRequests"
+	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
 
 var listBladesCmd = &cobra.Command{
-	Use:   `blades [--serv-ip | -a] [--serv-net-port | -p] [--appliance-id | -L] [--blade-id | -B]`,
-	Short: "List some or all recognized appliance blades",
-	Long:  `Queries the cfm-service for some or all recognized appliance blades and outputs a detailed summary of the discovered blades to stdout.`,
-	Example: `
-	cfm list blades --serv-ip 127.0.0.1 --serv-net-port 8080 --appliance-id applId --blade-id bladeId
-	cfm list blades --serv-ip 127.0.0.1 --serv-net-port 8080 --appliance-id applId
-	cfm list blades --serv-ip 127.0.0.1 --serv-net-port 8080 --blade-id bladeId
-	cfm list blades --serv-ip 127.0.0.1 --serv-net-port 8080
-
-	cfm list blades -a 127.0.0.1 -p 8080 -L applId -B bladeId
-	cfm list blades -a 127.0.0.1 -p 8080 -L applId
-	cfm list blades -a 127.0.0.1 -p 8080 -B bladeId
-	cfm list blades -a 127.0.0.1 -p 8080`,
-	Args: cobra.MatchAll(cobra.NoArgs),
+	Use:     GetCmdUsageListBlades(),
+	Short:   "List some or all recognized appliance blades",
+	Long:    `Queries the cfm-service for some or all recognized appliance blades and outputs a detailed summary of the discovered blades to stdout.`,
+	Example: GetCmdExampleListBlades(),
+	Args:    cobra.MatchAll(cobra.NoArgs),
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		initLogging(cmd)
 		return nil
@@ -43,10 +36,79 @@ var listBladesCmd = &cobra.Command{
 func init() {
 	listBladesCmd.DisableFlagsInUseLine = true
 
-	initCommonPersistentFlags(listBladesCmd)
-	listBladesCmd.Flags().StringP(flags.APPLIANCE_ID, flags.APPLIANCE_ID_SH, flags.ID_DFLT, "ID of appliance to interrogate (default \"all appliances searched\")")
-	listBladesCmd.Flags().StringP(flags.BLADE_ID, flags.BLADE_ID_SH, flags.ID_DFLT, "ID of a specific appliance blade. (default \"all blades returned\")")
+	initCommonBladeListCmdFlags(listBladesCmd)
 
 	//Add command to parent
 	listCmd.AddCommand(listBladesCmd)
+}
+
+// GetCmdUsageListBlade - Generates the command usage string for the cobra.Command.Use field.
+func GetCmdUsageListBlades() string {
+	return fmt.Sprintf("%s %s %s %s",
+		flags.BLADES, // Note: The first word in the Command.Use string is how Cobra defines the "name" of this "command".
+		flags.GetOptionUsageGroupServiceTcp(false),
+		flags.GetOptionUsageApplianceId(true),
+		flags.GetOptionUsageBladeId(true))
+}
+
+// GetCmdExampleListBlades - Generates the command example string for the cobra.Command.Example field.
+func GetCmdExampleListBlades() string {
+	baseCmd := fmt.Sprintf("cfm list %s", flags.BLADES)
+
+	baseCmdLoopSh := fmt.Sprintf("%s %s",
+		baseCmd,
+		flags.GetOptionExampleShGroupServiceTcp())
+
+	shIdExamplesMap := map[string]string{
+		"applianceId": " " + flags.GetOptionExampleShApplianceId(),
+		"bladeId":     " " + flags.GetOptionExampleShBladeId(),
+	}
+
+	shExampleLines := make([]string, 0, 4)
+	for i := 0; i < 4; i++ {
+		s := baseCmdLoopSh
+		if i&1 != 0 {
+			s += shIdExamplesMap["applianceId"]
+		}
+		if i&2 != 0 {
+			s += shIdExamplesMap["bladeId"]
+		}
+		shExampleLines = append(shExampleLines, s)
+	}
+
+	var shorthandFormat strings.Builder
+	for _, line := range shExampleLines {
+		shorthandFormat.WriteString("\t" + line + "\n")
+	}
+
+	baseCmdLoopLh := fmt.Sprintf("%s %s",
+		baseCmd,
+		flags.GetOptionExampleLhGroupServiceTcp())
+
+	lhIdExamplesMap := map[string]string{
+		"applianceId": " " + flags.GetOptionExampleLhApplianceId(),
+		"bladeId":     " " + flags.GetOptionExampleLhBladeId(),
+	}
+
+	lhExampleLines := make([]string, 0, 4)
+	for i := 0; i < 4; i++ {
+		s := baseCmdLoopLh
+		if i&1 != 0 {
+			s += lhIdExamplesMap["applianceId"]
+		}
+		if i&2 != 0 {
+			s += lhIdExamplesMap["bladeId"]
+		}
+		lhExampleLines = append(lhExampleLines, s)
+	}
+
+	var longhandFormat strings.Builder
+	for _, line := range lhExampleLines {
+		longhandFormat.WriteString("\t" + line + "\n")
+	}
+
+	return fmt.Sprintf(`
+%s
+
+%s`, shorthandFormat.String(), longhandFormat.String())
 }
