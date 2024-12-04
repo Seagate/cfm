@@ -5,27 +5,22 @@ package cmd
 import (
 	"cfm/cli/pkg/serviceLib/flags"
 	"cfm/cli/pkg/serviceLib/serviceRequests"
+	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
 
 var listHostsMemoryCmd = &cobra.Command{
-	Use:   `memory [--serv-ip | -a] [--serv-net-port | -p] [--host-id | -H] [--memory-id | -m]`,
+	Use:   GetCmdUsageListHostsMemory(),
 	Short: "List all available composed memory region(s) accessible to the host(s)",
 	Long: `Queries the cfm-service for composed memory region(s) accessible to the host(s).
 	Outputs a detailed summary of those memory regions to stdout.
-	Note that, for any given item ID, if it is omitted, ALL items are collected\searched.`,
-	Example: `
-	cfm list hosts memory --serv-ip 127.0.0.1 --serv-net-port 8080 --host-id hostId --memory-id memId
-	cfm list hosts memory --serv-ip 127.0.0.1 --serv-net-port 8080 --host-id hostId
-	cfm list hosts memory --serv-ip 127.0.0.1 --serv-net-port 8080 --memory-id memId
-	cfm list hosts memory --serv-ip 127.0.0.1 --serv-net-port 8080
-
-	cfm list hosts memory -a 127.0.0.1 -p 8080 -B hostId -m memId
-	cfm list hosts memory -a 127.0.0.1 -p 8080 -B hostId
-	cfm list hosts memory -a 127.0.0.1 -p 8080 -m memId
-	cfm list hosts memory -a 127.0.0.1 -p 8080 `,
-	Args: cobra.MatchAll(cobra.NoArgs),
+	Note: For any given ID option:
+			If the option is included, ONLY THAT ID is searched.
+			If the option is omitted, ALL POSSIBLE IDs (within cfm-service) are searched.`,
+	Example: GetCmdExampleListHostsMemory(),
+	Args:    cobra.MatchAll(cobra.NoArgs),
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		initLogging(cmd)
 		return nil
@@ -47,8 +42,79 @@ func init() {
 
 	initCommonHostListCmdFlags(listHostsMemoryCmd)
 
-	listHostsMemoryCmd.Flags().StringP(flags.MEMORY_ID, flags.MEMORY_ID_SH, flags.ID_DFLT, "ID of a specific memory region. (default \"all memory regions returned\")")
+	listHostsMemoryCmd.Flags().StringP(flags.MEMORY_ID, flags.MEMORY_ID_SH, flags.ID_DFLT, "ID of a specific memory region\n (default \"all memory regions listed\")")
 
 	//Add command to parent
 	listHostsCmd.AddCommand(listHostsMemoryCmd)
+}
+
+// GetCmdUsageListHostMemory - Generates the command usage string for the cobra.Command.Use field.
+func GetCmdUsageListHostsMemory() string {
+	return fmt.Sprintf("%s %s %s %s",
+		flags.MEMORY, // Note: The first word in the Command.Use string is how Cobra defines the "name" of this "command".
+		flags.GetOptionUsageGroupServiceTcp(false),
+		flags.GetOptionUsageHostId(true),
+		flags.GetOptionUsageMemoryId(true))
+}
+
+// GetCmdExampleListHostsMemory - Generates the command example string for the cobra.Command.Example field.
+func GetCmdExampleListHostsMemory() string {
+	baseCmd := fmt.Sprintf("cfm list %s %s", flags.HOSTS, flags.MEMORY)
+
+	baseCmdLoopSh := fmt.Sprintf("%s %s",
+		baseCmd,
+		flags.GetOptionExampleShGroupServiceTcp())
+
+	shIdExamplesMap := map[string]string{
+		"hostId":   " " + flags.GetOptionExampleShHostId(),
+		"memoryId": " " + flags.GetOptionExampleShMemoryId(),
+	}
+
+	shExampleLines := make([]string, 0, 4)
+	for i := 0; i < 4; i++ {
+		s := baseCmdLoopSh
+		if i&1 != 0 {
+			s += shIdExamplesMap["hostId"]
+		}
+		if i&2 != 0 {
+			s += shIdExamplesMap["memoryId"]
+		}
+		shExampleLines = append(shExampleLines, s)
+	}
+
+	var shorthandFormat strings.Builder
+	for _, line := range shExampleLines {
+		shorthandFormat.WriteString("\t" + line + "\n")
+	}
+
+	baseCmdLoopLh := fmt.Sprintf("%s %s",
+		baseCmd,
+		flags.GetOptionExampleLhGroupServiceTcp())
+
+	lhIdExamplesMap := map[string]string{
+		"hostId":   " " + flags.GetOptionExampleShHostId(),
+		"memoryId": " " + flags.GetOptionExampleLhMemoryId(),
+	}
+
+	lhExampleLines := make([]string, 0, 4)
+	for i := 0; i < 4; i++ {
+		s := baseCmdLoopLh
+		if i&1 != 0 {
+			s += shIdExamplesMap["hostId"]
+		}
+		if i&2 != 0 {
+			s += lhIdExamplesMap["memoryId"]
+		}
+		lhExampleLines = append(lhExampleLines, s)
+	}
+
+	var longhandFormat strings.Builder
+	for _, line := range lhExampleLines {
+		longhandFormat.WriteString("\t" + line + "\n")
+	}
+
+	return fmt.Sprintf(`
+%s
+
+%s`, shorthandFormat.String(), longhandFormat.String())
 }
