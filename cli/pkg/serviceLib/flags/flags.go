@@ -10,8 +10,7 @@ const (
 
 // CLI flag component descriptor
 const (
-	SERVICE       string = "serv"
-	DEVICE        string = "dev" //generic "device" for appliance OR host - future deprecation
+	SERVICE       string = "service"
 	APPLIANCE     string = "appliance"
 	BLADE         string = "blade"
 	HOST          string = "host"
@@ -19,6 +18,13 @@ const (
 	MEMORY_DEVICE string = "memory-device"
 	PORT          string = "port"
 	RESOURCE      string = "resource"
+
+	APPLIANCES     string = "appliances"
+	BLADES         string = "blades"
+	HOSTS          string = "hosts"
+	MEMORY_DEVICES string = "memory-devices"
+	PORTS          string = "ports"
+	RESOURCES      string = "resources"
 )
 
 // CLI flag detail descriptor
@@ -26,7 +32,7 @@ const (
 	ID       string = "id"
 	USERNAME string = "username"
 	PASSWORD string = "password"
-	NET_IP   string = "ip"
+	NET_IP   string = "net-ip"
 	NET_PORT string = "net-port"
 	INSECURE string = "insecure"
 	PROTOCOL string = "protocol"
@@ -59,18 +65,51 @@ const (
 	NEW_ID          string = NEW + "-" + ID
 	NEW_ID_SH       string = "N"
 
-	DEVICE_USERNAME    string = DEVICE + "-" + USERNAME
-	DEVICE_USERNAME_SH string = "R"
-	DEVICE_PASSWORD    string = DEVICE + "-" + PASSWORD
-	DEVICE_PASSWORD_SH string = "W"
-	DEVICE_NET_IP      string = DEVICE + "-" + NET_IP
-	DEVICE_NET_IP_SH   string = "A"
-	DEVICE_NET_PORT    string = DEVICE + "-" + NET_PORT
-	DEVICE_NET_PORT_SH string = "P"
-	DEVICE_INSECURE    string = DEVICE + "-" + INSECURE
-	DEVICE_INSECURE_SH string = "S"
-	DEVICE_PROTOCOL    string = DEVICE + "-" + PROTOCOL
-	DEVICE_PROTOCOL_SH string = "T"
+	COMMON_USERNAME_SH string = "R"
+	COMMON_PASSWORD_SH string = "W"
+	COMMON_NET_IP_SH   string = "A"
+	COMMON_NET_PORT_SH string = "P"
+	COMMON_INSECURE_SH string = "S"
+	COMMON_PROTOCOL_SH string = "T"
+
+	APPLIANCE_USERNAME    string = APPLIANCE + "-" + USERNAME
+	APPLIANCE_USERNAME_SH string = COMMON_USERNAME_SH
+	APPLIANCE_PASSWORD    string = APPLIANCE + "-" + PASSWORD
+	APPLIANCE_PASSWORD_SH string = COMMON_PASSWORD_SH
+	APPLIANCE_NET_IP      string = APPLIANCE + "-" + NET_IP
+	APPLIANCE_NET_IP_SH   string = COMMON_NET_IP_SH
+	APPLIANCE_NET_PORT    string = APPLIANCE + "-" + NET_PORT
+	APPLIANCE_NET_PORT_SH string = COMMON_NET_PORT_SH
+	APPLIANCE_INSECURE    string = APPLIANCE + "-" + INSECURE
+	APPLIANCE_INSECURE_SH string = COMMON_INSECURE_SH
+	APPLIANCE_PROTOCOL    string = APPLIANCE + "-" + PROTOCOL
+	APPLIANCE_PROTOCOL_SH string = COMMON_PROTOCOL_SH
+
+	BLADE_USERNAME    string = BLADE + "-" + USERNAME
+	BLADE_USERNAME_SH string = COMMON_USERNAME_SH
+	BLADE_PASSWORD    string = BLADE + "-" + PASSWORD
+	BLADE_PASSWORD_SH string = COMMON_PASSWORD_SH
+	BLADE_NET_IP      string = BLADE + "-" + NET_IP
+	BLADE_NET_IP_SH   string = COMMON_NET_IP_SH
+	BLADE_NET_PORT    string = BLADE + "-" + NET_PORT
+	BLADE_NET_PORT_SH string = COMMON_NET_PORT_SH
+	BLADE_INSECURE    string = BLADE + "-" + INSECURE
+	BLADE_INSECURE_SH string = COMMON_INSECURE_SH
+	BLADE_PROTOCOL    string = BLADE + "-" + PROTOCOL
+	BLADE_PROTOCOL_SH string = COMMON_PROTOCOL_SH
+
+	HOST_USERNAME    string = HOST + "-" + USERNAME
+	HOST_USERNAME_SH string = COMMON_USERNAME_SH
+	HOST_PASSWORD    string = HOST + "-" + PASSWORD
+	HOST_PASSWORD_SH string = COMMON_PASSWORD_SH
+	HOST_NET_IP      string = HOST + "-" + NET_IP
+	HOST_NET_IP_SH   string = COMMON_NET_IP_SH
+	HOST_NET_PORT    string = HOST + "-" + NET_PORT
+	HOST_NET_PORT_SH string = COMMON_NET_PORT_SH
+	HOST_INSECURE    string = HOST + "-" + INSECURE
+	HOST_INSECURE_SH string = COMMON_INSECURE_SH
+	HOST_PROTOCOL    string = HOST + "-" + PROTOCOL
+	HOST_PROTOCOL_SH string = COMMON_PROTOCOL_SH
 
 	MEMORY_ID           string = MEMORY + "-" + ID
 	MEMORY_ID_SH        string = "m"
@@ -121,7 +160,7 @@ const (
 	HOST_USERNAME_DFLT string = "admin"
 	HOST_PASSWORD_DFLT string = "admin12345"
 
-	SIZE_DFLT string = "0"
+	SIZE_DFLT string = "8g"
 
 	MEMORY_QOS_DFLT = 4
 

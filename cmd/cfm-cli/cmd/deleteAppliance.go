@@ -5,19 +5,17 @@ package cmd
 import (
 	"cfm/cli/pkg/serviceLib/flags"
 	"cfm/cli/pkg/serviceLib/serviceRequests"
+	"fmt"
 
 	"github.com/spf13/cobra"
 )
 
 var deleteApplianceCmd = &cobra.Command{
-	Use:   `appliance [--serv-ip | -a] [--serv-net-port | -p] <--appliance-id | -L>`,
-	Short: "Delete a memory appliance connection from cfm-service",
-	Long:  `Deletes a netowrk connection from the cfm-service to an external memory appliance.`,
-	Example: `
-	cfm delete appliance --appliance-id applId --serv-ip 127.0.0.1 --serv-net-port 8080
-
-	cfm delete appliance -L applId -a 127.0.0.1 -p 8080`,
-	Args: cobra.MatchAll(cobra.NoArgs),
+	Use:     GetCmdUsageDeleteAppliance(),
+	Short:   "Delete a memory appliance connection from cfm-service",
+	Long:    `Deletes a netowrk connection from the cfm-service to an external memory appliance.`,
+	Example: GetCmdExampleDeleteAppliance(),
+	Args:    cobra.MatchAll(cobra.NoArgs),
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		initLogging(cmd)
 		return nil
@@ -39,8 +37,37 @@ func init() {
 
 	initCommonPersistentFlags(deleteApplianceCmd)
 
-	deleteApplianceCmd.Flags().StringP(flags.APPLIANCE_ID, flags.APPLIANCE_ID_SH, flags.ID_DFLT, "ID of memory appliance")
+	deleteApplianceCmd.Flags().StringP(flags.APPLIANCE_ID, flags.APPLIANCE_ID_SH, flags.ID_DFLT, "ID of memory appliance\n")
+	deleteApplianceCmd.MarkFlagRequired(flags.APPLIANCE_ID)
 
 	//Add command to parent
 	deleteCmd.AddCommand(deleteApplianceCmd)
+}
+
+// GetCmdUsageDeleteAppliance - Generates the command usage string for the cobra.Command.Use field.
+func GetCmdUsageDeleteAppliance() string {
+	return fmt.Sprintf("%s %s %s",
+		flags.APPLIANCE, // Note: The first word in the Command.Use string is how Cobra defines the "name" of this "command".
+		flags.GetOptionUsageGroupServiceTcp(false),
+		flags.GetOptionUsageApplianceId(false))
+}
+
+// GetCmdExampleDeleteAppliance - Generates the command example string for the cobra.Command.Example field.
+func GetCmdExampleDeleteAppliance() string {
+	baseCmd := fmt.Sprintf("cfm delete %s", flags.APPLIANCE)
+
+	shorthandFormat := fmt.Sprintf("%s %s %s",
+		baseCmd,
+		flags.GetOptionExampleShGroupServiceTcp(),
+		flags.GetOptionExampleShApplianceId())
+
+	longhandFormat := fmt.Sprintf("%s %s %s",
+		baseCmd,
+		flags.GetOptionExampleLhGroupServiceTcp(),
+		flags.GetOptionExampleLhApplianceId())
+
+	return fmt.Sprintf(`
+	%s
+
+	%s`, shorthandFormat, longhandFormat)
 }

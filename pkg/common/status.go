@@ -76,6 +76,7 @@ const (
 	StatusBladeDeleteSessionFailure     //500
 	StatusHostCreateSessionFailure      //500
 	StatusHostDeleteSessionFailure      //500
+	StatusDeviceDiscoveryFailure        //500
 
 	StatusApplianceIdDoesNotExist    //404
 	StatusBladeIdDoesNotExist        //404
@@ -186,6 +187,8 @@ func (e StatusCodeType) String() string {
 		return "Rename Blade Failure"
 	case StatusHostRenameFailure:
 		return "Rename Host Failure"
+	case StatusDeviceDiscoveryFailure:
+		return "Device Discovery Failure"
 	}
 	return "Unknown"
 
@@ -242,7 +245,8 @@ func (e StatusCodeType) HttpStatusCode() int {
 		StatusHostDeleteSessionFailure,
 		StatusApplianceCreateSessionFailure,
 		StatusApplianceDeleteSessionFailure,
-		StatusManagerInitializationFailure:
+		StatusManagerInitializationFailure,
+		StatusDeviceDiscoveryFailure:
 		return http.StatusInternalServerError // 500
 	case StatusAppliancesExceedMaximum,
 		StatusBladesExceedMaximum,

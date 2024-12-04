@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"log"
 
 	"golang.org/x/net/context"
@@ -12,12 +13,13 @@ import (
 
 // discoverDevices function to call the DiscoverDevices API
 func DiscoverDevices(ctx context.Context, apiService openapi.DefaultAPIServicer, deviceType string) (openapi.ImplResponse, error) {
-	resp, err := apiService.DiscoverDevices(ctx, deviceType)
-	if err != nil {
-		log.Printf("Error discovering devices of type %s: %v", deviceType, err)
+	resp, _ := apiService.DiscoverDevices(ctx, deviceType)
+	if resp.Code >= 300 {
+		err := fmt.Errorf("error discovering devices of type %s: %+v", deviceType, resp)
+		log.Print(err)
 		return resp, err
 	} else {
-		log.Printf("Discovered devices of type %s: %v", deviceType, resp)
+		log.Printf("Discovered devices of type %s: %+v", deviceType, resp)
 		return resp, nil
 	}
 }

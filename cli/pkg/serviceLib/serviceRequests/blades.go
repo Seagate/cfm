@@ -27,8 +27,8 @@ func NewServiceRequestAddBlade(cmd *cobra.Command) *ServiceRequestAddBlade {
 		ServiceTcp:  NewTcpInfo(cmd, flags.SERVICE),
 		ApplianceId: NewId(cmd, flags.APPLIANCE),
 		BladeId:     NewId(cmd, flags.BLADE),
-		BladeCred:   NewDeviceCredentials(cmd, flags.DEVICE),
-		BladeTcp:    NewTcpInfo(cmd, flags.DEVICE),
+		BladeCred:   NewDeviceCredentials(cmd, flags.BLADE),
+		BladeTcp:    NewTcpInfo(cmd, flags.BLADE),
 	}
 }
 
