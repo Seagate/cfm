@@ -25,7 +25,7 @@ var composeBladeCmd = &cobra.Command{
 
 		request := serviceRequests.NewServiceRequestComposeMemory(cmd)
 
-		if request.GetPortId() != "" {
+		if request.PortId.GetId() != "" {
 			err := common.PromptYesNo(common.WARNING_CXL_HOST_POWER_DOWN)
 			if err != nil {
 				return
