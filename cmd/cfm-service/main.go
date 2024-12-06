@@ -68,17 +68,23 @@ func main() {
 	defaultRedfishController := redfishapi.NewDefaultAPIController(defaultRedfishService)
 	api.AddRedfishRouter(ctx, router, defaultRedfishController)
 
-	// Discover devices before loading datastore
-	bladeDevices, errBlade := services.DiscoverDevices(ctx, defaultApiService, "blade")
-	hostDevices, errHost := services.DiscoverDevices(ctx, defaultApiService, "cxl-host")
-	// Add the discovered devices into datastore
-	if errBlade == nil && errHost == nil {
-		services.AddDiscoveredDevices(ctx, defaultApiService, bladeDevices, hostDevices)
-	}
-
 	// Load datastore
 	datastore.DStore().Restore()
 	data := datastore.DStore().GetDataStore()
+
+	// If there is any devices in the data store, skip discovery
+	if len(data.ApplianceData) == 0 && len(data.HostData) == 0 {
+		// Discover devices before loading datastore
+		bladeDevices, errBlade := services.DiscoverDevices(ctx, defaultApiService, "blade")
+		hostDevices, errHost := services.DiscoverDevices(ctx, defaultApiService, "cxl-host")
+		// Add the discovered devices into datastore
+		if errBlade == nil && errHost == nil {
+			services.AddDiscoveredDevices(ctx, defaultApiService, bladeDevices, hostDevices)
+		}
+		// Update data
+		data = datastore.DStore().GetDataStore()
+	}
+
 	datastore.ReloadDataStore(ctx, defaultApiService, data)
 
 	// Set up CORS middleware (for webui)
