@@ -93,6 +93,7 @@
                 variant="text"
                 id="addBlade"
                 @click="addNewBladeWindowButton"
+                :disabled="isAddBladeButtonDisabled"
               >
                 <v-icon start color="#6ebe4a">mdi-plus-thick</v-icon>
                 BLADE
@@ -1524,6 +1525,12 @@ export default {
     ComposeMemoryButton,
   },
 
+  computed: {
+    isAddBladeButtonDisabled() {
+      return this.selectedApplianceId === "CMA_Discovered_Blades";
+    },
+  },
+
   methods: {
     /* Open the add appliance popup */
     addNewApplianceWindowButton() {
@@ -1985,7 +1992,10 @@ export default {
               applianceStore.selectedApplianceId,
               newBladeId
             ),
-            bladeStore.fetchBladeById(applianceStore.selectedApplianceId, newBladeId),
+            bladeStore.fetchBladeById(
+              applianceStore.selectedApplianceId,
+              newBladeId
+            ),
           ]);
           // Update the URL with the new blade ID
           updateUrlWithBladeId(applianceStore.selectedApplianceId, newBladeId);

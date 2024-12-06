@@ -23,7 +23,7 @@ export const useControlData = () => {
           id: "cfm-service",
           data: { label: "CFM Service", },
           position: position,
-          style: { backgroundColor: "#6ebe4a", color: "#000" },
+          style: { backgroundColor: useLayout().Colors.serviceColor, border: "none" },
           type: serviceNodeType,
         },
       ]
@@ -35,26 +35,33 @@ export const useControlData = () => {
           id: `appliance-${appliance.id}`,
           data: { label: appliance.id, url: `/appliances/${appliance.id}` },
           position: position,
-          style: { backgroundColor: "#f2ae72", color: "#000" },
+          style: { backgroundColor: useLayout().Colors.applianceColor, border: "none" },
           type: applianceNodeType,
         },
-        ...appliance.bladeIds.map((bladeId, bladeIndex) => ({
-          id: `blade-${bladeId}`,
-          data: { label: bladeId, url: `/appliances/${appliance.id}/blades/${bladeId}`, associatedAppliance: appliance.id },
-          position: position,
-          style: { backgroundColor: "#f2e394", color: "#000" },
-          type: bladeNodeType,
-        })),
+        ...appliance.blades.map((blade, bladeIndex) => {
+          const borderColor = useLayout().borderColorChange(blade.status);
+          return {
+            id: `blade-${blade.id}`,
+            data: { label: blade.id, url: `/appliances/${appliance.id}/blades/${blade.id}`, associatedAppliance: appliance.id },
+            position: position,
+            style: { backgroundColor: useLayout().Colors.baldeColor, border: `3px solid ${borderColor}` },
+            type: bladeNodeType,
+          }
+        }),
       ]
     );
 
-    const hostNodes = hostStore.hostIds.map((host, index) => ({
-      id: `host-${host}`,
-      data: { label: host, url: `/hosts/${host}` },
-      position: position,
-      style: { backgroundColor: "#d9ecd0", color: "#000" },
-      type: hostNodeType,
-    }));
+    const hostNodes = hostStore.hostIds.map((host, index) => {
+      const borderColor = useLayout().borderColorChange(host.status);
+
+      return {
+        id: `host-${host.id}`,
+        data: { label: host.id, url: `/hosts/${host.id}` },
+        position: position,
+        style: { backgroundColor: useLayout().Colors.hostColor, border: `3px solid ${borderColor}` },
+        type: hostNodeType,
+      }
+    });
 
     const allNodes = [...coreNode, ...applianceNodes, ...hostNodes];
 
@@ -67,18 +74,18 @@ export const useControlData = () => {
             source: "cfm-service",
             target: `appliance-${appliance.id}`,
           },
-          ...appliance.bladeIds.map((bladeId) => ({
-            id: `appliance-blade-${appliance.id}-${bladeId}`,
+          ...appliance.blades.map((blade) => ({
+            id: `appliance-blade-${appliance.id}-${blade.id}`,
             source: `appliance-${appliance.id}`,
-            target: `blade-${bladeId}`,
+            target: `blade-${blade.id}`,
           })),
         ])
         : [];
 
       const hostEdges = hostStore.hostIds.map((host) => ({
-        id: `cfm-${host}`,
+        id: `cfm-${host.id}`,
         source: "cfm-service",
-        target: `host-${host}`,
+        target: `host-${host.id}`,
       }));
 
       return [...coreEdges, ...hostEdges];
@@ -97,19 +104,19 @@ export const useControlData = () => {
           target: `appliance-${appliance.id}`,
           animated: true,
         },
-        ...appliance.bladeIds.map((bladeId) => ({
-          id: `appliance-blade-${appliance.id}-${bladeId}`,
+        ...appliance.blades.map((blade) => ({
+          id: `appliance-blade-${appliance.id}-${blade.id}`,
           source: `appliance-${appliance.id}`,
-          target: `blade-${bladeId}`,
+          target: `blade-${blade.id}`,
           animated: true,
         })),
       ])
       : [];
 
     const hostEdges = hostStore.hostIds.map((host) => ({
-      id: `cfm-${host}`,
+      id: `cfm-${host.id}`,
       source: "cfm-service",
-      target: `host-${host}`,
+      target: `host-${host.id}`,
       animated: true,
     }));
 
