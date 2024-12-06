@@ -66,5 +66,5 @@ docker build --no-cache -t <new-image-name> -f docker/Dockerfile .
 ...and then run those changes
 
 ```bash
-docker run --restart unless-stopped --network=host --name <new-container-name> --detach <new-image-name> -webui -verbosity 4
+docker run --restart unless-stopped --network=host --name <new-container-name> --detach --privileged -v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket <new-image-name> -webui -verbosity 4
 ```
