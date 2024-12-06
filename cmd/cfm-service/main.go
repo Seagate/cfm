@@ -72,7 +72,7 @@ func main() {
 	datastore.DStore().Restore()
 	data := datastore.DStore().GetDataStore()
 
-	// If there is any devices in the data store, skip discovery
+	// If there are any devices in the data store, skip discovery
 	if len(data.ApplianceData) == 0 && len(data.HostData) == 0 {
 		// Discover devices before loading datastore
 		bladeDevices, errBlade := services.DiscoverDevices(ctx, defaultApiService, "blade")
