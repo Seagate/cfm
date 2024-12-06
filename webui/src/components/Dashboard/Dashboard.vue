@@ -57,14 +57,6 @@
             justify-content: center;
           "
         >
-          <div
-            style="
-              width: 100%;
-              height: 100%;
-              position: relative;
-              overflow: hidden;
-            "
-          >
             <VueFlow
               :nodes="nodes"
               :edges="edges"
@@ -73,7 +65,6 @@
               :min-zoom="0.2"
               :max-zoom="4"
               @node-click="handleNodeClick"
-              style="width: 100%; height: 100%;"
             >
               <Controls position="top-left">
                 <ControlButton title="Search" @click="toggleSearch">
@@ -81,7 +72,6 @@
                 </ControlButton>
               </Controls>
             </VueFlow>
-          </div>
           <v-card class="child-card"
           style="
             width: 20%;
@@ -170,14 +160,14 @@
           <v-btn
             color="info"
             variant="text"
-            id="cancelResyncBlade"
+            id="cancelAddSelecteddDevices"
             @click="dialogNewDiscoveredDevices = false"
             >Cancel</v-btn
           >
           <v-btn
             color="info"
             variant="text"
-            id="confirmResyncBlade"
+            id="confirmAddSelecteddDevices"
             @click="addDiscoveredDevices"
             >Add</v-btn
           >
@@ -249,7 +239,7 @@
             rounded
             variant="flat"
             width="90"
-            id="addNewApplianceSuccess"
+            id="addNewDiscoveredDevicesOutput"
             @click="dialogAddNewDiscoveredDevicesOutput = false"
           >
             Done
