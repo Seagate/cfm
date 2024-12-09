@@ -5,7 +5,9 @@ package manager
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"github.com/google/uuid"
 	"k8s.io/klog/v2"
 
 	"cfm/pkg/backend"
@@ -281,11 +283,26 @@ func AddHost(ctx context.Context, c *openapi.Credentials) (*Host, error) {
 		newErr := fmt.Errorf("create session failure at [%s:%d] using interface [%s]: %w", c.IpAddress, c.Port, backendName, err)
 		logger.Error(newErr, "failure: add host")
 
+		hostId := c.CustomId
+		if hostId == "" { // Order CustomeId > HostSN > UUID
+			hostId = response.ChassisSN
+			if hostId == "" {
+				// Generate default id using last N digits of the session id combined with the default prefix
+				// Example uuid: ee0328d9-258a-4e81-976e-b75aa4a2d8f5
+				uuid := uuid.New().String()
+				uuid = strings.ReplaceAll(uuid, "-", "")
+				hostId = fmt.Sprintf("%s-%s", ID_PREFIX_HOST_DFLT, uuid[(len(uuid)-common.NumUuidCharsForId):])
+			}
+			c.CustomId = hostId
+		}
+
 		// Continue adding the failed host to the datastore, but update the connection status to unavailable
 		host := &Host{
-			Id:     c.CustomId,
-			Uri:    GetCfmUriHostId(c.CustomId),
-			Status: common.UNAVAILABLE,
+			Id:         c.CustomId,
+			Uri:        GetCfmUriHostId(c.CustomId),
+			Status:     common.UNAVAILABLE,
+			backendOps: ops,
+			creds:      c,
 		}
 		deviceCache.AddHost(host, false)
 
@@ -348,9 +365,11 @@ func AddHost(ctx context.Context, c *openapi.Credentials) (*Host, error) {
 
 		// Continue adding the failed host to the datastore, but update the connection status to unavailable
 		host := &Host{
-			Id:     c.CustomId,
-			Uri:    GetCfmUriHostId(c.CustomId),
-			Status: common.UNAVAILABLE,
+			Id:         c.CustomId,
+			Uri:        GetCfmUriHostId(c.CustomId),
+			Status:     common.UNAVAILABLE,
+			backendOps: ops,
+			creds:      c,
 		}
 		deviceCache.AddHost(host, false)
 
@@ -487,11 +506,11 @@ func DeleteHostById(ctx context.Context, hostId string) (*Host, error) {
 
 	host, err := DeleteHostByIdBackend(ctx, hostId)
 	if err != nil || host == nil {
-		logger.V(2).Info("success: delete host by id after backend session failure", "hostId", host.Id)
+		logger.V(2).Info("success: delete host by id after backend session failure", "hostId", hostId)
 		return host, err
 	}
 
-	logger.V(2).Info("success: delete host by id", "hostId", host.Id)
+	logger.V(2).Info("success: delete host by id", "hostId", hostId)
 
 	return host, nil
 }

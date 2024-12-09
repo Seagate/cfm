@@ -5,19 +5,17 @@ package cmd
 import (
 	"cfm/cli/pkg/serviceLib/flags"
 	"cfm/cli/pkg/serviceLib/serviceRequests"
+	"fmt"
 
 	"github.com/spf13/cobra"
 )
 
 var deleteBladeCmd = &cobra.Command{
-	Use:   `blade  [--serv-ip | -a] [--serv-net-port | -p] <--appliance-id | -L> <--blade-id | -B>`,
-	Short: "Delete a memory appliance blade connection from cfm-service",
-	Long:  `Deletes a netowrk connection from the cfm-service to an external memory appliance blade.`,
-	Example: `
-	cfm delete blade --appliance-id applId --blade-id bladeId --serv-ip 127.0.0.1 --serv-net-port 8080
-
-	cfm delete blade -L applId -B bladeId -a 127.0.0.1 -p 8080`,
-	Args: cobra.MatchAll(cobra.NoArgs),
+	Use:     GetCmdUsageDeleteBlade(),
+	Short:   "Delete a memory appliance blade connection from cfm-service",
+	Long:    `Deletes a netowrk connection from the cfm-service to an external memory appliance blade.`,
+	Example: GetCmdExampleDeleteBlade(),
+	Args:    cobra.MatchAll(cobra.NoArgs),
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		initLogging(cmd)
 		return nil
@@ -39,9 +37,42 @@ func init() {
 
 	initCommonPersistentFlags(deleteBladeCmd)
 
-	deleteBladeCmd.Flags().StringP(flags.APPLIANCE_ID, flags.APPLIANCE_ID_SH, flags.ID_DFLT, "ID of blade's appliance")
-	deleteBladeCmd.Flags().StringP(flags.BLADE_ID, flags.BLADE_ID_SH, flags.ID_DFLT, "ID of blade to delete")
+	deleteBladeCmd.Flags().StringP(flags.APPLIANCE_ID, flags.APPLIANCE_ID_SH, flags.ID_DFLT, "ID of blade's appliance\n")
+	deleteBladeCmd.MarkFlagRequired(flags.APPLIANCE_ID)
+	deleteBladeCmd.Flags().StringP(flags.BLADE_ID, flags.BLADE_ID_SH, flags.ID_DFLT, "ID of blade to delete\n")
+	deleteBladeCmd.MarkFlagRequired(flags.BLADE_ID)
 
 	//Add command to parent
 	deleteCmd.AddCommand(deleteBladeCmd)
+}
+
+// GetCmdUsageDeleteBlade - Generates the command usage string for the cobra.Command.Use field.
+func GetCmdUsageDeleteBlade() string {
+	return fmt.Sprintf("%s %s %s %s",
+		flags.BLADE, // Note: The first word in the Command.Use string is how Cobra defines the "name" of this "command".
+		flags.GetOptionUsageGroupServiceTcp(false),
+		flags.GetOptionUsageApplianceId(false),
+		flags.GetOptionUsageBladeId(false))
+}
+
+// GetCmdExampleDeleteBlade - Generates the command example string for the cobra.Command.Example field.
+func GetCmdExampleDeleteBlade() string {
+	baseCmd := fmt.Sprintf("cfm delete %s", flags.BLADE)
+
+	shorthandFormat := fmt.Sprintf("%s %s %s %s",
+		baseCmd,
+		flags.GetOptionExampleShGroupServiceTcp(),
+		flags.GetOptionExampleShApplianceId(),
+		flags.GetOptionExampleShBladeId())
+
+	longhandFormat := fmt.Sprintf("%s %s %s %s",
+		baseCmd,
+		flags.GetOptionExampleLhGroupServiceTcp(),
+		flags.GetOptionExampleLhApplianceId(),
+		flags.GetOptionExampleLhBladeId())
+
+	return fmt.Sprintf(`
+	%s
+
+	%s`, shorthandFormat, longhandFormat)
 }

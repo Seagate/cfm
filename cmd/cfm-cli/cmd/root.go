@@ -67,12 +67,8 @@ func initLogging(cmd *cobra.Command) {
 // Need to ONLY add them in the subcommand init() func so these flags ONLY show up in the help output when they can actually be used.
 func initCommonPersistentFlags(cmd *cobra.Command) {
 	//Add globally required cfm-service TCPIP connection flags
-	cmd.PersistentFlags().StringP(flags.SERVICE_NET_IP, flags.SERVICE_NET_IP_SH, flags.SERVICE_NET_IP_DFLT, "cfm-service network IP address")
-	cmd.PersistentFlags().Uint16P(flags.SERVICE_NET_PORT, flags.SERVICE_NET_PORT_SH, flags.SERVICE_NET_PORT_DFLT, "cfm-service network port")
-
-	//Currently unused but need default values downstream
-	cmd.PersistentFlags().Bool(flags.SERVICE_INSECURE, flags.SERVICE_INSECURE_DFLT, "cfm-service insecure connection flag")
-	cmd.PersistentFlags().MarkHidden(flags.SERVICE_INSECURE)
-	cmd.PersistentFlags().String(flags.SERVICE_PROTOCOL, flags.SERVICE_PROTOCOL_DFLT, "cfm-service network connection protocol (http/https)")
-	cmd.PersistentFlags().MarkHidden(flags.SERVICE_PROTOCOL)
+	cmd.PersistentFlags().StringP(flags.SERVICE_NET_IP, flags.SERVICE_NET_IP_SH, flags.SERVICE_NET_IP_DFLT, "cfm-service network IP address\n")
+	cmd.PersistentFlags().Uint16P(flags.SERVICE_NET_PORT, flags.SERVICE_NET_PORT_SH, flags.SERVICE_NET_PORT_DFLT, "cfm-service network port\n")
+	cmd.PersistentFlags().BoolP(flags.SERVICE_INSECURE, flags.SERVICE_INSECURE_SH, flags.SERVICE_INSECURE_DFLT, "cfm-service insecure connection flag\n (default false)")
+	cmd.PersistentFlags().StringP(flags.SERVICE_PROTOCOL, flags.SERVICE_PROTOCOL_SH, flags.SERVICE_PROTOCOL_DFLT, "cfm-service network connection protocol (http/https)\n")
 }

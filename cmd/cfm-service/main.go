@@ -69,10 +69,12 @@ func main() {
 	api.AddRedfishRouter(ctx, router, defaultRedfishController)
 
 	// Discover devices before loading datastore
-	bladeDevices, _ := services.DiscoverDevices(ctx, defaultApiService, "blade")
-	hostDevices, _ := services.DiscoverDevices(ctx, defaultApiService, "cxl-host")
+	bladeDevices, errBlade := services.DiscoverDevices(ctx, defaultApiService, "blade")
+	hostDevices, errHost := services.DiscoverDevices(ctx, defaultApiService, "cxl-host")
 	// Add the discovered devices into datastore
-	services.AddDiscoveredDevices(ctx, defaultApiService, bladeDevices, hostDevices)
+	if errBlade == nil && errHost == nil {
+		services.AddDiscoveredDevices(ctx, defaultApiService, bladeDevices, hostDevices)
+	}
 
 	// Load datastore
 	datastore.DStore().Restore()

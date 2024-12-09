@@ -25,8 +25,8 @@ func NewServiceRequestAddHost(cmd *cobra.Command) *ServiceRequestAddHost {
 	return &ServiceRequestAddHost{
 		ServiceTcp: NewTcpInfo(cmd, flags.SERVICE),
 		HostId:     NewId(cmd, flags.HOST),
-		HostCred:   NewDeviceCredentials(cmd, flags.DEVICE),
-		HostTcp:    NewTcpInfo(cmd, flags.DEVICE),
+		HostCred:   NewDeviceCredentials(cmd, flags.HOST),
+		HostTcp:    NewTcpInfo(cmd, flags.HOST),
 	}
 }
 

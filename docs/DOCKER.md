@@ -17,7 +17,7 @@ If desired, the user can add `:vX.X.X` to the end of the command to obtain an ol
 To enable the webui launching during cfm-service startup, the user must provide the `-webui` flag in the command below.
 
 ```bash
-docker run --restart unless-stopped --network=host --name <container-name> --detach ghcr.io/seagate/cfm -webui -verbosity 4
+docker run --restart unless-stopped --network=host --name <container-name> --detach --privileged -v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket ghcr.io/seagate/cfm -webui -verbosity 4
 ```
 
 By default, the cfm-service will be hosted at port 8080 and the webui will be hosted at port 3000. The user could change the port by input argument -Port and/or -webuiPort. The webui only works with --network=host mode.
@@ -51,6 +51,9 @@ docker exec -it cfm-container ./cfm-cli -h
 docker exec -it cfm-container ./cfm-cli list appliances
 ```
 
+NOTE: Currently, every cfm-cli command requires various tcpip options (e.g.: --service-net-ip) regarding the specific cfm-service that is being interacted with.
+However, using the docker container, the user can rely on the default cli settings for these cfm-service options since they point to the cfm-service running within the same docker container.
+
 ## Customization
 
 The developer could use the [DockerFile](../docker/Dockerfile) as a reference to build a new docker image using a local [cfm](https://github.com/Seagate/cfm) clone...
@@ -63,5 +66,5 @@ docker build --no-cache -t <new-image-name> -f docker/Dockerfile .
 ...and then run those changes
 
 ```bash
-docker run --restart unless-stopped --network=host --name <new-container-name> --detach <new-image-name> -webui -verbosity 4
+docker run --restart unless-stopped --network=host --name <new-container-name> --detach --privileged -v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket <new-image-name> -webui -verbosity 4
 ```

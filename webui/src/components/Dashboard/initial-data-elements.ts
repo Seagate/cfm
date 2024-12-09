@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { useApplianceStore } from "../Stores/ApplianceStore";
 import { useHostStore } from "../Stores/HostStore";
 import { useBladePortStore } from "../Stores/BladePortStore";
+import { useLayout } from "./useLayout";
 
 export const useData = () => {
     const applianceStore = useApplianceStore();
@@ -17,7 +18,7 @@ export const useData = () => {
         let currentYPosition = 0;
         const applianceNodes = applianceStore.applianceIds.flatMap(
             (appliance, index) => {
-                const bladeCount = appliance.bladeIds.length;
+                const bladeCount = appliance.blades.length;
                 const applianceHeight = 50 + bladeCount * 50; // Adjust height based on number of blades
                 const applianceWidth = 270; // Width of the appliance node
                 const bladeWidth = 250; // Width of the blade node
@@ -27,24 +28,27 @@ export const useData = () => {
                     id: `appliance-${appliance.id}`,
                     data: { label: appliance.id, url: `/appliances/${appliance.id}` },
                     position: { x: 100, y: currentYPosition },
-                    style: { backgroundColor: "rgba(242, 174, 114, 0.5)", color: "#000", height: `${applianceHeight}px`, width: `${applianceWidth}px` },
+                    style: { backgroundColor: useLayout().Colors.applianceColor, height: `${applianceHeight}px`, width: `${applianceWidth}px`, border: "none" },
                     type: applianceNodeType,
                     sourcePosition: 'right',
                     targetPosition: 'left',
                 };
 
-                const bladeNodes = appliance.bladeIds.map((bladeId, bladeIndex) => ({
-                    id: `blade-${bladeId}`,
-                    data: { label: bladeId, url: `/appliances/${appliance.id}/blades/${bladeId}`, associatedAppliance: appliance.id },
-                    position: { x: bladeXPosition, y: 50 + bladeIndex * 50 }, // Center blades within the appliance node
-                    style: { backgroundColor: "#f2e394", color: "#000", width: `${bladeWidth}px` },
-                    type: bladeNodeType,
-                    parentNode: `appliance-${appliance.id}`,
-                    extent: 'parent',
-                    expandParent: true,
-                    sourcePosition: 'right',
-                    targetPosition: 'left',
-                }));
+                const bladeNodes = appliance.blades.map((blade, bladeIndex) => {
+                    const borderColor = useLayout().borderColorChange(blade.status);
+                    return {
+                        id: `blade-${blade.id}`,
+                        data: { label: blade.id, url: `/appliances/${appliance.id}/blades/${blade.id}`, associatedAppliance: appliance.id },
+                        position: { x: bladeXPosition, y: 50 + bladeIndex * 50 }, // Center blades within the appliance node
+                        style: { backgroundColor: useLayout().Colors.baldeColor, width: `${bladeWidth}px`, border: `3px solid ${borderColor}` },
+                        type: bladeNodeType,
+                        parentNode: `appliance-${appliance.id}`,
+                        extent: 'parent',
+                        expandParent: true,
+                        sourcePosition: 'right',
+                        targetPosition: 'left',
+                    }
+                });
 
                 currentYPosition += applianceHeight + 20; // Add some space between nodes
 
@@ -52,15 +56,26 @@ export const useData = () => {
             }
         );
 
-        const hostNodes = hostStore.hostIds.map((host, index) => ({
-            id: `host-${host}`,
-            data: { label: host, url: `/hosts/${host}` },
-            position: { x: 500, y: index * 200 },
-            style: { backgroundColor: "#d9ecd0", color: "#000" },
-            type: hostNodeType,
-            sourcePosition: 'right',
-            targetPosition: 'left',
-        }));
+        const hostNodes = hostStore.hostIds.map((host, index) => {
+            const { width, height } = useLayout().measureText(host.id);
+            const borderColor = useLayout().borderColorChange(host.status);
+
+            return {
+                id: `host-${host.id}`,
+                data: { label: host.id, url: `/hosts/${host.id}` },
+                position: { x: 500, y: index * 200 },
+                style: {
+                    backgroundColor: useLayout().Colors.hostColor,
+                    color: "#000",
+                    width: `${width + 20}px`, // Adding some padding
+                    height: `${height + 20}px`, // Adding some padding
+                    border: `3px solid ${borderColor}`
+                },
+                type: hostNodeType,
+                sourcePosition: 'right',
+                targetPosition: 'left',
+            };
+        });
 
         return [...applianceNodes, ...hostNodes];
     });

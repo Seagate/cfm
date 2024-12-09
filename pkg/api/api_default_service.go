@@ -1498,7 +1498,7 @@ func (cfm *CfmApiService) RootGet(ctx context.Context) (openapi.ImplResponse, er
 func (cfm *CfmApiService) DiscoverDevices(ctx context.Context, deviceType string) (openapi.ImplResponse, error) {
 	if deviceType != "blade" && deviceType != "cxl-host" {
 		err := common.RequestError{
-			StatusCode: http.StatusBadRequest,
+			StatusCode: common.StatusDeviceDiscoveryFailure,
 			Err:        fmt.Errorf("invalid type parameter"),
 		}
 		return formatErrorResp(ctx, &err)
@@ -1513,7 +1513,7 @@ func (cfm *CfmApiService) DiscoverDevices(ctx context.Context, deviceType string
 	conn, err := dbus.SystemBus()
 	if err != nil {
 		return formatErrorResp(ctx, &common.RequestError{
-			StatusCode: http.StatusInternalServerError,
+			StatusCode: common.StatusDeviceDiscoveryFailure,
 			Err:        fmt.Errorf("cannot get system bus: %v", err),
 		})
 	}
@@ -1521,7 +1521,7 @@ func (cfm *CfmApiService) DiscoverDevices(ctx context.Context, deviceType string
 	server, err := avahi.ServerNew(conn)
 	if err != nil {
 		return formatErrorResp(ctx, &common.RequestError{
-			StatusCode: http.StatusInternalServerError,
+			StatusCode: common.StatusDeviceDiscoveryFailure,
 			Err:        fmt.Errorf("avahi new failed: %v", err),
 		})
 	}
@@ -1530,7 +1530,7 @@ func (cfm *CfmApiService) DiscoverDevices(ctx context.Context, deviceType string
 	sb, err := server.ServiceBrowserNew(avahi.InterfaceUnspec, avahi.ProtoInet, "_obmc_redfish._tcp", "local", 0)
 	if err != nil {
 		return formatErrorResp(ctx, &common.RequestError{
-			StatusCode: http.StatusInternalServerError,
+			StatusCode: common.StatusDeviceDiscoveryFailure,
 			Err:        fmt.Errorf("service browser new failed: %v", err),
 		})
 	}

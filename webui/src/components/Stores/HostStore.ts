@@ -1,6 +1,6 @@
 // Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
 import { defineStore } from 'pinia'
-import { Host, Credentials, DefaultApi } from "@/axios/api";
+import { Host, Credentials, DefaultApi, DiscoveredDevice } from "@/axios/api";
 import { BASE_PATH } from "@/axios/base";
 import axios from 'axios';
 
@@ -19,7 +19,19 @@ export const useHostStore = defineStore('host', {
         deleteHostError: null as unknown,
         resyncHostError: null as unknown,
         renameHostError: null as unknown,
-        hostIds: [] as string[],
+        hostIds: [] as { id: string, ipAddress: string, status: string | undefined }[],
+        discoveredHosts: [] as DiscoveredDevice[],
+
+        prefixHostId: "Discoverd_Host_",
+        newHostCredentials: {
+            username: "admin",
+            password: "admin12345",
+            ipAddress: "127.0.0.1",
+            port: 8082,
+            insecure: true,
+            protocol: "http",
+            customId: "",
+        },
     }),
 
     actions: {
@@ -44,7 +56,8 @@ export const useHostStore = defineStore('host', {
                     // Store host in hosts
                     if (detailsResponseOfHost) {
                         this.hosts.push(detailsResponseOfHost.data);
-                        this.hostIds.push(detailsResponseOfHost.data.id)
+                        const host = { id: detailsResponseOfHost.data.id, ipAddress: detailsResponseOfHost.data.ipAddress, status: detailsResponseOfHost.data.status }
+                        this.hostIds.push(host)
                     }
                 }
             } catch (error) {
@@ -66,6 +79,51 @@ export const useHostStore = defineStore('host', {
             } catch (error) {
                 console.error("Error fetching host by id:", error);
             }
+        },
+
+        async discoverHosts() {
+            try {
+                // Get all the existed hosts
+                const existedHostIpAddress: (string | undefined)[] = []
+                for (var i = 0; i < this.hostIds.length; i++) {
+                    existedHostIpAddress.push(this.hostIds[i].ipAddress)
+                }
+
+                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
+                this.discoveredHosts = [];
+                const responseOfHost = await defaultApi.discoverDevices("cxl-host");
+                this.discoveredHosts = responseOfHost.data;
+
+                // Remove the existed hosts from the discovered hosts
+                for (var k = 0; k < this.discoveredHosts.length; k++) {
+                    for (var m = 0; m < existedHostIpAddress.length; m++) {
+                        this.discoveredHosts = this.discoveredHosts.filter(
+                            (discoveredHost) => discoveredHost.address !== existedHostIpAddress[m]
+                        );
+                    }
+                }
+
+                return this.discoveredHosts
+            } catch (error) {
+                console.error("Error discovering new devices:", error);
+            }
+        },
+
+        async addDiscoveredHosts(host: DiscoveredDevice) {
+            const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
+            // Add all the new didcovered hosts
+            this.newHostCredentials.customId = this.prefixHostId + host.address;
+            this.newHostCredentials.ipAddress = host.address + "";
+
+            const responseOfHost = await defaultApi.hostsPost(this.newHostCredentials);
+
+            // Update the applianceIds and appliances
+            if (responseOfHost) {
+                const response = { id: responseOfHost.data.id, ipAddress: responseOfHost.data.ipAddress, status: responseOfHost.data.status }
+                this.hosts.push(responseOfHost.data);
+                this.hostIds.push(response)
+            }
+            return responseOfHost.data;
         },
 
         async addNewHost(newHost: Credentials) {

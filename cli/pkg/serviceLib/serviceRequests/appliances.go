@@ -28,8 +28,8 @@ func NewServiceRequestAddAppliance(cmd *cobra.Command) *ServiceRequestAddApplian
 	return &ServiceRequestAddAppliance{
 		ServiceTcp:    NewTcpInfo(cmd, flags.SERVICE),
 		ApplianceId:   NewId(cmd, flags.APPLIANCE),
-		ApplianceCred: NewDeviceCredentials(cmd, flags.DEVICE),
-		ApplianceTcp:  NewTcpInfo(cmd, flags.DEVICE),
+		ApplianceCred: NewDeviceCredentials(cmd, flags.APPLIANCE),
+		ApplianceTcp:  NewTcpInfo(cmd, flags.APPLIANCE),
 	}
 }
 

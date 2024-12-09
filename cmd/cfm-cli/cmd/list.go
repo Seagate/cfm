@@ -31,8 +31,8 @@ func initCommonBladeListCmdFlags(cmd *cobra.Command) {
 
 	initCommonPersistentFlags(cmd)
 
-	cmd.Flags().StringP(flags.APPLIANCE_ID, flags.APPLIANCE_ID_SH, flags.ID_DFLT, "ID of appliance to interrogate")
-	cmd.Flags().StringP(flags.BLADE_ID, flags.BLADE_ID_SH, flags.ID_DFLT, "ID of blade to interrogate")
+	cmd.Flags().StringP(flags.APPLIANCE_ID, flags.APPLIANCE_ID_SH, flags.ID_DFLT, "ID of appliance to interrogate\n (default \"all appliances listed\")")
+	cmd.Flags().StringP(flags.BLADE_ID, flags.BLADE_ID_SH, flags.ID_DFLT, "ID of blade to interrogate\n (default \"all blades listed\")")
 }
 
 // Add set of flags used by all the "list" commands
@@ -42,5 +42,5 @@ func initCommonHostListCmdFlags(cmd *cobra.Command) {
 
 	initCommonPersistentFlags(cmd)
 
-	cmd.Flags().StringP(flags.HOST_ID, flags.HOST_ID_SH, flags.ID_DFLT, "ID of appliance to interrogate")
+	cmd.Flags().StringP(flags.HOST_ID, flags.HOST_ID_SH, flags.ID_DFLT, "ID of appliance to interrogate\n (default \"all hosts listed\")")
 }
