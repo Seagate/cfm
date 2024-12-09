@@ -17,7 +17,6 @@ export const useApplianceStore = defineStore('appliance', {
         applianceIds: [] as { id: string, blades: { id: string, ipAddress: string, status: string | undefined }[] }[],
         discoveredBlades: [] as DiscoveredDevice[],
 
-        prefixBladeId: "Discoverd_Blade_",
         newBladeCredentials: {
             username: "root",
             password: "0penBmc",
@@ -140,6 +139,11 @@ export const useApplianceStore = defineStore('appliance', {
                     }
                 }
 
+                // Format the device name, remove the .local suffix (e.g. blade device name: granite00.local) from the device name by splitting it with .
+                for (var n = 0; n < this.discoveredBlades.length; n++) {
+                    this.discoveredBlades[n].name = this.discoveredBlades[n].name!.split('.')[0]
+                }
+
                 return this.discoveredBlades
             } catch (error) {
                 console.error("Error discovering new devices:", error);
@@ -163,12 +167,13 @@ export const useApplianceStore = defineStore('appliance', {
                 }
             }
 
-            // Add the new discovered blade to the default appliance
             let appliance = this.applianceIds.find(appliance => appliance.id === this.defaultApplianceId);
-
-            this.newBladeCredentials.customId = this.prefixBladeId + blade.address;
+            // Remove the .local suffix (e.g. blade device name: granite00.local) from the device name by splitting it with . and assign it to the customId
+            let deviceName = blade.name!.split('.')[0];
+            this.newBladeCredentials.customId = deviceName;
             this.newBladeCredentials.ipAddress = blade.address + "";
 
+            // Add the new discovered blade to the default appliance
             const responseOfBlade = await defaultApi.bladesPost(this.defaultApplianceId, this.newBladeCredentials);
 
             if (responseOfBlade) {

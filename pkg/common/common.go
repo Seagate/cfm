@@ -28,7 +28,7 @@ var DefaultBladeCredentials = &openapi.Credentials{
 	Port:      443,
 	Insecure:  true,
 	Protocol:  "https",
-	CustomId:  "Discoverd_Blade_",
+	CustomId:  "",
 }
 
 var DefaultHostCredentials = &openapi.Credentials{
@@ -38,5 +38,5 @@ var DefaultHostCredentials = &openapi.Credentials{
 	Port:      8082,
 	Insecure:  true,
 	Protocol:  "http",
-	CustomId:  "Discoverd_Host_",
+	CustomId:  "",
 }
