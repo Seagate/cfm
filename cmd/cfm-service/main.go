@@ -73,12 +73,7 @@ func main() {
 	data := datastore.DStore().GetDataStore()
 
 	// Check if there are any devices in the data store
-	bladeExist := false
-	for _, appliance := range data.ApplianceData {
-		if len(appliance.BladeData) != 0 {
-			bladeExist = true
-		}
-	}
+	bladeExist := len(data.ApplianceData) != 0
 	hostExist := len(data.HostData) != 0
 
 	// If there are no devices in the data store, do discovery, otherwise skip
