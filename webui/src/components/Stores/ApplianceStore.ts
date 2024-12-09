@@ -139,7 +139,7 @@ export const useApplianceStore = defineStore('appliance', {
                     }
                 }
 
-                //Handle the discovered device name, remove the tag local
+                // Format the device name, remove the .local suffix (e.g. blade device name: granite00.local) from the device name by splitting it with .
                 for (var n = 0; n < this.discoveredBlades.length; n++) {
                     this.discoveredBlades[n].name = this.discoveredBlades[n].name!.split('.')[0]
                 }
@@ -167,13 +167,13 @@ export const useApplianceStore = defineStore('appliance', {
                 }
             }
 
-            // Add the new discovered blade to the default appliance
             let appliance = this.applianceIds.find(appliance => appliance.id === this.defaultApplianceId);
-
+            // Remove the .local suffix (e.g. blade device name: granite00.local) from the device name by splitting it with . and assign it to the customId
             let deviceName = blade.name!.split('.')[0];
             this.newBladeCredentials.customId = deviceName;
             this.newBladeCredentials.ipAddress = blade.address + "";
 
+            // Add the new discovered blade to the default appliance
             const responseOfBlade = await defaultApi.bladesPost(this.defaultApplianceId, this.newBladeCredentials);
 
             if (responseOfBlade) {

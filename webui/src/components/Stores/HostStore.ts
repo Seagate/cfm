@@ -102,7 +102,7 @@ export const useHostStore = defineStore('host', {
                     }
                 }
 
-                //Handle the discovered device name, remove the tag local
+                // Format the device name, remove the .local suffix (e.g. host device name: host00.local) from the device name by splitting it with .
                 for (var n = 0; n < this.discoveredHosts.length; n++) {
                     this.discoveredHosts[n].name = this.discoveredHosts[n].name!.split('.')[0]
                 }
@@ -116,14 +116,15 @@ export const useHostStore = defineStore('host', {
         async addDiscoveredHosts(host: DiscoveredDevice) {
             const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
 
-            // Add all the new didcovered hosts
+            // Remove the .local suffix (e.g. host device name: host00.local) from the device name by splitting it with . and assign it to the customId
             let deviceName = host.name!.split('.')[0];
             this.newHostCredentials.customId = deviceName;
             this.newHostCredentials.ipAddress = host.address + "";
 
+            // Add the new didcovered host
             const responseOfHost = await defaultApi.hostsPost(this.newHostCredentials);
 
-            // Update the applianceIds and appliances
+            // Update the hostIds and hosts
             if (responseOfHost) {
                 const response = { id: responseOfHost.data.id, ipAddress: responseOfHost.data.ipAddress, status: responseOfHost.data.status }
                 this.hosts.push(responseOfHost.data);

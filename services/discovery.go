@@ -12,7 +12,7 @@ import (
 	"cfm/pkg/openapi"
 )
 
-// discoverDevices function to call the DiscoverDevices API
+// DiscoverDevices function to call the DiscoverDevices API
 func DiscoverDevices(ctx context.Context, apiService openapi.DefaultAPIServicer, deviceType string) (openapi.ImplResponse, error) {
 	resp, _ := apiService.DiscoverDevices(ctx, deviceType)
 	if resp.Code >= 300 {
@@ -36,7 +36,6 @@ func AddDiscoveredDevices(ctx context.Context, apiService openapi.DefaultAPIServ
 	}
 
 	// Add blades
-	// Convert data type
 	bladeBodyBytes, ok := blades.Body.([]*openapi.DiscoveredDevice)
 	if !ok {
 		log.Fatalf("Response body is not []byte")
@@ -47,10 +46,9 @@ func AddDiscoveredDevices(ctx context.Context, apiService openapi.DefaultAPIServ
 		if !exist {
 			newCredentials := *common.DefaultBladeCredentials
 			newCredentials.IpAddress = bladeDevice.Address
-			//Assign the actual device name to customId
-			// Handle the device name to remove the tag local
-			deviceName := strings.SplitN(bladeDevice.Name, ".", 2)[0]
 
+			// Remove the .local suffix (e.g. blade device name: granite00.local) from the device name by splitting it with . and assign it to the customId
+			deviceName := strings.SplitN(bladeDevice.Name, ".", 2)[0]
 			newCredentials.CustomId = deviceName
 
 			applianceDatum.AddBladeDatum(&newCredentials)
@@ -59,7 +57,6 @@ func AddDiscoveredDevices(ctx context.Context, apiService openapi.DefaultAPIServ
 	}
 
 	// Add cxl-hosts
-	// Convert data type
 	hostBodyBytes, ok := hosts.Body.([]*openapi.DiscoveredDevice)
 	if !ok {
 		log.Fatalf("Response body is not []byte")
@@ -69,8 +66,8 @@ func AddDiscoveredDevices(ctx context.Context, apiService openapi.DefaultAPIServ
 		if !exist {
 			newCredentials := *common.DefaultHostCredentials
 			newCredentials.IpAddress = hostDevice.Address
-			//Assign the actual device name to customId
-			// Handle the device name to remove the tag local
+
+			// Remove the .local suffix (e.g. host device name: host00.local) from the device name by splitting it with . and assign it to the customId
 			deviceName := strings.SplitN(hostDevice.Name, ".", 2)[0]
 			newCredentials.CustomId = deviceName
 
