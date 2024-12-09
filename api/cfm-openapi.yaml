@@ -19,9 +19,10 @@ paths:
   # Root
   /:
     get:
+      description: The CFM Service API
       responses:
         '200':
-          description: The CFM Service API
+          description: OK
           content:
             application/json:
               schema:
@@ -30,9 +31,10 @@ paths:
   # Service Versions
   /cfm:
     get:
+      description: The current supported version(s)
       responses:
         '200':
-          description: The current supported version(s)
+          description: OK
           content:
             application/json:
               schema:
@@ -41,9 +43,10 @@ paths:
   # Service Information
   /cfm/v1:
     get:
+      description: Contains general service information, including version tag and root resource(s)
       responses:
         '200':
-          description: Contains general service information, including version tag and root resource(s)
+          description: OK
           content:
             application/json:
               schema:
@@ -51,7 +54,7 @@ paths:
 
   /cfm/v1/discover:
     get:
-      description: Discover devices on the network.
+      description: Discover devices on the sub-network.
       operationId: discoverDevices
       parameters:
         - $ref: "#/components/parameters/deviceType"
@@ -74,7 +77,7 @@ paths:
   # Memory Appliances
   /cfm/v1/appliances:
     get:
-      description: Retrieve a collection of all managed memory appliances. Collection may be empty.
+      description: Retrieve a collection of all managed memory appliances.
       operationId: appliancesGet
       responses:
         "200":
@@ -90,7 +93,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/statusMessage"
     post:
-      description: Add a new memory appliance and optional credentials to be managed by cfm-service.
+      description: Add a new memory appliance and optional credentials to be managed by CFM Service.
       operationId: appliancesPost
       requestBody:
         content:
@@ -120,7 +123,7 @@ paths:
   # Single Memory Appliance
   /cfm/v1/appliances/{applianceId}:
     patch:
-      description: For any subsequent requests, force the appliance to re-synchronize all its' cfm-service data, for every blade, with the real hardware.
+      description: Force the appliance to re-synchronize.
       operationId: appliancesResyncById
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -156,7 +159,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/statusMessage"
     get:
-      description: Retrieve information for a single memory appliance. {applianceId} has to match the id of the appliance.
+      description: Retrieve information for a single memory appliance.
       operationId: appliancesGetById
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -186,7 +189,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/statusMessage"
     delete:
-      description: Remove a memory appliance by id from cfm-service management.
+      description: Remove a memory appliance from CFM Service management.
       operationId: appliancesDeleteById
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -210,7 +213,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/statusMessage"
     put:
-      description: Update an appliance with a new id.
+      description: Update an appliance to a new id.
       operationId: appliancesUpdateById
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -248,7 +251,7 @@ paths:
   # Memory Appliance Blades
   /cfm/v1/appliances/{applianceId}/blades:
     get:
-      description: Retrieve a collection of all managed blades under a memory appliance. Collection may be empty.
+      description: Retrieve a collection of all managed blades under a memory appliance.
       operationId: bladesGet
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -266,7 +269,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/statusMessage"
     post:
-      description: Add a new blade under a memory appliance and credentials to be managed by cfm-service.
+      description: Add a new blade under a memory appliance and credentials to be managed by CFM Service.
       operationId: bladesPost
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -299,7 +302,7 @@ paths:
   # Single Memory Blade
   /cfm/v1/appliances/{applianceId}/blades/{bladeId}:
     patch:
-      description: For any subsequent requests, force the blade to re-synchronize all its' cfm-service data with the real hardware.
+      description: Force the blade to re-synchronize.
       operationId: bladesResyncById
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -330,7 +333,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/statusMessage"
     get:
-      description: Retrieve information for a single memory blade. {bladeId} has to match the id of the blade.
+      description: Retrieve information for a single memory blade.
       operationId: bladesGetById
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -361,7 +364,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/statusMessage"
     delete:
-      description: Remove a memory blade by id from cfm-service management.
+      description: Remove a memory blade from CFM Service management.
       operationId: bladesDeleteById
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -386,7 +389,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/statusMessage"
     put:
-      description: Update a blade with a new id.
+      description: Update a blade to a new id.
       operationId: bladesUpdateById
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -426,7 +429,7 @@ paths:
   /cfm/v1/appliances/{applianceId}/blades/{bladeId}/status:
     get:
       summary: Get blade status
-      description: Retrieve the hardware status of a specific blade, including memory, ports and resources.
+      description: Retrieve the status of a blade.
       operationId: bladesGetStatus
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -455,7 +458,7 @@ paths:
   /cfm/v1/appliances/{applianceId}/blades/{bladeId}/statusmemory:
     get:
       summary: Get blades memory chunk status
-      description: Retrieve the status of memory on a specific blade.
+      description: Retrieve the status of all the memory chunks on a blade.
       operationId: bladesGetMemoryStatus
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -486,7 +489,7 @@ paths:
   /cfm/v1/appliances/{applianceId}/blades/{bladeId}/statusports:
     get:
       summary: Get blades port status
-      description: Retrieve the status of ports on a specific blade.
+      description: Retrieve the status of all the ports on a blade.
       operationId: bladesGetPortStatus
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -517,7 +520,7 @@ paths:
   /cfm/v1/appliances/{applianceId}/blades/{bladeId}/statusresources:
     get:
       summary: Get blades memory resource status
-      description: Retrieve the status of resources on a specific blade.
+      description: Retrieve the status of all the resrouce blocks on a blade.
       operationId: bladesGetResourceStatus
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -547,7 +550,7 @@ paths:
   # Memory Blade Memory Resource Blocks
   /cfm/v1/appliances/{applianceId}/blades/{bladeId}/resources:
     get:
-      description: Retrieve a collection of memory blade resources. The collection may be empty.
+      description: Retrieve a collection of memory blade resource blocks.
       operationId: bladesGetResources
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -575,7 +578,7 @@ paths:
   # Single Memory Blade Memory Resource Block
   /cfm/v1/appliances/{applianceId}/blades/{bladeId}/resources/{resourceId}:
     get:
-      description: Retrieve information for a single memory resource block.
+      description: Retrieve information for a memory resource block.
       operationId: bladesGetResourceById
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -610,7 +613,7 @@ paths:
   # Memory Blade Ports
   /cfm/v1/appliances/{applianceId}/blades/{bladeId}/ports:
     get:
-      description: Retrieve a collection of memory appliance ports. The collection may be empty.
+      description: Retrieve a collection of memory blade ports.
       operationId: bladesGetPorts
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -638,7 +641,7 @@ paths:
   # Single Memory Blade Port
   /cfm/v1/appliances/{applianceId}/blades/{bladeId}/ports/{portId}:
     get:
-      description: Retrieve information for a single port.
+      description: Retrieve information for a blade port.
       operationId: bladesGetPortById
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -673,7 +676,7 @@ paths:
   # Memory Region Collection
   /cfm/v1/appliances/{applianceId}/blades/{bladeId}/memory:
     get:
-      description: Retrieve a collection of memory regions. The collection may be empty.
+      description: Retrieve a collection of memory regions.
       operationId: bladesGetMemory
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -698,7 +701,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/statusMessage"
     post:
-      description: Allocate a new memory region from a Memory Blade and possibly assign it to a CXL Host.
+      description: Allocate a new memory region from a memory blade and optionally assign it to a blade port.
       operationId: bladesComposeMemory
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -747,7 +750,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/statusMessage"
     put:
-      description: Allocate a new memory region from a Memory Blade with the supplied resource blocks and possibly assign it to a CXL Host.
+      description: Allocate a new memory region from a memory blade with the supplied resource blocks and optionally assign it to a blade port.
       operationId: bladesComposeMemoryByResource
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -799,7 +802,7 @@ paths:
   # Single Memory Region
   /cfm/v1/appliances/{applianceId}/blades/{bladeId}/memory/{memoryId}:
     get:
-      description: Retrieve information for a single memory region.
+      description: Retrieve information for a memory region.
       operationId: bladesGetMemoryById
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -831,7 +834,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/statusMessage"
     patch:
-      description: Assign a memory region to a CXL port or Unassign a memory region from a CXL port
+      description: Assign a memory region to a blade port or Unassign a memory region from a blade port
       operationId: bladesAssignMemoryById
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -863,7 +866,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/statusMessage"
     delete:
-      description: Free a memory region by id
+      description: Free the memory region
       operationId: bladesFreeMemoryById
       parameters:
       - $ref: "#/components/parameters/applianceId"
@@ -893,7 +896,7 @@ paths:
   /cfm/v1/hosts:
     get:
       summary: Get CXL Host information.
-      description: Retrieves the current state of CXL hosts including allocated memory regions.
+      description: Retrieves the current state of CXL hosts.
       operationId: hostsGet
       responses:
         "200":
@@ -909,8 +912,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/statusMessage"
     post:
-      summary: Add a CXL host to be managed by CFM.
-      description: Add a new CXL host and credentials to be managed by the cfm-service.
+      summary: Add a CXL host to be managed by CFM Service.
+      description: Add a new CXL host and credentials to be managed by the CFM Service.
       operationId: hostsPost
       requestBody:
         required: true
@@ -940,7 +943,7 @@ paths:
   # Single CXL Host
   /cfm/v1/hosts/{hostId}:
     patch:
-      description: For any subsequent requests, force the host to re-synchronize all its' cfm-service data with the real hardware.
+      description: Force the host to re-synchronize
       operationId: hostsResyncById
       parameters:
       - $ref: "#/components/parameters/hostId"
@@ -970,7 +973,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/statusMessage"
     get:
-      summary: Get information for a single CXL Host.
+      summary: Get information for a CXL Host.
       operationId: hostsGetById
       parameters:
       - $ref: "#/components/parameters/hostId"
@@ -1000,7 +1003,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/statusMessage"
     delete:
-      description: Remove a CXL Host by id from cfm-service management.
+      description: Remove the CXL Host from CFM Service management.
       operationId: hostsDeleteById
       parameters:
       - $ref: "#/components/parameters/hostId"
@@ -1024,7 +1027,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/statusMessage"
     put:
-      description: Update a CXL host with a new id.
+      description: Update a CXL host to a new id.
       operationId: hostsUpdateById
       parameters:
       - $ref: "#/components/parameters/hostId"
@@ -1089,7 +1092,7 @@ paths:
 # Single CXL host Port
   /cfm/v1/hosts/{hostId}/ports/{portId}:
     get:
-      description: Retrieve information for a single port.
+      description: Retrieve information for a host port.
       operationId: hostsGetPortById
       parameters:
       - $ref: "#/components/parameters/hostId"
@@ -1150,7 +1153,7 @@ paths:
 # Single CXL host memory device
   /cfm/v1/hosts/{hostId}/memory-devices/{memoryDeviceId}:
     get:
-      description: Retrieve information for a single memory device ( CXL logical device ).
+      description: Retrieve information for a memory device ( CXL logical device ).
       operationId: hostsGetMemoryDeviceById
       parameters:
       - $ref: "#/components/parameters/hostId"
@@ -1253,7 +1256,7 @@ paths:
 # Single Memory Region on CXL host
   /cfm/v1/hosts/{hostId}/memory/{memoryId}:
     get:
-      description: Retrieve information for a single memory region.
+      description: Retrieve information for a host memory region.
       operationId: hostsGetMemoryById
       parameters:
       - $ref: "#/components/parameters/hostId"
@@ -1284,7 +1287,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/statusMessage"
     delete:
-      description: Free a memory region by id
+      description: Free the memory region
       operationId: hostsFreeMemoryById
       parameters:
       - $ref: "#/components/parameters/hostId"
@@ -1768,7 +1771,7 @@ components:
       properties:
         version:
           type: string
-          description: The cfm-service version
+          description: The CFM Service version
         resources:
           type: array
           items:
