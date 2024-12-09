@@ -22,7 +22,6 @@ export const useHostStore = defineStore('host', {
         hostIds: [] as { id: string, ipAddress: string, status: string | undefined }[],
         discoveredHosts: [] as DiscoveredDevice[],
 
-        prefixHostId: "Discoverd_Host_",
         newHostCredentials: {
             username: "admin",
             password: "admin12345",
@@ -103,6 +102,11 @@ export const useHostStore = defineStore('host', {
                     }
                 }
 
+                //Handle the discovered device name, remove the tag local
+                for (var n = 0; n < this.discoveredHosts.length; n++) {
+                    this.discoveredHosts[n].name = this.discoveredHosts[n].name!.split('.')[0]
+                }
+
                 return this.discoveredHosts
             } catch (error) {
                 console.error("Error discovering new devices:", error);
@@ -111,8 +115,10 @@ export const useHostStore = defineStore('host', {
 
         async addDiscoveredHosts(host: DiscoveredDevice) {
             const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
+
             // Add all the new didcovered hosts
-            this.newHostCredentials.customId = this.prefixHostId + host.address;
+            let deviceName = host.name!.split('.')[0];
+            this.newHostCredentials.customId = deviceName;
             this.newHostCredentials.ipAddress = host.address + "";
 
             const responseOfHost = await defaultApi.hostsPost(this.newHostCredentials);

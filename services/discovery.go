@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"golang.org/x/net/context"
 
@@ -46,8 +47,11 @@ func AddDiscoveredDevices(ctx context.Context, apiService openapi.DefaultAPIServ
 		if !exist {
 			newCredentials := *common.DefaultBladeCredentials
 			newCredentials.IpAddress = bladeDevice.Address
-			//Assign the actual ipAddress to customId to ensure its uniqueness
-			newCredentials.CustomId = newCredentials.CustomId + bladeDevice.Address
+			//Assign the actual device name to customId
+			// Handle the device name to remove the tag local
+			deviceName := strings.SplitN(bladeDevice.Name, ".", 2)[0]
+
+			newCredentials.CustomId = deviceName
 
 			applianceDatum.AddBladeDatum(&newCredentials)
 			datastore.DStore().Store()
@@ -65,8 +69,10 @@ func AddDiscoveredDevices(ctx context.Context, apiService openapi.DefaultAPIServ
 		if !exist {
 			newCredentials := *common.DefaultHostCredentials
 			newCredentials.IpAddress = hostDevice.Address
-			//Assign the actual ipAddress to customId to ensure its uniqueness
-			newCredentials.CustomId = newCredentials.CustomId + hostDevice.Address
+			//Assign the actual device name to customId
+			// Handle the device name to remove the tag local
+			deviceName := strings.SplitN(hostDevice.Name, ".", 2)[0]
+			newCredentials.CustomId = deviceName
 
 			datastore.DStore().GetDataStore().AddHostDatum(&newCredentials)
 			datastore.DStore().Store()

@@ -26,7 +26,7 @@
           style="margin-bottom: 40px"
           variant="tonal"
         >
-          Click to discover new devices</v-btn
+          Discover new devices</v-btn
         >
       </v-col>
     </v-row>
