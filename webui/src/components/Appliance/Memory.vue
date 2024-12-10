@@ -434,7 +434,7 @@ export default {
             this.selectedMemoryRegion.memoryApplianceId,
             this.selectedMemoryRegion.memoryBladeId
           );
-          await bladeResourceStore.fetchMemoryResources(
+          await bladeResourceStore.updateMemoryResourcesStatus(
             this.selectedMemoryRegion.memoryApplianceId,
             this.selectedMemoryRegion.memoryBladeId
           );
@@ -477,7 +477,7 @@ export default {
         const bladeResourceStore = useBladeResourceStore();
         const bladePortStore = useBladePortStore();
 
-        await bladeResourceStore.fetchMemoryResources(
+        await bladeResourceStore.updateMemoryResourcesStatus(
           this.selectedMemoryRegion.memoryApplianceId,
           this.selectedMemoryRegion.memoryBladeId
         );
