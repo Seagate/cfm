@@ -316,7 +316,7 @@
 </template>
 
 <script>
-import { computed, ref, watchEffect } from "vue";
+import { computed } from "vue";
 import { useBladeMemoryStore } from "../Stores/BladeMemoryStore";
 import { useBladePortStore } from "../Stores/BladePortStore";
 import { useBladeResourceStore } from "../Stores/BladeResourceStore";
