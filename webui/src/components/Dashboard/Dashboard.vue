@@ -323,7 +323,7 @@ export default {
       if (this.selectedBlades.length === 0) {
         console.log("No blades selected.");
       } else {
-        for (var i = 0; i < this.selectedBlades.length; i++) {
+        for (let i = 0; i < this.selectedBlades.length; i++) {
           try {
             const newAddedBlade = await applianceStore.addDiscoveredBlades(
               this.selectedBlades[i]
@@ -341,7 +341,7 @@ export default {
       if (this.selectedHosts.length === 0) {
         console.log("No hosts selected.");
       } else {
-        for (var i = 0; i < this.selectedHosts.length; i++) {
+        for (let i = 0; i < this.selectedHosts.length; i++) {
           try {
             const newAddedHost = await hostStore.addDiscoveredHosts(
               this.selectedHosts[i]
