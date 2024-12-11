@@ -21,7 +21,7 @@ export const useBladeResourceStore = defineStore('bladeResource', {
                     applianceId,
                     bladeId
                 );
-                
+
                 const resourcesCount = response.data.memberCount;
                 for (let i = 0; i < resourcesCount; i++) {
                     // Extract the id for each resources
@@ -46,6 +46,35 @@ export const useBladeResourceStore = defineStore('bladeResource', {
             } catch (error) {
                 console.error("Error fetching resources:", error);
             }
+        },
+
+        async updateMemoryResourcesStatus(applianceId: string, bladeId: string) {
+            try {
+                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
+                const updatedResource = await defaultApi.bladesGetResourceStatus(
+                    applianceId,
+                    bladeId,
+                );
+
+                if (updatedResource) {
+                    // Create a map to quick look up the updatedResource
+                    const resourceMap = new Map<string, string>();
+                    updatedResource.data.resourceStatuses.forEach((resource) => {
+                        resourceMap.set(resource.id, resource.compositionStatus.compositionState);
+                    });
+
+                    // Update the status in memoryResources based on the resource map
+                    this.memoryResources.forEach(resource => {
+                        if (resourceMap.has(resource.id)) {
+                            resource.compositionStatus.compositionState = resourceMap.get(resource.id) + ""
+                        }
+                    });
+                }
+
+            } catch (error) {
+                console.error("Error updating resources:", error);
+            }
+
         },
     }
 })
