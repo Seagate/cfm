@@ -39,7 +39,7 @@ func (r *ServiceRequestAddAppliance) Execute() (*service.Appliance, error) {
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "AppliancesCred", fmt.Sprintf("%+v", *r.ApplianceCred))
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ApplianceTcp", fmt.Sprintf("%+v", *r.ApplianceTcp))
 
-	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort())
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
 	insecure := r.ApplianceTcp.GetInsecure()
 	protocol := r.ApplianceTcp.GetProtocol()
@@ -79,7 +79,7 @@ func (r *ServiceRequestDeleteAppliance) Execute() (*service.Appliance, error) {
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ServiceTcp", fmt.Sprintf("%+v", *r.ServiceTcp))
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ApplianceId", fmt.Sprintf("%+v", *r.ApplianceId))
 
-	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort())
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
 	deletedAppliance, err := serviceWrap.DeleteApplianceById(serviceClient, r.ApplianceId.GetId())
 	if err != nil {
@@ -102,7 +102,7 @@ func NewServiceRequestListAppliances(cmd *cobra.Command) *ServiceRequestListAppl
 func (r *ServiceRequestListAppliances) Execute() (*[]*service.Appliance, error) {
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ServiceTcp", fmt.Sprintf("%+v", *r.ServiceTcp))
 
-	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.ip, r.ServiceTcp.port)
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
 	appliances, err := serviceWrap.GetAllAppliances(serviceClient)
 	if err != nil {
@@ -147,7 +147,7 @@ func (r *ServiceRequestRenameAppliance) Execute() (*service.Appliance, error) {
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ApplianceId", fmt.Sprintf("%+v", *r.ApplianceId))
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "NewApplianceId", fmt.Sprintf("%+v", *r.NewApplianceId))
 
-	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort())
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
 	appliance, err := serviceWrap.RenameApplianceById(serviceClient, r.ApplianceId.GetId(), r.NewApplianceId.GetId())
 	if err != nil {
@@ -173,7 +173,7 @@ func (r *ServiceRequestResyncAppliance) Execute() (*service.Appliance, error) {
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ServiceTcp", fmt.Sprintf("%+v", *r.ServiceTcp))
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ApplianceId", fmt.Sprintf("%+v", *r.ApplianceId))
 
-	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort())
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
 	appliance, err := serviceWrap.ResyncApplianceById(serviceClient, r.ApplianceId.GetId())
 	if err != nil {
