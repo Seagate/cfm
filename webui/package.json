@@ -17,6 +17,7 @@
     "chart.js": "^4.4.3",
     "core-js": "^3.29.0",
     "d3-force": "^3.0.0",
+    "http-proxy-middleware": "^3.0.3",
     "pinia": "^2.1.7",
     "roboto-fontface": "*",
     "v-network-graph": "^0.9.15",

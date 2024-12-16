@@ -1,8 +1,8 @@
 // Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
 // Plugins
-import vue from '@vitejs/plugin-vue'
-import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
-import ViteFonts from 'unplugin-fonts/vite'
+import vue from '@vitejs/plugin-vue';
+import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify';
+import ViteFonts from 'unplugin-fonts/vite';
 import yaml from 'js-yaml';
 import fs from 'fs';
 
@@ -56,7 +56,15 @@ export default defineConfig({
     ],
   },
   server: {
-    host:'0.0.0.0',
+    host: '0.0.0.0',
     port: 3000,
+    proxy: {
+      '/api': {
+        target: parsedConfig.api.base_path,
+        changeOrigin: true,
+        secure: false, // Ignore self-signed certificate
+        rewrite: (path) => path.replace(/^\/api/, '/api'),
+      },
+    },
   },
-})
+});

@@ -43,7 +43,14 @@ export const useHostStore = defineStore("host", {
       this.hostIds = [];
       try {
         // Get all hosts from OpenBMC
-        const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
+        const axiosInstance = axios.create({
+          baseURL: API_BASE_PATH, // Proxy will handle the rest
+          validateStatus: function (status) {
+            return status >= 200 && status < 300; // Accept only 2xx status codes
+          },
+        });
+        
+        const defaultApi = new DefaultApi(undefined,API_BASE_PATH, axiosInstance);
         const responseOfHosts = await defaultApi.hostsGet();
         const hostCount = responseOfHosts.data.memberCount;
 
