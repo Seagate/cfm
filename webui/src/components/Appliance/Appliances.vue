@@ -2017,13 +2017,27 @@ export default {
     const selectedBladeStatus = computed(() => bladeStore.selectedBladeStatus);
 
     const statusColor = computed(() => {
-      return selectedBladeStatus.value === "online" ? "#6ebe4a" : "#ff9f40";
+      if (selectedBladeStatus.value === "online") {
+        return "#6ebe4a";
+      } else if (selectedBladeStatus.value === "unavailable") {
+        return "#ff9f40";
+      } else if (selectedBladeStatus.value === "offline") {
+        return "#b00020";
+      } else {
+        return "#B0B0B0"; // Default unknown status
+      }
     });
 
     const statusIcon = computed(() => {
-      return selectedBladeStatus.value === "online"
-        ? "mdi-check-circle"
-        : "mdi-close-circle";
+      if (selectedBladeStatus.value === "online") {
+        return "mdi-check-circle";
+      } else if (selectedBladeStatus.value === "unavailable") {
+        return "mdi-alert-circle";
+      } else if (selectedBladeStatus.value === "offline") {
+        return "mdi-close-circle";
+      } else {
+        return "mdi-help-circle"; // Default unknown status
+      }
     });
 
     // Methods to update state
