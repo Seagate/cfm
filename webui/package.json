@@ -20,7 +20,7 @@
     "pinia": "^2.1.7",
     "roboto-fontface": "*",
     "v-network-graph": "^0.9.15",
-    "vue": "^3.2.0",
+    "vue": "^3.3.7",
     "vue-router": "^4.0.0",
     "vuetify": "^3.0.0"
   },
