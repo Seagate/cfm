@@ -73,11 +73,20 @@ func main() {
 	data := datastore.DStore().GetDataStore()
 
 	// Check if there are any devices in the data store
-	bladeExist := len(data.ApplianceData) != 0
-	hostExist := len(data.HostData) != 0
+	hostsExist := len(data.HostData) != 0
+	appliancesExist := len(data.ApplianceData) != 0
+	bladesExist := false
+	if appliancesExist {
+		for _, applianceDatum := range data.ApplianceData {
+			bladesExist = len(applianceDatum.BladeData) != 0
+			if bladesExist {
+				break
+			}
+		}
+	}
 
 	// If there are no devices in the data store, do discovery, otherwise skip
-	if !bladeExist && !hostExist {
+	if !bladesExist && !hostsExist {
 		// Discover devices before loading datastore
 		bladeDevices, errBlade := services.DiscoverDevices(ctx, defaultApiService, "blade")
 		hostDevices, errHost := services.DiscoverDevices(ctx, defaultApiService, "cxl-host")
