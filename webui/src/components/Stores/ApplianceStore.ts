@@ -122,16 +122,27 @@ export const useApplianceStore = defineStore("appliance", {
                 ?.slice(0, -2) as string;
               // Store blade in blades
               if (bladeId) {
-                const responseOfBlade = await defaultApi.bladesGetById(
-                  applianceId,
-                  bladeId
-                );
-                const response = {
-                  id: responseOfBlade.data.id,
-                  ipAddress: responseOfBlade.data.ipAddress,
-                  status: responseOfBlade.data.status,
-                };
-                associatedBlades.push(response);
+                try {
+                  const responseOfBlade = await defaultApi.bladesGetById(applianceId, bladeId);
+
+                  const response = {
+                    id: responseOfBlade.data.id,
+                    ipAddress: responseOfBlade.data.ipAddress,
+                    status: responseOfBlade.data.status,
+                  };
+
+                  associatedBlades.push(response);
+                } catch (bladeError) {
+                  console.error(`Error fetching blade ${bladeId}:`, bladeError);
+
+                  // Push the failed blade with an empty status
+                  // TODO: Get the status for the failed blade from cfm-service
+                  associatedBlades.push({
+                    id: bladeId,
+                    ipAddress: "",
+                    status: "",
+                  });
+                }
               }
             }
             this.applianceIds.push({

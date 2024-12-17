@@ -17,7 +17,7 @@ export const useData = () => {
     const dataNodes = computed(() => {
         let currentYPosition = 0;
         const applianceNodes = applianceStore.applianceIds.flatMap(
-            (appliance, index) => {
+            (appliance) => {
                 const bladeCount = appliance.blades.length;
                 const applianceHeight = 50 + bladeCount * 50; // Adjust height based on number of blades
                 const applianceWidth = 270; // Width of the appliance node

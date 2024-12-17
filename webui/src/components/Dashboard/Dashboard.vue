@@ -47,83 +47,99 @@
         {{ "mdi-close" }}
       </v-icon>
     </div>
-        <v-card class="parent-card"
-          style="
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-          "
-        >
-            <VueFlow
-              :nodes="nodes"
-              :edges="edges"
-              class="basic-flow"
-              :default-viewport="{ zoom: 1 }"
-              :min-zoom="0.2"
-              :max-zoom="4"
-              @node-click="handleNodeClick"
-            >
-              <Controls position="top-left">
-                <ControlButton title="Search" @click="toggleSearch">
-                  <v-icon>mdi-magnify</v-icon>
-                </ControlButton>
-              </Controls>
-            </VueFlow>
-          <v-card class="child-card"
-          style="
-            width: 20%;
-            height: 50%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-          "
-        >
-          <v-card-text>
-            Devices
-            <v-list-item>
-              <v-list-item-title>
-                <v-icon color="#f2ae72" class="mr-2">mdi-rectangle</v-icon>
-                CMA
-              </v-list-item-title>
-            </v-list-item>
-            <v-list-item>
-              <v-list-item-title>
-                <v-icon color="#f2e394" class="mr-2">mdi-rectangle</v-icon>
-                Blade
-              </v-list-item-title>
-            </v-list-item>
-            <v-list-item>
-              <v-list-item-title>
-                <v-icon color="#d9ecd0" class="mr-2">mdi-rectangle</v-icon>
-                Host
-              </v-list-item-title>
-            </v-list-item>
-            <br>Status
-            <v-list-item>
-              <v-list-item-title>
-                <v-icon color="#6ebe4a" class="mr-2">mdi-rectangle-outline</v-icon>
-                online
-              </v-list-item-title>
-            </v-list-item>
-            <v-list-item>
-              <v-list-item-title>
-                <v-icon color="#b00020" class="mr-2">mdi-rectangle-outline</v-icon>
-                offline
-              </v-list-item-title>
-            </v-list-item>
-            <v-list-item>
-              <v-list-item-title>
-                <v-icon color="#ff9f40" class="mr-2">mdi-rectangle-outline</v-icon>
-                unavailable
-              </v-list-item-title>
-            </v-list-item>
-          </v-card-text>
-        </v-card>
-        </v-card>
+    <v-card
+      class="parent-card"
+      style="
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <VueFlow
+        :nodes="nodes"
+        :edges="edges"
+        class="basic-flow"
+        :default-viewport="{ zoom: 1 }"
+        :min-zoom="0.2"
+        :max-zoom="4"
+        @node-click="handleNodeClick"
+      >
+        <Controls position="top-left">
+          <ControlButton title="Search" @click="toggleSearch">
+            <v-icon>mdi-magnify</v-icon>
+          </ControlButton>
+        </Controls>
+      </VueFlow>
+      <v-card
+        class="child-card"
+        style="
+          width: 20%;
+          height: 50%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        "
+      >
+        <v-card-text>
+          Devices
+          <v-list-item>
+            <v-list-item-title>
+              <v-icon color="#f2ae72" class="mr-2">mdi-rectangle</v-icon>
+              CMA
+            </v-list-item-title>
+          </v-list-item>
+          <v-list-item>
+            <v-list-item-title>
+              <v-icon color="#f2e394" class="mr-2">mdi-rectangle</v-icon>
+              Blade
+            </v-list-item-title>
+          </v-list-item>
+          <v-list-item>
+            <v-list-item-title>
+              <v-icon color="#d9ecd0" class="mr-2">mdi-rectangle</v-icon>
+              Host
+            </v-list-item-title>
+          </v-list-item>
+          <br />Status
+          <v-list-item>
+            <v-list-item-title>
+              <v-icon color="#6ebe4a" class="mr-2"
+                >mdi-rectangle-outline</v-icon
+              >
+              online
+            </v-list-item-title>
+          </v-list-item>
+          <v-list-item>
+            <v-list-item-title>
+              <v-icon color="#b00020" class="mr-2"
+                >mdi-rectangle-outline</v-icon
+              >
+              offline
+            </v-list-item-title>
+          </v-list-item>
+          <v-list-item>
+            <v-list-item-title>
+              <v-icon color="#ff9f40" class="mr-2"
+                >mdi-rectangle-outline</v-icon
+              >
+              unavailable
+            </v-list-item-title>
+          </v-list-item>
+          <v-list-item>
+            <v-list-item-title>
+              <v-icon color="#B0B0B0" class="mr-2"
+                >mdi-rectangle-outline</v-icon
+              >
+              unknown
+            </v-list-item-title>
+          </v-list-item>
+        </v-card-text>
+      </v-card>
+    </v-card>
 
     <!-- The dialog of the warning before the adding the new discovered devices(blades or cxl-hosts) -->
     <v-dialog v-model="dialogNewDiscoveredDevices" max-width="600px">
@@ -144,7 +160,7 @@
             v-model="selectedBlades"
             :value="blade"
           ></v-checkbox>
-          <br>
+          <br />
           New Discovered Hosts:
           <v-checkbox
             v-for="(host, index) in discoveredHosts"
@@ -218,19 +234,18 @@
           size="112"
         ></v-icon>
         <h2 class="text-h5 mb-6">Congrats! New devices were added</h2>
-        <p class="mb-4 text-medium-emphasis text-body-2">
-          New blades:
-          <ul>
+        New blades:
+        <ul>
           <li v-for="(blade, index) in newBlades" :key="index">
             {{ blade.id }}
           </li>
-        </ul><br />New hosts: <br />
+        </ul>
+        <br />New hosts: <br />
         <ul>
           <li v-for="(host, index) in newHosts" :key="index">
             {{ host.id }}
           </li>
         </ul>
-        </p>
         <v-divider class="mb-4"></v-divider>
         <div class="text-end">
           <v-btn
@@ -269,7 +284,7 @@ export default {
     return {
       addNewDiscoveredDevicesProgressText:
         "Adding the selected devices, please wait...",
-      discoverDevicesProgressText:"Discovering devices, please wait...",
+      discoverDevicesProgressText: "Discovering devices, please wait...",
 
       dialogNewDiscoveredDevices: false,
       dialogAddNewDiscoveredDevicesWait: false,
