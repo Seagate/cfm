@@ -1,6 +1,6 @@
 // Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
 import dagre from '@dagrejs/dagre';
-import { Position, useVueFlow } from '@vue-flow/core';
+import { Position } from '@vue-flow/core';
 import { ref } from 'vue';
 
 /**
@@ -18,7 +18,7 @@ export function measureText(text: string, font = '16px Arial') {
     width: width,
     height: parseInt(font, 10) // Assuming height is roughly the font size
   };
-};
+}
 
 export const Colors = {
   applianceColor: '#f2ae72',
@@ -30,19 +30,17 @@ export const Colors = {
 export function borderColorChange(status: string | undefined) {
   switch (status) {
     case "online":
-      return "#6ebe4a"; // green
+      return "#6ebe4a"; // Green
     case "offline":
       return "#b00020"; // Red
     case "unavailable":
       return "#ff9f40"; // Orange
     default:
-      return "#ffffff"; // White
+      return "#B0B0B0"; // Gray
   }
-};
+}
 
 export function useLayout() {
-  const { findNode } = useVueFlow();
-
   const graph = ref(new dagre.graphlib.Graph());
 
   const previousDirection = ref('LR');

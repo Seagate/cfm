@@ -30,7 +30,7 @@ export const useControlData = () => {
       : [];
 
     const applianceNodes = applianceStore.applianceIds.flatMap(
-      (appliance, applianceIndex) => [
+      (appliance) => [
         {
           id: `appliance-${appliance.id}`,
           data: { label: appliance.id, url: `/appliances/${appliance.id}` },
@@ -38,7 +38,7 @@ export const useControlData = () => {
           style: { backgroundColor: useLayout().Colors.applianceColor, border: "none" },
           type: applianceNodeType,
         },
-        ...appliance.blades.map((blade, bladeIndex) => {
+        ...appliance.blades.map((blade) => {
           const borderColor = useLayout().borderColorChange(blade.status);
           return {
             id: `blade-${blade.id}`,
@@ -51,7 +51,7 @@ export const useControlData = () => {
       ]
     );
 
-    const hostNodes = hostStore.hostIds.map((host, index) => {
+    const hostNodes = hostStore.hostIds.map((host) => {
       const borderColor = useLayout().borderColorChange(host.status);
 
       return {
