@@ -5,7 +5,6 @@ package manager
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/google/uuid"
 	"k8s.io/klog/v2"
@@ -97,37 +96,6 @@ func (a *Appliance) AddBlade(ctx context.Context, c *openapi.Credentials) (*Blad
 	if err != nil || response == nil {
 		newErr := fmt.Errorf("create session failure at [%s:%d] using interface [%s]: %w", c.IpAddress, c.Port, backendName, err)
 		logger.Error(newErr, "failure: add blade")
-
-		bladeId := c.CustomId
-		if bladeId == "" { // Order CustomeId > BladeSN > UUID
-			bladeId = response.ChassisSN
-			if bladeId == "" {
-				// Generate default id using last N digits of a randomly generated uuid combined with the default prefix
-				// Example uuid: ee0328d9-258a-4e81-976e-b75aa4a2d8f5
-				uuid := uuid.New().String()
-				uuid = strings.ReplaceAll(uuid, "-", "")
-				bladeId = fmt.Sprintf("%s-%s", ID_PREFIX_BLADE_DFLT, uuid[(len(uuid)-common.NumUuidCharsForId):])
-			}
-			c.CustomId = bladeId
-		}
-
-		// Continue adding the failed blade to the datastore, but update the connection status to unavailable
-		newBlade := &Blade{
-			Id:          c.CustomId,
-			Uri:         GetCfmUriBladeId(a.Id, c.CustomId),
-			Status:      common.UNAVAILABLE,
-			ApplianceId: a.Id,
-			backendOps:  ops,
-			creds:       c,
-		}
-		a.Blades[newBlade.Id] = newBlade
-
-		applianceDatum, _ := datastore.DStore().GetDataStore().GetApplianceDatumById(newBlade.ApplianceId)
-		applianceDatum.AddBladeDatum(c)
-		unavailabelBlade, _ := applianceDatum.GetBladeDatumById(ctx, c.CustomId)
-		unavailabelBlade.ConnectionStatus = common.UNAVAILABLE
-		datastore.DStore().Store()
-
 		return nil, &common.RequestError{StatusCode: common.StatusBladeCreateSessionFailure, Err: newErr}
 	}
 
