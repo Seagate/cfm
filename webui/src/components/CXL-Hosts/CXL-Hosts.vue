@@ -1132,7 +1132,7 @@ export default {
             hostPortStore.hostPortStore(newHostId),
             hostMemoryStore.hostMemoryStore(newHostId),
             hostMemoryDeviceStore.hostMemoryDeviceStore(newHostId),
-            hostStore.fetchHostById(newHostId)
+            hostStore.fetchHostById(newHostId),
           ]);
 
           // Update the URL with the new host ID
@@ -1152,13 +1152,27 @@ export default {
     const selectedHostStatus = computed(() => hostStore.selectedHostStatus);
 
     const statusColor = computed(() => {
-      return selectedHostStatus.value === "online" ? "#6ebe4a" : "#ff9f40";
+      if (selectedHostStatus.value === "online") {
+        return "#6ebe4a";
+      } else if (selectedHostStatus.value === "unavailable") {
+        return "#ff9f40";
+      } else if (selectedHostStatus.value === "offline") {
+        return "#b00020";
+      } else {
+        return "#B0B0B0"; // Default unknown status
+      }
     });
 
     const statusIcon = computed(() => {
-      return selectedHostStatus.value === "online"
-        ? "mdi-check-circle"
-        : "mdi-close-circle";
+      if (selectedHostStatus.value === "online") {
+        return "mdi-check-circle";
+      } else if (selectedHostStatus.value === "unavailable") {
+        return "mdi-alert-circle";
+      } else if (selectedHostStatus.value === "offline") {
+        return "mdi-close-circle";
+      } else {
+        return "mdi-help-circle"; // Default unknown status
+      }
     });
 
     // Methods to update state
