@@ -55,17 +55,31 @@ export const useHostStore = defineStore("host", {
             .pop()
             ?.slice(0, -2) as string;
           // Get host by id
-          const detailsResponseOfHost = await defaultApi.hostsGetById(hostId);
+          if (hostId) {
+            try {
+              const detailsResponseOfHost = await defaultApi.hostsGetById(hostId);
 
-          // Store host in hosts
-          if (detailsResponseOfHost) {
-            this.hosts.push(detailsResponseOfHost.data);
-            const host = {
-              id: detailsResponseOfHost.data.id,
-              ipAddress: detailsResponseOfHost.data.ipAddress,
-              status: detailsResponseOfHost.data.status,
-            };
-            this.hostIds.push(host);
+              // Store host in hosts
+              if (detailsResponseOfHost) {
+                this.hosts.push(detailsResponseOfHost.data);
+                const host = {
+                  id: detailsResponseOfHost.data.id,
+                  ipAddress: detailsResponseOfHost.data.ipAddress,
+                  status: detailsResponseOfHost.data.status,
+                };
+                this.hostIds.push(host);
+              }
+            }
+            catch (hostError) {
+              console.error(`Error fetching host ${hostId}:`, hostError);
+              // Push the failed host with an empty status
+              // TODO: Get the status for the failed host from cfm-service
+              this.hostIds.push({
+                id: hostId,
+                ipAddress: "",
+                status: "",
+              });
+            }
           }
         }
       } catch (error) {
