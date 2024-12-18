@@ -1496,6 +1496,12 @@ func (cfm *CfmApiService) RootGet(ctx context.Context) (openapi.ImplResponse, er
 
 // DiscoverDevices -
 func (cfm *CfmApiService) DiscoverDevices(ctx context.Context, deviceType string) (openapi.ImplResponse, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("###### DiscoverDevices")
+
 	if deviceType != "blade" && deviceType != "cxl-host" {
 		err := common.RequestError{
 			StatusCode: common.StatusDeviceDiscoveryFailure,
