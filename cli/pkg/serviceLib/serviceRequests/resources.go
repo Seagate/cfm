@@ -56,7 +56,7 @@ func (r *ServiceRequestListResources) Execute() (*serviceWrap.ResourceBlockSumma
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "BladeId", fmt.Sprintf("%+v", *r.BladeId))
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ResourceId", fmt.Sprintf("%+v", *r.ResourceId))
 
-	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.ip, r.ServiceTcp.port)
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
 	if r.AllAppliances() && r.AllBlades() && r.AllResources() {
 		summary, err = serviceWrap.GetResourceBlocks_AllApplsAllBlades(serviceClient)

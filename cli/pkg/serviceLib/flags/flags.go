@@ -2,6 +2,12 @@
 
 package flags
 
+// Constants
+const (
+	PROTOCOL_HTTP  = "http"
+	PROTOCOL_HTTPS = "https"
+)
+
 // CLI flag component descriptor
 const (
 	SERVICE       string = "service"
@@ -131,26 +137,26 @@ const (
 	SERVICE_NET_IP_DFLT   string = "127.0.0.1"
 	SERVICE_NET_PORT_DFLT uint16 = 8080
 	SERVICE_INSECURE_DFLT bool   = false
-	SERVICE_PROTOCOL_DFLT string = "http"
+	SERVICE_PROTOCOL_DFLT string = PROTOCOL_HTTPS
 
 	APPLIANCE_NET_IP_DFLT   string = "127.0.0.1"
 	APPLIANCE_NET_PORT_DFLT uint16 = 443
 	APPLIANCE_INSECURE_DFLT bool   = false
-	APPLIANCE_PROTOCOL_DFLT string = "https"
+	APPLIANCE_PROTOCOL_DFLT string = PROTOCOL_HTTPS
 	APPLIANCE_USERNAME_DFLT string = "dummyuser"
 	APPLIANCE_PASSWORD_DFLT string = "dummypswd"
 
 	BLADE_NET_IP_DFLT   string = "127.0.0.1"
 	BLADE_NET_PORT_DFLT uint16 = 443
 	BLADE_INSECURE_DFLT bool   = false
-	BLADE_PROTOCOL_DFLT string = "https"
+	BLADE_PROTOCOL_DFLT string = PROTOCOL_HTTPS
 	BLADE_USERNAME_DFLT string = "root"
 	BLADE_PASSWORD_DFLT string = "0penBmc"
 
 	HOST_NET_IP_DFLT   string = "127.0.0.1"
 	HOST_NET_PORT_DFLT uint16 = 8082
 	HOST_INSECURE_DFLT bool   = false
-	HOST_PROTOCOL_DFLT string = "http"
+	HOST_PROTOCOL_DFLT string = PROTOCOL_HTTP
 	HOST_USERNAME_DFLT string = "admin"
 	HOST_PASSWORD_DFLT string = "admin12345"
 

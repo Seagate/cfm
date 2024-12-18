@@ -45,7 +45,7 @@ func (r *ServiceRequestListHostMemoryDevices) Execute() (*serviceWrap.HostMemory
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "HostId", fmt.Sprintf("%+v", *r.HostId))
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "MemoryDeviceId", fmt.Sprintf("%+v", *r.MemoryDeviceId))
 
-	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.ip, r.ServiceTcp.port)
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
 	if r.AllHosts() && r.AllMemoryDevices() {
 		summary, err = serviceWrap.GetMemoryDevices_AllHosts(serviceClient)
