@@ -1999,7 +1999,7 @@ export default {
             );
           }
 
-          // Fetch resources and ports for the newly selected blade
+          // Fetch resources, ports and memory for the newly selected blade
           await Promise.all([
             bladeResourceStore.fetchMemoryResources(
               applianceStore.selectedApplianceId,

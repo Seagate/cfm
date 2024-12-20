@@ -1129,7 +1129,7 @@ export default {
           loading.value = true;
 
           await hostStore.fetchHostById(newHostId);
-          
+
           const selectedHost = hostStore.hosts.find(
             (host) => host.id === newHostId
           );
@@ -1144,12 +1144,11 @@ export default {
             );
           }
 
-          // Fetch resources and ports for the newly selected host
+          // Fetch ports and memory for the newly selected host
           await Promise.all([
             hostPortStore.hostPortStore(newHostId),
             hostMemoryStore.hostMemoryStore(newHostId),
             hostMemoryDeviceStore.hostMemoryDeviceStore(newHostId),
-            hostStore.fetchHostById(newHostId),
           ]);
 
           // Update the URL with the new host ID
