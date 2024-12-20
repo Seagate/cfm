@@ -95,6 +95,13 @@ export const useHostStore = defineStore("host", {
         const host = detailsResponseOfHost.data;
         this.updateSelectHostStatus(host.status);
 
+        // Update hosts in case this host changes
+        if (host) {
+          this.hosts = this.hosts.map((h) =>
+            h.id === hostId ? detailsResponseOfHost.data : h
+          );
+        }
+
         return host;
       } catch (error) {
         console.error("Error fetching host by id:", error);
