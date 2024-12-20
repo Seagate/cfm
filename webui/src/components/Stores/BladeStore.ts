@@ -65,6 +65,12 @@ export const useBladeStore = defineStore('blade', {
 
                 this.updateSelectedBladeStatus(blade.status)
 
+                // Update blades in case this blade changes
+                if (blade) {
+                    this.blades = this.blades.map((b) =>
+                        b.id === bladeId ? detailsResponseOfBlade.data : b
+                    );
+                }
                 return blade;
             } catch (error) {
                 console.error("Error fetching blade by id:", error);
