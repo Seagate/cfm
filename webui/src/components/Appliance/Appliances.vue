@@ -1978,7 +1978,28 @@ export default {
       async (newBladeId, oldBladeId) => {
         if (newBladeId !== null && newBladeId !== oldBladeId) {
           loading.value = true;
-          // Fetch resources and ports for the newly selected blade
+
+          await bladeStore.fetchBladeById(
+            applianceStore.selectedApplianceId,
+            newBladeId
+          );
+
+          const selectedBlade = bladeStore.blades.find(
+            (blade) => blade.id === newBladeId
+          );
+
+          if (selectedBlade) {
+            bladeStore.selectBlade(
+              selectedBlade.id,
+              selectedBlade.ipAddress,
+              selectedBlade.port,
+              Number(selectedBlade.totalMemoryAvailableMiB),
+              Number(selectedBlade.totalMemoryAllocatedMiB),
+              selectedBlade.status
+            );
+          }
+
+          // Fetch resources, ports and memory for the newly selected blade
           await Promise.all([
             bladeResourceStore.fetchMemoryResources(
               applianceStore.selectedApplianceId,
@@ -1989,10 +2010,6 @@ export default {
               newBladeId
             ),
             bladeMemoryStore.fetchBladeMemory(
-              applianceStore.selectedApplianceId,
-              newBladeId
-            ),
-            bladeStore.fetchBladeById(
               applianceStore.selectedApplianceId,
               newBladeId
             ),
