@@ -9,6 +9,7 @@ import fs from 'fs';
 // Utilities
 import { defineConfig } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
+import path from 'path';
 
 
 const configYaml = fs.readFileSync('./config.yaml', 'utf8');
@@ -36,10 +37,10 @@ export default defineConfig({
       },
     }),
   ],
-  define: { 
+  define: {
     'process.env': {
       BASE_PATH: parsedConfig.api.base_path,
-    } 
+    }
   },
   resolve: {
     alias: {
@@ -56,7 +57,11 @@ export default defineConfig({
     ],
   },
   server: {
-    host:'0.0.0.0',
+    host: '0.0.0.0',
     port: 3000,
+    https: {
+      key: fs.existsSync(path.resolve(__dirname, 'incoming/key.pem')) ? fs.readFileSync(path.resolve(__dirname, 'incoming/key.pem')) : undefined,
+      cert: fs.existsSync(path.resolve(__dirname, 'incoming/cert.pem')) ? fs.readFileSync(path.resolve(__dirname, 'incoming/cert.pem')) : undefined
+    },
   },
 })
