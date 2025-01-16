@@ -6,11 +6,9 @@ import {
   DefaultApi,
   DiscoveredDevice,
 } from "@/axios/api";
-import { BASE_PATH } from "@/axios/base";
 import axios from "axios";
-
 // Use API_BASE_PATH to overwrite the BASE_PATH in the generated client code
-const API_BASE_PATH = process.env.BASE_PATH || BASE_PATH;
+import { API_BASE_PATH } from "../Common/Helpers.vue";
 
 export const useApplianceStore = defineStore("appliance", {
   state: () => ({

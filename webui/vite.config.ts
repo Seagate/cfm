@@ -63,5 +63,19 @@ export default defineConfig({
       key: fs.existsSync(path.resolve(__dirname, 'incoming/key.pem')) ? fs.readFileSync(path.resolve(__dirname, 'incoming/key.pem')) : undefined,
       cert: fs.existsSync(path.resolve(__dirname, 'incoming/cert.pem')) ? fs.readFileSync(path.resolve(__dirname, 'incoming/cert.pem')) : undefined
     },
+    proxy: {
+      '/api': {
+        target: parsedConfig.api.base_path,
+        secure: false, // This will ignore the self-signed certificate
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+        configure: (proxy) => {
+          proxy.on('proxyRes', (proxyRes) => {
+            // Remove the strict-transport-security header
+            delete proxyRes.headers['strict-transport-security'];
+          });
+        },
+      },
+    },
   },
 })
