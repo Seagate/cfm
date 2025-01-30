@@ -16,13 +16,15 @@ import (
 
 const (
 	SEAGATE_CFM_SERVICE_CRT_FILEPATH = "/usr/local/share/ca-certificates/github_com_seagate_cfm-self-signed.crt"
+	SEAGATE_CFM_CRT_FILEPATH         = "/etc/certs/cert.pem"
+	SEAGATE_CFM_KEY_FILEPATH         = "/etc/certs/key.pem"
 )
 
 // GenerateSelfSignedCert - Generates the self-signed SSL/TLS certificate and private key at runtime.
-func GenerateSelfSignedCert() (*tls.Certificate, []byte, error) {
+func GenerateSelfSignedCert() (*tls.Certificate, []byte, []byte, error) {
 	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	notBefore := time.Now()
@@ -30,7 +32,7 @@ func GenerateSelfSignedCert() (*tls.Certificate, []byte, error) {
 
 	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	template := x509.Certificate{
@@ -54,21 +56,21 @@ func GenerateSelfSignedCert() (*tls.Certificate, []byte, error) {
 
 	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
 	keyPEM, err := x509.MarshalECPrivateKey(priv)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	keyPEMBytes := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyPEM})
 
 	cert, err := tls.X509KeyPair(certPEM, keyPEMBytes)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	return &cert, certPEM, nil
+	return &cert, certPEM, keyPEMBytes, nil
 }

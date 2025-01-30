@@ -98,6 +98,13 @@ func main() {
 	c := cors.AllowAll()
 	handler := c.Handler(router)
 
+	// Generate the cfm-service with the self-signed certificate
+	server, err := GenerateCfmServer(ctx, &settings, &handler)
+	if err != nil {
+		logger.Error(err, ", failed to generate cfm server: %s", err)
+		os.Exit(1)
+	}
+
 	// Attempt to start cfm-service's webui service on a separate thread
 	if settings.Webui {
 		webuiDistPath, err := services.FindWebUIDistPath(ctx)
@@ -107,12 +114,6 @@ func main() {
 			wg.Add(1)
 			go services.StartWebUIService(ctx, &settings.WebuiPort, &settings.Port, webuiDistPath, &settings.HostIpOverride)
 		}
-	}
-
-	server, err := GenerateCfmServer(ctx, &settings, &handler)
-	if err != nil {
-		logger.Error(err, ", failed to generate cfm server: %s", err)
-		os.Exit(1)
 	}
 
 	// Start the main service
@@ -133,7 +134,7 @@ func GenerateCfmServer(ctx context.Context, settings *common.Settings, handler *
 	}
 
 	// Generate the keys
-	cert, certPEM, err := security.GenerateSelfSignedCert()
+	cert, certPEM, keyPEM, err := security.GenerateSelfSignedCert()
 	if err != nil {
 		return nil, fmt.Errorf("failure: tls (self-signed) certificate generation: %v", err)
 	}
@@ -143,15 +144,33 @@ func GenerateCfmServer(ctx context.Context, settings *common.Settings, handler *
 	if err != nil {
 		return nil, fmt.Errorf("failure: tls cert file save: %v", err)
 	}
-
 	logger.V(2).Info(fmt.Sprintf("cfm tls (self-signed) cert file saved to: %s ", security.SEAGATE_CFM_SERVICE_CRT_FILEPATH))
 
-	// Update CA certificates
+	// Update CA certificates to make the client side trust
 	cmd := exec.Command("update-ca-certificates") // This assumes the above self-signed .crt file is written to the correct location
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return nil, fmt.Errorf("failure: update CA certificates: %v", err)
+	}
+
+	// If in production model(in docker container, webui starts inside cfm-service), reuse the self-signed certificate for webui
+	// Write the certificate and key to a file for webui to use
+	logger.V(2).Info(fmt.Sprintf("settings Webui: %t ", settings.Webui))
+	if settings.Webui {
+		// Create the directory if it doesn't exist
+		err := os.MkdirAll("/etc/certs", 0755)
+		if err != nil {
+			return nil, fmt.Errorf("failure: creating directory: %v", err)
+		}
+		err = os.WriteFile(security.SEAGATE_CFM_CRT_FILEPATH, []byte(certPEM), 0644)
+		if err != nil {
+			return nil, fmt.Errorf("failure: cert file save for webui: %v", err)
+		}
+		err = os.WriteFile(security.SEAGATE_CFM_KEY_FILEPATH, []byte(keyPEM), 0644)
+		if err != nil {
+			return nil, fmt.Errorf("failure: key file save for webui: %v", err)
+		}
 	}
 
 	// Configure the server

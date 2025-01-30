@@ -13,6 +13,8 @@ import (
 	"github.com/gorilla/mux"
 	"golang.org/x/net/context"
 	"k8s.io/klog/v2"
+
+	"cfm/pkg/security"
 )
 
 const (
@@ -20,13 +22,13 @@ const (
 	SECONDARY_WEBUI_DIST_PATH = "../../webui/dist"
 )
 
-// StartWebService: Launch the Vue.js web service using local distribution files, if they are present.
+// StartWebUIService: Launch the Vue.js web service using local distribution files, if they are present.
 func StartWebUIService(ctx context.Context, webuiPort *string, servicePort *string, webuiDistPath *string, hostIpOverride *string) {
 	logger := klog.FromContext(ctx)
 
 	var hostIp string
 
-	// obtain host IP
+	// Obtain host IP
 	if *hostIpOverride == "" {
 		hostIp = GetHostIp(ctx)
 	} else {
@@ -39,11 +41,11 @@ func StartWebUIService(ctx context.Context, webuiPort *string, servicePort *stri
 	// 9 comes from minimum possible length required for socket to have a valid IPv4 and port specified (X.X.X.X:X)
 	// Assumes ip defaults to an empty string (which is then used to disable the webui service here)
 	if len(webuiSocket) < 9 {
-		logger.V(1).Info("[WEBUI] cfm-service's webui service NOT starred.  Incomplete socket specified.", "socket", webuiSocket)
+		logger.V(1).Info("[WEBUI] cfm-service's webui service NOT started. Incomplete socket specified.", "socket", webuiSocket)
 		return
 	}
 
-	// overwrite base_path for the webui disto
+	// Overwrite base_path for the webui disto
 	err := UpdateBasePath(ctx, &serviceSocket, webuiDistPath)
 	if err != nil {
 		logger.V(1).Info("[WEBUI] fail to update webui service base path", "socket", serviceSocket, "err", err)
@@ -74,8 +76,8 @@ func StartWebUIService(ctx context.Context, webuiPort *string, servicePort *stri
 	// Log and start the web UI service
 	logger.V(1).Info("[WEBUI] Start cfm-service's webui service", "socket", webuiSocket)
 
-	// Start the server
-	err = http.ListenAndServe(webuiSocket, nil)
+	// Start the server with HTTPS
+	err = http.ListenAndServeTLS(webuiSocket, security.SEAGATE_CFM_CRT_FILEPATH, security.SEAGATE_CFM_KEY_FILEPATH, nil)
 	if err != nil {
 		logger.Error(err, ", [WEBUI] unable to start cfm-service's webui service", "socket", webuiSocket)
 	}
@@ -132,7 +134,7 @@ func GetHostIp(ctx context.Context) string {
 func UpdateBasePath(ctx context.Context, serviceSocket *string, webuiDistPath *string) error {
 	// logger := klog.FromContext(ctx)
 
-	rawString := "http://127.0.0.1:8080"
+	rawString := "https://127.0.0.1:8080"
 	dirPath := *webuiDistPath + "/assets/"
 
 	f, err := os.Open(dirPath)
@@ -152,7 +154,7 @@ func UpdateBasePath(ctx context.Context, serviceSocket *string, webuiDistPath *s
 			if err != nil {
 				return err
 			}
-			newContents := strings.Replace(string(read), rawString, "http://"+*serviceSocket, -1)
+			newContents := strings.Replace(string(read), rawString, "https://"+*serviceSocket, -1)
 			err = os.WriteFile(dirPath+file.Name(), []byte(newContents), 0)
 			if err != nil {
 				return err
