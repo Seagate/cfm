@@ -52,9 +52,11 @@ ENV BASEPATH=/cfm
 # copy source code with generated files to go image
 COPY --from=go ${BASEPATH}/webui ${BASEPATH}/webui
 
-# setup web UI and build the dist package
+# setup web UI and build the dist package(generate the certificates for webui and cfm-service during this process)
 WORKDIR ${BASEPATH}/webui
 RUN npm install
+# Set the environment variable
+ENV NODE_ENV=production
 RUN npm run build
 
 FROM alpine:latest

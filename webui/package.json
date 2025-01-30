@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "sh generate-cert.sh && vite",
-    "build": "vue-tsc --noEmit && sh generate-cert.sh && vite build",
+    "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint . --fix --ignore-path .gitignore"
   },
