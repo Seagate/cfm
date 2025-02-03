@@ -159,7 +159,7 @@ func GenerateCfmServer(ctx context.Context, settings *common.Settings, handler *
 	logger.V(2).Info(fmt.Sprintf("settings Webui: %t ", settings.Webui))
 	if settings.Webui {
 		// Create the directory if it doesn't exist
-		err := os.MkdirAll("/etc/certs", 0755)
+		err := os.MkdirAll("/etc/certs", 0700)
 		if err != nil {
 			return nil, fmt.Errorf("failure: creating directory: %v", err)
 		}
