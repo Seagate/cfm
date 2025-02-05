@@ -3,13 +3,10 @@ import { defineStore } from "pinia";
 import {
   Appliance,
   Credentials,
-  DefaultApi,
   DiscoveredDevice,
 } from "@/axios/api";
 import axios from "axios";
-// Use the isProduction flag to force the Web UI to find the correct basepath in apiClient for the production model
-// Use API_BASE_PATH to override the BASE_PATH in the generated client code for the development model
-import { isProduction, apiClient, API_BASE_PATH } from "../Common/Helpers.vue";
+import { getDefaultApi } from "../Common/apiService";
 
 export const useApplianceStore = defineStore("appliance", {
   state: () => ({
@@ -44,23 +41,14 @@ export const useApplianceStore = defineStore("appliance", {
       protocol: "https",
       customId: "",
     },
-    defaultApi: null as DefaultApi | null,
   }),
 
   actions: {
-    async initializeApi() {
-      let axiosInstance = undefined;
-      if (isProduction()) {
-        axiosInstance = apiClient;
-      }
-      this.defaultApi = new DefaultApi(undefined, API_BASE_PATH, axiosInstance);
-    },
-
     async renameAppliance(applianceId: string, newApplianceId: string) {
-      await this.initializeApi(); // Ensure API is initialized
+      const defaultApi = getDefaultApi();
       this.renameApplianceError = "";
       try {
-        const response = await this.defaultApi!.appliancesUpdateById(
+        const response = await defaultApi!.appliancesUpdateById(
           applianceId,
           newApplianceId
         );
@@ -93,12 +81,12 @@ export const useApplianceStore = defineStore("appliance", {
     },
 
     async fetchAppliances() {
-      await this.initializeApi(); // Ensure API is initialized
+      const defaultApi = getDefaultApi();
       this.appliances = [];
       this.applianceIds = [];
       try {
         // Get all appliances from OpenBMC
-        const responseOfAppliances = await this.defaultApi!.appliancesGet();
+        const responseOfAppliances = await defaultApi!.appliancesGet();
         const applianceCount = responseOfAppliances.data.memberCount;
 
         for (let i = 0; i < applianceCount; i++) {
@@ -109,7 +97,7 @@ export const useApplianceStore = defineStore("appliance", {
             .pop()
             ?.slice(0, -2) as string;
           // Get appliance by id
-          const detailsResponseOfAppliance = await this.defaultApi!.appliancesGetById(
+          const detailsResponseOfAppliance = await defaultApi!.appliancesGetById(
             applianceId
           );
 
@@ -117,7 +105,7 @@ export const useApplianceStore = defineStore("appliance", {
           if (detailsResponseOfAppliance) {
             this.appliances.push(detailsResponseOfAppliance.data);
 
-            const responseOfBlades = await this.defaultApi!.bladesGet(applianceId);
+            const responseOfBlades = await defaultApi!.bladesGet(applianceId);
             const bladeCount = responseOfBlades.data.memberCount;
             const associatedBlades = [];
 
@@ -131,7 +119,7 @@ export const useApplianceStore = defineStore("appliance", {
               // Store blade in blades
               if (bladeId) {
                 try {
-                  const responseOfBlade = await this.defaultApi!.bladesGetById(applianceId, bladeId);
+                  const responseOfBlade = await defaultApi!.bladesGetById(applianceId, bladeId);
 
                   const response = {
                     id: responseOfBlade.data.id,
@@ -165,7 +153,7 @@ export const useApplianceStore = defineStore("appliance", {
     },
 
     async discoverBlades() {
-      await this.initializeApi(); // Ensure API is initialized
+      const defaultApi = getDefaultApi();
       try {
         // Get all the existed blades
         const existedBladeIpAddress: (string | undefined)[] = [];
@@ -178,7 +166,7 @@ export const useApplianceStore = defineStore("appliance", {
         }
 
         this.discoveredBlades = [];
-        const responseOfBlade = await this.defaultApi!.discoverDevices("blade");
+        const responseOfBlade = await defaultApi!.discoverDevices("blade");
         this.discoveredBlades = responseOfBlade.data;
 
         // Remove the existed blades from the discovered blades
@@ -204,15 +192,15 @@ export const useApplianceStore = defineStore("appliance", {
     },
 
     async addDiscoveredBlades(blade: DiscoveredDevice) {
-      await this.initializeApi(); // Ensure API is initialized
-      const responseOfApplianceExist = await this.defaultApi!.appliancesGetById(
+      const defaultApi = getDefaultApi();
+      const responseOfApplianceExist = await defaultApi!.appliancesGetById(
         this.defaultApplianceId
       );
 
       // If there is no default appliance, add one
       if (!responseOfApplianceExist) {
         this.newApplianceCredentials.customId = this.defaultApplianceId;
-        const responseOfAppliance = await this.defaultApi!.appliancesPost(
+        const responseOfAppliance = await defaultApi!.appliancesPost(
           this.newApplianceCredentials
         );
 
@@ -233,7 +221,7 @@ export const useApplianceStore = defineStore("appliance", {
       this.newBladeCredentials.ipAddress = blade.address + "";
 
       // Add the new discovered blade to the default appliance
-      const responseOfBlade = await this.defaultApi!.bladesPost(
+      const responseOfBlade = await defaultApi!.bladesPost(
         this.defaultApplianceId,
         this.newBladeCredentials
       );
@@ -251,10 +239,10 @@ export const useApplianceStore = defineStore("appliance", {
     },
 
     async addNewAppliance(newAppliance: Credentials) {
-      await this.initializeApi(); // Ensure API is initialized
+      const defaultApi = getDefaultApi();
       this.addApplianceError = "";
       try {
-        const response = await this.defaultApi!.appliancesPost(newAppliance);
+        const response = await defaultApi!.appliancesPost(newAppliance);
         const addedAppliance = response.data;
         // Add the new appliance to the appliances array
         this.appliances.push(addedAppliance);
@@ -277,11 +265,11 @@ export const useApplianceStore = defineStore("appliance", {
     },
 
     async deleteAppliance(applianceId: string) {
-      await this.initializeApi(); // Ensure API is initialized
+      const defaultApi = getDefaultApi();
       this.deleteApplianceError = "";
       let deletedAppliance = "";
       try {
-        const response = await this.defaultApi!.appliancesDeleteById(applianceId);
+        const response = await defaultApi!.appliancesDeleteById(applianceId);
         deletedAppliance = response.data.id;
         // Remove the deleted appliance from the appliances array
         if (response) {

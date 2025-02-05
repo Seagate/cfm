@@ -1,31 +1,20 @@
 // Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
 import { defineStore } from 'pinia'
-import { MemoryResourceBlock, DefaultApi } from "@/axios/api";
-// Use the isProduction flag to force the Web UI to find the correct basepath in apiClient for the production model
-// Use API_BASE_PATH to override the BASE_PATH in the generated client code for the development model
-import { isProduction, apiClient, API_BASE_PATH } from "../Common/Helpers.vue";
+import { MemoryResourceBlock } from "@/axios/api";
+import { getDefaultApi } from "../Common/apiService";
 
 export const useBladeResourceStore = defineStore('bladeResource', {
     state: () => ({
         memoryResources: [] as MemoryResourceBlock[],
-        defaultApi: null as DefaultApi | null,
     }),
 
     actions: {
-        async initializeApi() {
-            let axiosInstance = undefined;
-            if (isProduction()) {
-              axiosInstance = apiClient;
-            }
-            this.defaultApi = new DefaultApi(undefined, API_BASE_PATH, axiosInstance);
-          },
-
         async fetchMemoryResources(applianceId: string, bladeId: string) {
-            await this.initializeApi(); // Ensure API is initialized
+            const defaultApi = getDefaultApi();
             this.memoryResources = [];
             try {
                 // Get all resources
-                const response = await this.defaultApi!.bladesGetResources(
+                const response = await defaultApi!.bladesGetResources(
                     applianceId,
                     bladeId
                 );
@@ -36,7 +25,7 @@ export const useBladeResourceStore = defineStore('bladeResource', {
                     const uri = response.data.members[i];
                     const resourceId: string = JSON.stringify(uri).split("/").pop()?.slice(0, -2) as string;
                     // Get resource by id
-                    const detailsResponse = await this.defaultApi!.bladesGetResourceById(
+                    const detailsResponse = await defaultApi!.bladesGetResourceById(
                         applianceId,
                         bladeId,
                         resourceId
@@ -57,9 +46,9 @@ export const useBladeResourceStore = defineStore('bladeResource', {
         },
 
         async updateMemoryResourcesStatus(applianceId: string, bladeId: string) {
-            await this.initializeApi(); // Ensure API is initialized
+            const defaultApi = getDefaultApi();
             try {
-                const updatedResource = await this.defaultApi!.bladesGetResourceStatus(
+                const updatedResource = await defaultApi!.bladesGetResourceStatus(
                     applianceId,
                     bladeId,
                 );

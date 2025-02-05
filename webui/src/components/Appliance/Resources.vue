@@ -8,7 +8,7 @@
       :items="selectedBladeResources"
     >
       <template v-slot:[`item.compositionStatus.compositionState`]="{ value }">
-        <v-chip :color="getColor(value)">
+        <v-chip :color="getStatusColor(value)">
           {{ value }}
         </v-chip>
       </template>
@@ -17,13 +17,11 @@
 </template>
 
 <script>
-import Helpers from "../Common/Helpers";
+import { getColor } from "../Common/helpers";
 import { computed } from "vue";
 import { useBladeResourceStore } from "../Stores/BladeResourceStore";
 
 export default {
-  mixins: [Helpers],
-
   data() {
     return {
       headers: [
@@ -41,6 +39,12 @@ export default {
         { title: "CapacityGiB", key: "capacityMiB" },
       ],
     };
+  },
+
+  methods: {
+    getStatusColor(item) {
+      return getColor(item);
+    },
   },
 
   setup() {

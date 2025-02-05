@@ -1,33 +1,22 @@
 // Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
 import { defineStore } from 'pinia'
-import { PortInformation, DefaultApi } from "@/axios/api";
-// Use the isProduction flag to force the Web UI to find the correct basepath in apiClient for the production model
-// Use API_BASE_PATH to override the BASE_PATH in the generated client code for the development model
-import { isProduction, apiClient, API_BASE_PATH } from "../Common/Helpers.vue";
+import { PortInformation } from "@/axios/api";
+import { getDefaultApi } from "../Common/apiService";
 
 export const useBladePortStore = defineStore('bladePort', {
     state: () => ({
         bladePorts: [] as PortInformation[],
         // Use bladeIds to store the relationship between blade and host, the relationship is used to determine the dataEdges in the dashboard
         bladeIds: [] as { id: string, connectedHostIds: string[] }[],
-        defaultApi: null as DefaultApi | null,
     }),
 
     actions: {
-        async initializeApi() {
-            let axiosInstance = undefined;
-            if (isProduction()) {
-              axiosInstance = apiClient;
-            }
-            this.defaultApi = new DefaultApi(undefined, API_BASE_PATH, axiosInstance);
-          },
-
         async fetchBladePorts(applianceId: string, bladeId: string) {
-            await this.initializeApi(); // Ensure API is initialized
+            const defaultApi = getDefaultApi();
             this.bladePorts = [];
             try {
                 // Get all ports
-                const response = await this.defaultApi!.bladesGetPorts(
+                const response = await defaultApi!.bladesGetPorts(
                     applianceId,
                     bladeId
                 );
@@ -39,7 +28,7 @@ export const useBladePortStore = defineStore('bladePort', {
                     const uri = response.data.members[i];
                     const portId: string = JSON.stringify(uri).split("/").pop()?.slice(0, -2) as string;
                     // Get port by id
-                    const detailsResponse = await this.defaultApi!.bladesGetPortById(
+                    const detailsResponse = await defaultApi!.bladesGetPortById(
                         applianceId,
                         bladeId,
                         portId
