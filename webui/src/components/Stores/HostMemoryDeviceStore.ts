@@ -1,10 +1,7 @@
 // Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
 import { defineStore } from 'pinia'
-import { MemoryDeviceInformation, DefaultApi } from "@/axios/api";
-import { BASE_PATH } from "@/axios/base";
-
-// Use API_BASE_PATH to overwrite the BASE_PATH in the generated client code
-const API_BASE_PATH = process.env.BASE_PATH || BASE_PATH;
+import { MemoryDeviceInformation } from "@/axios/api";
+import { getDefaultApi } from "../Common/apiService";
 
 export const useHostMemoryDeviceStore = defineStore('hostMemoryDevices', {
     state: () => ({
@@ -13,11 +10,11 @@ export const useHostMemoryDeviceStore = defineStore('hostMemoryDevices', {
 
     actions: {
         async hostMemoryDeviceStore(hostId: string) {
+            const defaultApi = getDefaultApi();
             this.hostMemoryDevices = [];
             try {
                 // Get all memory devices
-                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-                const response = await defaultApi.hostsGetMemoryDevices(
+                const response = await defaultApi!.hostsGetMemoryDevices(
                     hostId
                 );
 
@@ -27,7 +24,7 @@ export const useHostMemoryDeviceStore = defineStore('hostMemoryDevices', {
                     const uri = response.data.members[i];
                     const memoryDeviceId: string = JSON.stringify(uri).split("/").pop()?.slice(0, -2) as string;
                     // Get memory device by id
-                    const detailsResponse = await defaultApi.hostsGetMemoryDeviceById(
+                    const detailsResponse = await defaultApi!.hostsGetMemoryDeviceById(
                         hostId,
                         memoryDeviceId
                     );

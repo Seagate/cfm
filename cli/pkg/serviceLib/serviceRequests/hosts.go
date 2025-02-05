@@ -36,7 +36,7 @@ func (r *ServiceRequestAddHost) Execute() (*service.Host, error) {
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "HostCred", fmt.Sprintf("%+v", *r.HostCred))
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "HostTcp", fmt.Sprintf("%+v", *r.HostTcp))
 
-	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort())
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
 	insecure := r.HostTcp.GetInsecure()
 	protocol := r.HostTcp.GetProtocol()
@@ -79,7 +79,7 @@ func (r *ServiceRequestDeleteHost) Execute() (*service.Host, error) {
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ServiceTcp", fmt.Sprintf("%+v", *r.ServiceTcp))
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "HostId", fmt.Sprintf("%+v", *r.HostId))
 
-	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort())
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
 	host, err = serviceWrap.DeleteHostById(serviceClient, r.HostId.GetId())
 	if err != nil {
@@ -102,7 +102,7 @@ func NewServiceRequestListHosts(cmd *cobra.Command) *ServiceRequestListHosts {
 func (r *ServiceRequestListHosts) Execute() (*[]*service.Host, error) {
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ServiceTcp", fmt.Sprintf("%+v", *r.ServiceTcp))
 
-	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.ip, r.ServiceTcp.port)
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
 	hosts, err := serviceWrap.GetAllHosts(serviceClient)
 	if err != nil {
@@ -147,7 +147,7 @@ func (r *ServiceRequestRenameHost) Execute() (*service.Host, error) {
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "HostId", fmt.Sprintf("%+v", *r.HostId))
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "NewHostId", fmt.Sprintf("%+v", *r.NewHostId))
 
-	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort())
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
 	host, err := serviceWrap.RenameHostById(serviceClient, r.HostId.GetId(), r.NewHostId.GetId())
 	if err != nil {
@@ -173,7 +173,7 @@ func (r *ServiceRequestResyncHost) Execute() (*service.Host, error) {
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ServiceTcp", fmt.Sprintf("%+v", *r.ServiceTcp))
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "HostId", fmt.Sprintf("%+v", *r.HostId))
 
-	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort())
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
 	host, err := serviceWrap.ResyncHostById(serviceClient, r.HostId.GetId())
 	if err != nil {

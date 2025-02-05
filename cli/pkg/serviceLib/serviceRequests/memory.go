@@ -56,7 +56,7 @@ func (r *ServiceRequestListMemoryRegions) Execute() (*serviceWrap.BladeMemoryReg
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "BladeId", fmt.Sprintf("%+v", *r.BladeId))
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "MemoryId", fmt.Sprintf("%+v", *r.MemoryId))
 
-	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.ip, r.ServiceTcp.port)
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
 	if r.AllAppliances() && r.AllBlades() && r.AllMemoryRegions() {
 		summary, err = serviceWrap.GetMemoryRegions_AllApplsAllBlades(serviceClient)
@@ -151,42 +151,16 @@ func (r *ServiceRequestListMemoryRegions) OutputSummaryListMemory(s *serviceWrap
 }
 
 type ServiceRequestComposeMemory struct {
-	serviceTcp   *TcpInfo
-	applianceId  *Id
-	bladeId      *Id
-	portId       *Id
-	resourceSize *Size
-	qos          int32
-}
-
-//TODO: Should I propogate: private struct variables, forcing Getter usage -and- adding pointer safety to all Getter's (like generated cfm-service client)
-
-func (r *ServiceRequestComposeMemory) GetServiceIp() string {
-	return r.serviceTcp.GetIp()
-}
-
-func (r *ServiceRequestComposeMemory) GetServicePort() uint16 {
-	return r.serviceTcp.GetPort()
-}
-
-func (r *ServiceRequestComposeMemory) GetApplianceId() string {
-	return r.applianceId.GetId()
-}
-
-func (r *ServiceRequestComposeMemory) GetBladeId() string {
-	return r.bladeId.GetId()
-}
-
-func (r *ServiceRequestComposeMemory) GetPortId() string {
-	return r.portId.GetId()
-}
-
-func (r *ServiceRequestComposeMemory) GetResourceSizeGiB() int32 {
-	return r.resourceSize.GetSizeGiB()
+	ServiceTcp   *TcpInfo
+	ApplianceId  *Id
+	BladeId      *Id
+	PortId       *Id
+	ResourceSize *Size
+	Qos          int32
 }
 
 func (r *ServiceRequestComposeMemory) GetQos() int32 {
-	return r.qos
+	return r.Qos
 }
 
 func NewServiceRequestComposeMemory(cmd *cobra.Command) *ServiceRequestComposeMemory {
@@ -198,25 +172,25 @@ func NewServiceRequestComposeMemory(cmd *cobra.Command) *ServiceRequestComposeMe
 	}
 
 	return &ServiceRequestComposeMemory{
-		serviceTcp:   NewTcpInfo(cmd, flags.SERVICE),
-		applianceId:  NewId(cmd, flags.APPLIANCE),
-		bladeId:      NewId(cmd, flags.BLADE),
-		portId:       NewId(cmd, flags.PORT),
-		resourceSize: NewSize(cmd, flags.RESOURCE),
-		qos:          qos,
+		ServiceTcp:   NewTcpInfo(cmd, flags.SERVICE),
+		ApplianceId:  NewId(cmd, flags.APPLIANCE),
+		BladeId:      NewId(cmd, flags.BLADE),
+		PortId:       NewId(cmd, flags.PORT),
+		ResourceSize: NewSize(cmd, flags.RESOURCE),
+		Qos:          qos,
 	}
 }
 
 func (r *ServiceRequestComposeMemory) Execute() (*service.MemoryRegion, error) {
-	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "serviceTcp", fmt.Sprintf("%+v", *r.serviceTcp))
-	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "applianceId", fmt.Sprintf("%+v", *r.applianceId))
-	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "bladeId", fmt.Sprintf("%+v", *r.bladeId))
-	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "portId", fmt.Sprintf("%+v", *r.portId))
-	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "resourceSize", fmt.Sprintf("%+v", r.resourceSize))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ServiceTcp", fmt.Sprintf("%+v", *r.ServiceTcp))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ApplianceId", fmt.Sprintf("%+v", *r.ApplianceId))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "BladeId", fmt.Sprintf("%+v", *r.BladeId))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "PortId", fmt.Sprintf("%+v", *r.PortId))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ResourceSize", fmt.Sprintf("%+v", r.ResourceSize))
 
-	serviceClient := serviceWrap.GetServiceClient(r.GetServiceIp(), r.GetServicePort())
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
-	region, err := serviceWrap.ComposeMemory(serviceClient, r.GetApplianceId(), r.GetBladeId(), r.GetPortId(), r.GetResourceSizeGiB()*1024, r.GetQos())
+	region, err := serviceWrap.ComposeMemory(serviceClient, r.ApplianceId.GetId(), r.BladeId.GetId(), r.PortId.GetId(), r.ResourceSize.GetSizeGiB()*1024, r.GetQos())
 	if err != nil {
 		return nil, fmt.Errorf("failure: compose memory: %s", err)
 	}
@@ -235,51 +209,31 @@ func (r *ServiceRequestComposeMemory) OutputResultsComposedMemory(m *service.Mem
 }
 
 type ServiceRequestFreeMemory struct {
-	serviceTcp  *TcpInfo
-	applianceId *Id
-	bladeId     *Id
-	memoryId    *Id
-}
-
-func (r *ServiceRequestFreeMemory) GetServiceIp() string {
-	return r.serviceTcp.GetIp()
-}
-
-func (r *ServiceRequestFreeMemory) GetServicePort() uint16 {
-	return r.serviceTcp.GetPort()
-}
-
-func (r *ServiceRequestFreeMemory) GetApplianceId() string {
-	return r.applianceId.GetId()
-}
-
-func (r *ServiceRequestFreeMemory) GetBladeId() string {
-	return r.bladeId.GetId()
-}
-
-func (r *ServiceRequestFreeMemory) GetMemoryId() string {
-	return r.memoryId.GetId()
+	ServiceTcp  *TcpInfo
+	ApplianceId *Id
+	BladeId     *Id
+	MemoryId    *Id
 }
 
 func NewServiceRequestFreeMemory(cmd *cobra.Command) *ServiceRequestFreeMemory {
 
 	return &ServiceRequestFreeMemory{
-		serviceTcp:  NewTcpInfo(cmd, flags.SERVICE),
-		applianceId: NewId(cmd, flags.APPLIANCE),
-		bladeId:     NewId(cmd, flags.BLADE),
-		memoryId:    NewId(cmd, flags.MEMORY),
+		ServiceTcp:  NewTcpInfo(cmd, flags.SERVICE),
+		ApplianceId: NewId(cmd, flags.APPLIANCE),
+		BladeId:     NewId(cmd, flags.BLADE),
+		MemoryId:    NewId(cmd, flags.MEMORY),
 	}
 }
 
 func (r *ServiceRequestFreeMemory) Execute() (*service.MemoryRegion, error) {
-	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "serviceTcp", fmt.Sprintf("%+v", *r.serviceTcp))
-	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "applianceId", fmt.Sprintf("%+v", *r.applianceId))
-	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "bladeId", fmt.Sprintf("%+v", *r.bladeId))
-	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "memoryId", fmt.Sprintf("%+v", *r.memoryId))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ServiceTcp", fmt.Sprintf("%+v", *r.ServiceTcp))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ApplianceId", fmt.Sprintf("%+v", *r.ApplianceId))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "BladeId", fmt.Sprintf("%+v", *r.BladeId))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "MemoryId", fmt.Sprintf("%+v", *r.MemoryId))
 
-	serviceClient := serviceWrap.GetServiceClient(r.GetServiceIp(), r.GetServicePort())
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
-	region, err := serviceWrap.FreeMemory(serviceClient, r.GetApplianceId(), r.GetBladeId(), r.GetMemoryId())
+	region, err := serviceWrap.FreeMemory(serviceClient, r.ApplianceId.GetId(), r.BladeId.GetId(), r.MemoryId.GetId())
 	if err != nil {
 		return nil, fmt.Errorf("failure: free memory: %s", err)
 	}
@@ -330,7 +284,7 @@ func (r *ServiceRequestListHostMemoryRegions) Execute() (*serviceWrap.HostMemory
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "HostId", fmt.Sprintf("%+v", *r.HostId))
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "MemoryId", fmt.Sprintf("%+v", *r.MemoryId))
 
-	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.ip, r.ServiceTcp.port)
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
 	if r.AllHosts() && r.AllMemoryRegions() {
 		summary, err = serviceWrap.GetMemoryRegions_AllHosts(serviceClient)
@@ -398,6 +352,71 @@ func (r *ServiceRequestListHostMemoryRegions) OutputSummaryListMemory(s *service
 				outputHostId, memoryRegion.GetId(), memoryRegion.GetSizeMiB(), memoryRegion.GetMemoryAppliancePort())
 		}
 	}
+
+	fmt.Printf("\n")
+}
+
+// ServiceRequestBladesAssignMemory - This request structure supports BOTH "assign" and "unassign" of a memory region to\from a port
+// This is an artifact of the way the cfm-service client api is setup.
+type ServiceRequestBladesAssignMemory struct {
+	ServiceTcp  *TcpInfo
+	ApplianceId *Id
+	BladeId     *Id
+	MemoryId    *Id
+	PortId      *Id
+	Operation   string //"assign" or "unassign"
+}
+
+func NewServiceRequestBladesAssignMemory(cmd *cobra.Command, operation string) *ServiceRequestBladesAssignMemory {
+
+	if operation != "assign" && operation != "unassign" {
+		newErr := fmt.Errorf("failure: NewServiceRequestBladesAssignMemory: operation options: 'assign', 'unassign'")
+		klog.ErrorS(newErr, "Invalid parameter value", "operation", operation)
+		cobra.CheckErr(newErr)
+	}
+
+	return &ServiceRequestBladesAssignMemory{
+		ServiceTcp:  NewTcpInfo(cmd, flags.SERVICE),
+		ApplianceId: NewId(cmd, flags.APPLIANCE),
+		BladeId:     NewId(cmd, flags.BLADE),
+		MemoryId:    NewId(cmd, flags.MEMORY),
+		PortId:      NewId(cmd, flags.PORT),
+		Operation:   operation,
+	}
+}
+
+func (r *ServiceRequestBladesAssignMemory) GetOperation() string {
+	return r.Operation
+}
+
+func (r *ServiceRequestBladesAssignMemory) Execute() (*service.MemoryRegion, error) {
+	var err error
+
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ServiceTcp", fmt.Sprintf("%+v", *r.ServiceTcp))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "ApplianceId", fmt.Sprintf("%+v", *r.ApplianceId))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "BladeId", fmt.Sprintf("%+v", *r.BladeId))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "MemoryId", fmt.Sprintf("%+v", *r.MemoryId))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "PortId", fmt.Sprintf("%+v", *r.PortId))
+	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "Operation", r.Operation)
+
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
+
+	region, err := serviceWrap.BladesAssignMemory(serviceClient, r.ApplianceId.GetId(), r.BladeId.GetId(), r.MemoryId.GetId(), r.PortId.GetId(), r.GetOperation())
+	if err != nil {
+		newErr := fmt.Errorf("failure: assign blade memory region to blade port: %w", err)
+		klog.ErrorS(newErr, "Execute failure", "memoryId", r.MemoryId.GetId(), "portId", r.PortId.GetId(), "applId", r.ApplianceId.GetId(), "bladeId", r.BladeId.GetId())
+		return nil, newErr
+	}
+
+	return region, nil
+}
+
+func (r *ServiceRequestBladesAssignMemory) OutputSummaryBladesAssignMemory(m *service.MemoryRegion) {
+	fmt.Printf("\n%s Memory and Port Summary\n", strings.ToUpper(r.GetOperation()))
+	fmt.Printf("Status: %s\n\n", m.GetStatus())
+	fmt.Printf("%-15s %-15s %-15s %-25s\n", "Memory ID", "Port ID", "Blade ID", "Appliance ID")
+	fmt.Printf("%s %s %s %s\n", strings.Repeat("-", 15), strings.Repeat("-", 15), strings.Repeat("-", 15), strings.Repeat("-", 25))
+	fmt.Printf("%-15s %-15s %-15s %-25s\n", m.GetId(), m.GetMemoryAppliancePort(), m.GetMemoryBladeId(), m.GetMemoryApplianceId())
 
 	fmt.Printf("\n")
 }

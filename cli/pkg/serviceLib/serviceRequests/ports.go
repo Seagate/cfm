@@ -53,7 +53,7 @@ func (r *ServiceRequestListBladePorts) Execute() (*serviceWrap.BladePortsSummary
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "BladeId", fmt.Sprintf("%+v", *r.BladeId))
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "PortId", fmt.Sprintf("%+v", *r.PortId))
 
-	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.ip, r.ServiceTcp.port)
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
 	if r.AllAppliances() && r.AllBlades() && r.AllPorts() {
 		summary, err = serviceWrap.GetPorts_AllApplsAllBlades(serviceClient)
@@ -179,7 +179,7 @@ func (r *ServiceRequestListHostPorts) Execute() (*serviceWrap.HostPortSummary, e
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "HostId", fmt.Sprintf("%+v", *r.HostId))
 	klog.V(4).InfoS(fmt.Sprintf("%T", *r), "PortId", fmt.Sprintf("%+v", *r.PortId))
 
-	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.ip, r.ServiceTcp.port)
+	serviceClient := serviceWrap.GetServiceClient(r.ServiceTcp.GetIp(), r.ServiceTcp.GetPort(), r.ServiceTcp.GetInsecure(), r.ServiceTcp.GetProtocol())
 
 	if r.AllHosts() && r.AllPorts() {
 		summary, err = serviceWrap.GetAllPorts_AllHosts(serviceClient)

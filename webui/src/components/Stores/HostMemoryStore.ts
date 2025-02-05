@@ -1,10 +1,7 @@
 // Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
 import { defineStore } from 'pinia'
-import { MemoryRegion, DefaultApi } from "@/axios/api";
-import { BASE_PATH } from "@/axios/base";
-
-// Use API_BASE_PATH to overwrite the BASE_PATH in the generated client code
-const API_BASE_PATH = process.env.BASE_PATH || BASE_PATH;
+import { MemoryRegion } from "@/axios/api";
+import { getDefaultApi } from "../Common/apiService";
 
 export const useHostMemoryStore = defineStore('hostMemory', {
     state: () => ({
@@ -13,11 +10,12 @@ export const useHostMemoryStore = defineStore('hostMemory', {
 
     actions: {
         async hostMemoryStore(hostId: string) {
+            const defaultApi = getDefaultApi();
             this.hostMemory = [];
+
             try {
                 // Get all memory
-                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-                const response = await defaultApi.hostGetMemory(
+                const response = await defaultApi!.hostGetMemory(
                     hostId
                 );
 
@@ -27,7 +25,7 @@ export const useHostMemoryStore = defineStore('hostMemory', {
                     const uri = response.data.members[i];
                     const memoryId: string = JSON.stringify(uri).split("/").pop()?.slice(0, -2) as string;
                     // Get memory by id
-                    const detailsResponse = await defaultApi.hostsGetMemoryById(
+                    const detailsResponse = await defaultApi!.hostsGetMemoryById(
                         hostId,
                         memoryId
                     );

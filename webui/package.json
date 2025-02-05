@@ -3,7 +3,7 @@
   "version": "1.x.x",
   "private": true,
   "scripts": {
-    "dev": "vite",
+    "dev": "sh generate-cert.sh && vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint . --fix --ignore-path .gitignore"

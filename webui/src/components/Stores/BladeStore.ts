@@ -1,10 +1,8 @@
 // Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
 import { defineStore } from 'pinia'
-import { Blade, Credentials, DefaultApi } from "@/axios/api";
-import { BASE_PATH } from "@/axios/base";
+import { Blade, Credentials } from "@/axios/api";
 import axios from 'axios';
-// Use API_BASE_PATH to overwrite the BASE_PATH in the generated client code
-const API_BASE_PATH = process.env.BASE_PATH || BASE_PATH;
+import { getDefaultApi } from "../Common/apiService";
 
 export const useBladeStore = defineStore('blade', {
     state: () => ({
@@ -22,11 +20,12 @@ export const useBladeStore = defineStore('blade', {
     }),
     actions: {
         async fetchBlades(applianceId: string) {
+            const defaultApi = getDefaultApi();
             this.blades = [];
+
             try {
                 // Get all blades from OpenBMC
-                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-                const responseOfBlades = await defaultApi.bladesGet(applianceId);
+                const responseOfBlades = await defaultApi!.bladesGet(applianceId);
                 const bladeCount = responseOfBlades.data.memberCount;
 
                 for (let i = 0; i < bladeCount; i++) {
@@ -35,7 +34,7 @@ export const useBladeStore = defineStore('blade', {
                     const bladeId: string = JSON.stringify(uri).split("/").pop()?.slice(0, -2) as string;
 
                     // Get blade by id
-                    const detailsResponseOfBlade = await defaultApi.bladesGetById(
+                    const detailsResponseOfBlade = await defaultApi!.bladesGetById(
                         applianceId,
                         bladeId
                     );
@@ -51,9 +50,9 @@ export const useBladeStore = defineStore('blade', {
         },
 
         async fetchBladeById(applianceId: string, bladeId: string) {
+            const defaultApi = getDefaultApi();
             try {
-                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-                const detailsResponseOfBlade = await defaultApi.bladesGetById(
+                const detailsResponseOfBlade = await defaultApi!.bladesGetById(
                     applianceId,
                     bladeId
                 );
@@ -78,11 +77,11 @@ export const useBladeStore = defineStore('blade', {
         },
 
         async renameBlade(applianceId: string, bladeId: string, newBladeId: string) {
+            const defaultApi = getDefaultApi();
             this.renameBladeError = "";
 
             try {
-                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-                const response = await defaultApi.bladesUpdateById(applianceId, bladeId, newBladeId);
+                const response = await defaultApi!.bladesUpdateById(applianceId, bladeId, newBladeId);
 
                 // Update the blades array
                 if (response) {
@@ -109,10 +108,10 @@ export const useBladeStore = defineStore('blade', {
 
 
         async resyncBlade(applianceId: string, bladeId: string) {
+            const defaultApi = getDefaultApi();
             this.resyncBladeError = "";
             try {
-                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-                const response = await defaultApi.bladesResyncById(applianceId, bladeId);
+                const response = await defaultApi!.bladesResyncById(applianceId, bladeId);
 
                 const resyncedBlade = response.data;
                 return resyncedBlade;
@@ -132,10 +131,10 @@ export const useBladeStore = defineStore('blade', {
 
 
         async addNewBlade(applianceId: string, newBladeCredentials: Credentials) {
+            const defaultApi = getDefaultApi();
             this.addBladeError = "";
             try {
-                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-                const response = await defaultApi.bladesPost(
+                const response = await defaultApi!.bladesPost(
                     applianceId,
                     newBladeCredentials
                 );
@@ -158,11 +157,11 @@ export const useBladeStore = defineStore('blade', {
         },
 
         async deleteBlade(applianceId: string, bladeId: string) {
+            const defaultApi = getDefaultApi();
             let deletedBlade = "";
             this.deleteBladeError = "";
             try {
-                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-                const response = await defaultApi.bladesDeleteById(applianceId, bladeId);
+                const response = await defaultApi!.bladesDeleteById(applianceId, bladeId);
                 deletedBlade = response.data.id;
                 // Remove the deleted blade from the blades array
                 if (response) {

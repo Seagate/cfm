@@ -1,11 +1,8 @@
 // Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
 import { defineStore } from "pinia";
-import { Host, Credentials, DefaultApi, DiscoveredDevice } from "@/axios/api";
-import { BASE_PATH } from "@/axios/base";
+import { Host, Credentials, DiscoveredDevice } from "@/axios/api";
 import axios from "axios";
-
-// Use API_BASE_PATH to overwrite the BASE_PATH in the generated client code
-const API_BASE_PATH = process.env.BASE_PATH || BASE_PATH;
+import { getDefaultApi } from "../Common/apiService";
 
 export const useHostStore = defineStore("host", {
   state: () => ({
@@ -41,10 +38,10 @@ export const useHostStore = defineStore("host", {
     async fetchHosts() {
       this.hosts = [];
       this.hostIds = [];
+      const defaultApi = getDefaultApi();
       try {
         // Get all hosts from OpenBMC
-        const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-        const responseOfHosts = await defaultApi.hostsGet();
+        const responseOfHosts = await defaultApi!.hostsGet();
         const hostCount = responseOfHosts.data.memberCount;
 
         for (let i = 0; i < hostCount; i++) {
@@ -57,7 +54,7 @@ export const useHostStore = defineStore("host", {
           // Get host by id
           if (hostId) {
             try {
-              const detailsResponseOfHost = await defaultApi.hostsGetById(hostId);
+              const detailsResponseOfHost = await defaultApi!.hostsGetById(hostId);
 
               // Store host in hosts
               if (detailsResponseOfHost) {
@@ -88,9 +85,9 @@ export const useHostStore = defineStore("host", {
     },
 
     async fetchHostById(hostId: string) {
+      const defaultApi = getDefaultApi();
       try {
-        const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-        const detailsResponseOfHost = await defaultApi.hostsGetById(hostId);
+        const detailsResponseOfHost = await defaultApi!.hostsGetById(hostId);
 
         const host = detailsResponseOfHost.data;
         this.updateSelectHostStatus(host.status);
@@ -109,6 +106,7 @@ export const useHostStore = defineStore("host", {
     },
 
     async discoverHosts() {
+      const defaultApi = getDefaultApi();
       try {
         // Get all the existed hosts
         const existedHostIpAddress: (string | undefined)[] = [];
@@ -116,9 +114,8 @@ export const useHostStore = defineStore("host", {
           existedHostIpAddress.push(this.hostIds[i].ipAddress);
         }
 
-        const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
         this.discoveredHosts = [];
-        const responseOfHost = await defaultApi.discoverDevices("cxl-host");
+        const responseOfHost = await defaultApi!.discoverDevices("cxl-host");
         this.discoveredHosts = responseOfHost.data;
 
         // Remove the existed hosts from the discovered hosts
@@ -144,7 +141,7 @@ export const useHostStore = defineStore("host", {
     },
 
     async addDiscoveredHosts(host: DiscoveredDevice) {
-      const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
+      const defaultApi = getDefaultApi();
 
       // Remove the .local suffix (e.g. host device name: host00.local) from the device name by splitting it with . and assign it to the customId
       const deviceName = host.name!.split(".")[0];
@@ -152,7 +149,7 @@ export const useHostStore = defineStore("host", {
       this.newHostCredentials.ipAddress = host.address + "";
 
       // Add the new didcovered host
-      const responseOfHost = await defaultApi.hostsPost(
+      const responseOfHost = await defaultApi!.hostsPost(
         this.newHostCredentials
       );
 
@@ -170,10 +167,10 @@ export const useHostStore = defineStore("host", {
     },
 
     async addNewHost(newHost: Credentials) {
+      const defaultApi = getDefaultApi();
       this.addHostError = "";
       try {
-        const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-        const response = await defaultApi.hostsPost(newHost);
+        const response = await defaultApi!.hostsPost(newHost);
         const addedHost = response.data;
         // Add the new host to the hosts array
         this.hosts.push(addedHost);
@@ -196,11 +193,12 @@ export const useHostStore = defineStore("host", {
     },
 
     async deleteHost(hostId: string) {
+      const defaultApi = getDefaultApi();
       this.deleteHostError = "";
       let deletedHost = "";
+
       try {
-        const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-        const response = await defaultApi.hostsDeleteById(hostId);
+        const response = await defaultApi!.hostsDeleteById(hostId);
         deletedHost = response.data.id;
         // Remove the deleted host from the hosts array
         if (response) {
@@ -225,18 +223,16 @@ export const useHostStore = defineStore("host", {
     },
 
     async renameHost(hostId: string, newHostId: string) {
+      const defaultApi = getDefaultApi();
       this.renameHostError = "";
-
       try {
-        const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-        const response = await defaultApi.hostsUpdateById(hostId, newHostId);
+        const response = await defaultApi!.hostsUpdateById(hostId, newHostId);
 
         // Update the hosts array
         if (response) {
           this.hosts = this.hosts.filter((host) => host.id !== hostId);
           this.hosts.push(response.data);
         }
-
         return response.data;
       } catch (error) {
         if (axios.isAxiosError(error)) {
@@ -256,10 +252,11 @@ export const useHostStore = defineStore("host", {
     },
 
     async resyncHost(hostId: string) {
+      const defaultApi = getDefaultApi();
       this.resyncHostError = "";
+
       try {
-        const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-        const response = await defaultApi.hostsResyncById(hostId);
+        const response = await defaultApi!.hostsResyncById(hostId);
 
         const resyncedHost = response.data;
         return resyncedHost;

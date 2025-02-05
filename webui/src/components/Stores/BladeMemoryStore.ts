@@ -1,11 +1,8 @@
 // Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
 import { defineStore } from 'pinia'
-import { MemoryRegion, DefaultApi, ComposeMemoryRequest, AssignMemoryRequest } from "@/axios/api";
-import { BASE_PATH } from "@/axios/base";
+import { MemoryRegion, ComposeMemoryRequest, AssignMemoryRequest } from "@/axios/api";
 import axios from 'axios';
-
-// Use API_BASE_PATH to overwrite the BASE_PATH in the generated client code
-const API_BASE_PATH = process.env.BASE_PATH || BASE_PATH;
+import { getDefaultApi } from "../Common/apiService";
 
 export const useBladeMemoryStore = defineStore('bladeMemory', {
     state: () => ({
@@ -18,11 +15,11 @@ export const useBladeMemoryStore = defineStore('bladeMemory', {
 
     actions: {
         async fetchBladeMemory(applianceId: string, bladeId: string) {
+            const defaultApi = getDefaultApi();
             this.bladeMemory = [];
             try {
                 // Get all memory
-                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-                const response = await defaultApi.bladesGetMemory(
+                const response = await defaultApi!.bladesGetMemory(
                     applianceId,
                     bladeId
                 );
@@ -33,7 +30,7 @@ export const useBladeMemoryStore = defineStore('bladeMemory', {
                     const uri = response.data.members[i];
                     const memoryId: string = JSON.stringify(uri).split("/").pop()?.slice(0, -2) as string;
                     // Get memory by id
-                    const detailsResponse = await defaultApi.bladesGetMemoryById(
+                    const detailsResponse = await defaultApi!.bladesGetMemoryById(
                         applianceId,
                         bladeId,
                         memoryId
@@ -51,11 +48,11 @@ export const useBladeMemoryStore = defineStore('bladeMemory', {
         },
 
         async composeMemory(applianceId: string, bladeId: string, newMemoryCredentials: ComposeMemoryRequest) {
+            const defaultApi = getDefaultApi();
             // Reset the error before each compose memory operation
             this.composeMemoryError = null;
             try {
-                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-                const response = await defaultApi.bladesComposeMemory(
+                const response = await defaultApi!.bladesComposeMemory(
                     applianceId, bladeId, newMemoryCredentials
                 );
                 const newMemory = response.data;
@@ -78,9 +75,9 @@ export const useBladeMemoryStore = defineStore('bladeMemory', {
         },
 
         async assignOrUnassign(applianceId: string, bladeId: string, memoryId: string, assignMemoryRequest: AssignMemoryRequest) {
+            const defaultApi = getDefaultApi();
             try {
-                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-                const response = await defaultApi.bladesAssignMemoryById(
+                const response = await defaultApi!.bladesAssignMemoryById(
                     applianceId,
                     bladeId,
                     memoryId,
@@ -102,9 +99,9 @@ export const useBladeMemoryStore = defineStore('bladeMemory', {
         },
 
         async freeMemory(applianceId: string, bladeId: string, memoryId: string) {
+            const defaultApi = getDefaultApi();
             try {
-                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-                const response = await defaultApi.bladesFreeMemoryById(
+                const response = await defaultApi!.bladesFreeMemoryById(
                     applianceId,
                     bladeId,
                     memoryId

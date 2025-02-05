@@ -1,10 +1,7 @@
 // Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
 import { defineStore } from 'pinia'
-import { MemoryResourceBlock, DefaultApi } from "@/axios/api";
-import { BASE_PATH } from "@/axios/base";
-
-// Use API_BASE_PATH to overwrite the BASE_PATH in the generated client code
-const API_BASE_PATH = process.env.BASE_PATH || BASE_PATH;
+import { MemoryResourceBlock } from "@/axios/api";
+import { getDefaultApi } from "../Common/apiService";
 
 export const useBladeResourceStore = defineStore('bladeResource', {
     state: () => ({
@@ -13,11 +10,11 @@ export const useBladeResourceStore = defineStore('bladeResource', {
 
     actions: {
         async fetchMemoryResources(applianceId: string, bladeId: string) {
+            const defaultApi = getDefaultApi();
             this.memoryResources = [];
             try {
                 // Get all resources
-                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-                const response = await defaultApi.bladesGetResources(
+                const response = await defaultApi!.bladesGetResources(
                     applianceId,
                     bladeId
                 );
@@ -28,7 +25,7 @@ export const useBladeResourceStore = defineStore('bladeResource', {
                     const uri = response.data.members[i];
                     const resourceId: string = JSON.stringify(uri).split("/").pop()?.slice(0, -2) as string;
                     // Get resource by id
-                    const detailsResponse = await defaultApi.bladesGetResourceById(
+                    const detailsResponse = await defaultApi!.bladesGetResourceById(
                         applianceId,
                         bladeId,
                         resourceId
@@ -49,9 +46,9 @@ export const useBladeResourceStore = defineStore('bladeResource', {
         },
 
         async updateMemoryResourcesStatus(applianceId: string, bladeId: string) {
+            const defaultApi = getDefaultApi();
             try {
-                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-                const updatedResource = await defaultApi.bladesGetResourceStatus(
+                const updatedResource = await defaultApi!.bladesGetResourceStatus(
                     applianceId,
                     bladeId,
                 );

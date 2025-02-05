@@ -1,10 +1,7 @@
 // Copyright (c) 2024 Seagate Technology LLC and/or its Affiliates
 import { defineStore } from 'pinia'
-import { PortInformation, DefaultApi } from "@/axios/api";
-import { BASE_PATH } from "@/axios/base";
-
-// Use API_BASE_PATH to overwrite the BASE_PATH in the generated client code
-const API_BASE_PATH = process.env.BASE_PATH || BASE_PATH;
+import { PortInformation } from "@/axios/api";
+import { getDefaultApi } from "../Common/apiService";
 
 export const useHostPortStore = defineStore('hostPort', {
     state: () => ({
@@ -13,11 +10,12 @@ export const useHostPortStore = defineStore('hostPort', {
 
     actions: {
         async hostPortStore(hostId: string) {
+            const defaultApi = getDefaultApi();
             this.hostPorts = [];
+
             try {
                 // Get all ports
-                const defaultApi = new DefaultApi(undefined, API_BASE_PATH);
-                const response = await defaultApi.hostsGetPorts(
+                const response = await defaultApi!.hostsGetPorts(
                     hostId
                 );
 
@@ -27,7 +25,7 @@ export const useHostPortStore = defineStore('hostPort', {
                     const uri = response.data.members[i];
                     const portId: string = JSON.stringify(uri).split("/").pop()?.slice(0, -2) as string;
                     // Get port by id
-                    const detailsResponse = await defaultApi.hostsGetPortById(
+                    const detailsResponse = await defaultApi!.hostsGetPortById(
                         hostId,
                         portId
                     );
