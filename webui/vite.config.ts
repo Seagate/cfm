@@ -59,15 +59,19 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 3000,
+    
+    // Switch to https protocol with self-signed certificate and private key
     https: {
       key: fs.existsSync(path.resolve(__dirname, 'incoming/key.pem')) ? fs.readFileSync(path.resolve(__dirname, 'incoming/key.pem')) : undefined,
       cert: fs.existsSync(path.resolve(__dirname, 'incoming/cert.pem')) ? fs.readFileSync(path.resolve(__dirname, 'incoming/cert.pem')) : undefined
     },
+
+    // Proxy is used to redirect certain requests from webui server to cfm-service server
     proxy: {
-      '/api': {
+      '/api': { // Requests to /api will be proxied to the target URL
         target: parsedConfig.api.base_path,
         secure: false, // This will ignore the self-signed certificate
-        changeOrigin: true,
+        changeOrigin: true, // Ensures the host header of the request is changed to the target URL
         rewrite: (path) => path.replace(/^\/api/, ''),
         configure: (proxy) => {
           proxy.on('proxyRes', (proxyRes) => {
