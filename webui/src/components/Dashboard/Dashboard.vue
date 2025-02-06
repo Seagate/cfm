@@ -251,7 +251,10 @@
             <v-list-item v-for="(blade, index) in failedBlades" :key="index">
               <v-list-item-subtitle>
                 <v-icon left style="color: red">mdi-close-circle</v-icon>
-                {{ blade.name }}</v-list-item-subtitle
+                {{ blade.blade.name }}</v-list-item-subtitle
+              >
+              <v-list-item-subtitle>
+                {{ blade.error.message }}</v-list-item-subtitle
               >
             </v-list-item>
           </v-list>
@@ -272,7 +275,10 @@
             <v-list-item v-for="(host, index) in failedHosts" :key="index">
               <v-list-item-subtitle>
                 <v-icon left style="color: red">mdi-close-circle</v-icon>
-                {{ host.name }}</v-list-item-subtitle
+                {{ host.host.name }}</v-list-item-subtitle
+              >
+              <v-list-item-subtitle>
+                {{ host.error.message }}</v-list-item-subtitle
               >
             </v-list-item>
           </v-list>
@@ -386,9 +392,11 @@ export default {
             if (newAddedBlade) {
               this.newBlades.push(newAddedBlade);
             }
-
           } catch (error) {
-            this.failedBlades.push(this.selectedBlades[i]);
+            this.failedBlades.push({
+              blade: this.selectedBlades[i],
+              error: error,
+            });
             console.error("Error adding new discovered blade:", error);
           }
         }
@@ -406,9 +414,11 @@ export default {
             if (newAddedHost) {
               this.newHosts.push(newAddedHost);
             }
-            
           } catch (error) {
-            this.failedHosts.push(this.selectedHosts[i]);
+            this.failedHosts.push({
+              host: this.selectedHosts[i],
+              error: error,
+            });
             console.error("Error adding new discovered host:", error);
           }
         }
