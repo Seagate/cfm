@@ -220,37 +220,74 @@
     </v-dialog>
 
     <v-dialog v-model="dialogAddNewDiscoveredDevicesOutput" max-width="600px">
-      <v-sheet
+      <v-card
         elevation="12"
         max-width="600"
         rounded="lg"
         width="100%"
         class="pa-4 text-center mx-auto"
       >
-        <v-icon
-          class="mb-5"
-          color="success"
-          icon="mdi-check-circle"
-          size="112"
-        ></v-icon>
-        <h2 class="text-h5 mb-6">Congrats! New devices were added</h2>
-        New blades:
-        <ul>
-          <li v-for="(blade, index) in newBlades" :key="index">
-            {{ blade.id }}
-          </li>
-        </ul>
-        <br />New hosts: <br />
-        <ul>
-          <li v-for="(host, index) in newHosts" :key="index">
-            {{ host.id }}
-          </li>
-        </ul>
+        <v-alert
+          color="info"
+          icon="$info"
+          title="Results of adding devices"
+          variant="tonal"
+        ></v-alert>
+        <br />
+        <div
+          v-if="
+            (newBlades && newBlades.length) ||
+            (failedBlades && failedBlades.length)
+          "
+        >
+          New blades:
+          <v-list>
+            <v-list-item v-for="(blade, index) in newBlades" :key="index">
+              <v-list-item-subtitle>
+                <v-icon left style="color: green">mdi-check-circle</v-icon
+                >{{ blade.id }}</v-list-item-subtitle
+              >
+            </v-list-item>
+            <v-list-item v-for="(blade, index) in failedBlades" :key="index">
+              <v-list-item-subtitle>
+                <v-icon left style="color: red">mdi-close-circle</v-icon>
+                {{ blade.blade.name }}</v-list-item-subtitle
+              >
+              <v-list-item-subtitle>
+                {{ blade.error.message }}</v-list-item-subtitle
+              >
+            </v-list-item>
+          </v-list>
+        </div>
+        <div
+          v-if="
+            (newHosts && newHosts.length) || (failedHosts && failedHosts.length)
+          "
+        >
+          New hosts:
+          <v-list>
+            <v-list-item v-for="(host, index) in newHosts" :key="index">
+              <v-list-item-subtitle
+                ><v-icon left style="color: green">mdi-check-circle</v-icon
+                >{{ host.id }}</v-list-item-subtitle
+              >
+            </v-list-item>
+            <v-list-item v-for="(host, index) in failedHosts" :key="index">
+              <v-list-item-subtitle>
+                <v-icon left style="color: red">mdi-close-circle</v-icon>
+                {{ host.host.name }}</v-list-item-subtitle
+              >
+              <v-list-item-subtitle>
+                {{ host.error.message }}</v-list-item-subtitle
+              >
+            </v-list-item>
+          </v-list>
+        </div>
         <v-divider class="mb-4"></v-divider>
         <div class="text-end">
           <v-btn
             class="text-none"
-            color="success"
+            color="info"
             rounded
             variant="flat"
             width="90"
@@ -260,7 +297,7 @@
             Done
           </v-btn>
         </div>
-      </v-sheet>
+      </v-card>
     </v-dialog>
   </v-container>
 </template>
@@ -299,6 +336,8 @@ export default {
 
       newBlades: [],
       newHosts: [],
+      failedBlades: [],
+      failedHosts: [],
     };
   },
 
@@ -328,6 +367,12 @@ export default {
     },
 
     async addDiscoveredDevices() {
+      // Initialize the new and failed devices
+      this.newBlades = [];
+      this.newHosts = [];
+      this.failedBlades = [];
+      this.failedHosts = [];
+
       this.dialogNewDiscoveredDevices = false;
       this.dialogAddNewDiscoveredDevicesWait = true;
 
@@ -348,6 +393,10 @@ export default {
               this.newBlades.push(newAddedBlade);
             }
           } catch (error) {
+            this.failedBlades.push({
+              blade: this.selectedBlades[i],
+              error: error,
+            });
             console.error("Error adding new discovered blade:", error);
           }
         }
@@ -361,10 +410,15 @@ export default {
             const newAddedHost = await hostStore.addDiscoveredHosts(
               this.selectedHosts[i]
             );
+
             if (newAddedHost) {
               this.newHosts.push(newAddedHost);
             }
           } catch (error) {
+            this.failedHosts.push({
+              host: this.selectedHosts[i],
+              error: error,
+            });
             console.error("Error adding new discovered host:", error);
           }
         }
