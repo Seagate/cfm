@@ -234,53 +234,46 @@
           variant="tonal"
         ></v-alert>
         <br />
-        <div class="d-flex align-items-center justify-center mb-2">
-          <v-icon
-            class="mr-2"
-            color="success"
-            icon="mdi-check-circle"
-            size="24"
-          ></v-icon>
-          <h2 class="text-h5 mb-2">Successfully added devices</h2>
-        </div>
-        <div v-if="newBlades && newBlades.length">
+        <div
+          v-if="
+            (newBlades && newBlades.length) ||
+            (failedBlades && failedBlades.length)
+          "
+        >
           New blades:
           <v-list>
             <v-list-item v-for="(blade, index) in newBlades" :key="index">
-              <v-list-item-subtitle>{{ blade.id }}</v-list-item-subtitle>
+              <v-list-item-subtitle>
+                <v-icon left style="color: green">mdi-check-circle</v-icon
+                >{{ blade.id }}</v-list-item-subtitle
+              >
+            </v-list-item>
+            <v-list-item v-for="(blade, index) in failedBlades" :key="index">
+              <v-list-item-subtitle>
+                <v-icon left style="color: red">mdi-close-circle</v-icon>
+                {{ blade.name }}</v-list-item-subtitle
+              >
             </v-list-item>
           </v-list>
         </div>
-        <div v-if="newHosts && newHosts.length">
+        <div
+          v-if="
+            (newHosts && newHosts.length) || (failedHosts && failedHosts.length)
+          "
+        >
           New hosts:
           <v-list>
             <v-list-item v-for="(host, index) in newHosts" :key="index">
-              <v-list-item-subtitle>{{ host.id }}</v-list-item-subtitle>
+              <v-list-item-subtitle
+                ><v-icon left style="color: green">mdi-check-circle</v-icon
+                >{{ host.id }}</v-list-item-subtitle
+              >
             </v-list-item>
-          </v-list>
-        </div>
-        <div class="d-flex align-items-center justify-center mb-0">
-          <v-icon
-            class="mr-2"
-            color="red"
-            icon="mdi-close-circle"
-            size="24"
-          ></v-icon>
-          <h2 class="text-h5 mb-0">Failed to add devices</h2>
-        </div>
-        <div v-if="failedBlades && failedBlades.length">
-          Failed blades:
-          <v-list>
-            <v-list-item v-for="(blade, index) in failedBlades" :key="index">
-              {{ blade }}
-            </v-list-item>
-          </v-list>
-        </div>
-        <div v-if="failedHosts.length && failedHosts.length">
-          Failed hosts:
-          <v-list>
             <v-list-item v-for="(host, index) in failedHosts" :key="index">
-              {{ host }}
+              <v-list-item-subtitle>
+                <v-icon left style="color: red">mdi-close-circle</v-icon>
+                {{ host.name }}</v-list-item-subtitle
+              >
             </v-list-item>
           </v-list>
         </div>
@@ -392,10 +385,10 @@ export default {
 
             if (newAddedBlade) {
               this.newBlades.push(newAddedBlade);
-            } else {
-              this.failedBlades.push(this.selectedBlades[i].id);
             }
+
           } catch (error) {
+            this.failedBlades.push(this.selectedBlades[i]);
             console.error("Error adding new discovered blade:", error);
           }
         }
@@ -409,12 +402,13 @@ export default {
             const newAddedHost = await hostStore.addDiscoveredHosts(
               this.selectedHosts[i]
             );
+
             if (newAddedHost) {
               this.newHosts.push(newAddedHost);
-            } else {
-              this.failedHosts.push(this.selectedHosts[i].id);
             }
+            
           } catch (error) {
+            this.failedHosts.push(this.selectedHosts[i]);
             console.error("Error adding new discovered host:", error);
           }
         }
