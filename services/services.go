@@ -2,6 +2,7 @@
 package services
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"net"
@@ -22,6 +23,8 @@ const (
 	SECONDARY_WEBUI_DIST_PATH = "../../webui/dist"
 )
 
+var FullyHostName = ""
+
 // StartWebUIService: Launch the Vue.js web service using local distribution files, if they are present.
 func StartWebUIService(ctx context.Context, webuiPort *string, servicePort *string, webuiDistPath *string, hostIpOverride *string) {
 	logger := klog.FromContext(ctx)
@@ -30,7 +33,12 @@ func StartWebUIService(ctx context.Context, webuiPort *string, servicePort *stri
 
 	// Obtain host IP
 	if *hostIpOverride == "" {
-		hostIp = GetHostIp(ctx)
+		if FullyHostName == "" {
+			hostIp = GetHostIp(ctx)
+		} else {
+			hostIp = FullyHostName
+		}
+
 	} else {
 		hostIp = *hostIpOverride
 	}
@@ -163,4 +171,56 @@ func UpdateBasePath(ctx context.Context, serviceSocket *string, webuiDistPath *s
 	}
 
 	return nil
+}
+
+func GetHostName() (string, error) {
+	hostname, err := os.Hostname()
+
+	if err != nil {
+		return "", err
+	}
+
+	return hostname, nil
+}
+
+// Function to get the search domain from /etc/resolv.conf
+func GetSearchDomain() (string, error) {
+	file, err := os.Open("/etc/resolv.conf")
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "search") {
+			parts := strings.Fields(line)
+			if len(parts) > 1 {
+				return parts[1], nil
+			}
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+
+	return "", fmt.Errorf("search domain not found")
+}
+
+func init() {
+	hostName, err := GetHostName()
+	if err != nil {
+		fmt.Println("Error getting host name:", err)
+		return
+	}
+
+	searchDomain, err := GetSearchDomain()
+	if err != nil {
+		fmt.Println("Error getting search domain:", err)
+		return
+	}
+
+	FullyHostName = fmt.Sprintf("%s.%s", hostName, searchDomain)
 }
