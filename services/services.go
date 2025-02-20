@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -46,7 +47,7 @@ func StartWebUIService(ctx context.Context, webuiPort *string, servicePort *stri
 	}
 
 	// Overwrite base_path for the webui disto
-	err := UpdateBasePath(ctx, &serviceSocket, webuiDistPath)
+	err := UpdateBasePath(ctx, servicePort, webuiDistPath)
 	if err != nil {
 		logger.V(1).Info("[WEBUI] fail to update webui service base path", "socket", serviceSocket, "err", err)
 		return
@@ -131,11 +132,15 @@ func GetHostIp(ctx context.Context) string {
 }
 
 // UpdateBasePath: Replace the base address in the webui distro file
-func UpdateBasePath(ctx context.Context, serviceSocket *string, webuiDistPath *string) error {
-	// logger := klog.FromContext(ctx)
-
-	rawString := "https://127.0.0.1:8080"
+func UpdateBasePath(ctx context.Context, servicePort *string, webuiDistPath *string) error {
+	rawStringPattern := `https://[^/]+:8080`
 	dirPath := *webuiDistPath + "/assets/"
+
+	// Compile the regular expression
+	re, err := regexp.Compile(rawStringPattern)
+	if err != nil {
+		return err
+	}
 
 	f, err := os.Open(dirPath)
 	if err != nil {
@@ -154,7 +159,13 @@ func UpdateBasePath(ctx context.Context, serviceSocket *string, webuiDistPath *s
 			if err != nil {
 				return err
 			}
-			newContents := strings.Replace(string(read), rawString, "https://"+*serviceSocket, -1)
+
+			// Replace the port part with the new servicePort
+			newContents := re.ReplaceAllStringFunc(string(read), func(match string) string {
+				parsedURL := strings.Split(match, ":")
+				return parsedURL[0] + ":" + parsedURL[1] + ":" + *servicePort
+			})
+
 			err = os.WriteFile(dirPath+file.Name(), []byte(newContents), 0)
 			if err != nil {
 				return err
