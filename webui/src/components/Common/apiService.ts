@@ -3,8 +3,15 @@ import axios from "axios";
 import { DefaultApi } from "@/axios/api";
 
 let defaultApi: DefaultApi | null = null;
+
 // Declare a client AxiosInstance for the production model(docker container) to make the webui to get the correct basepath since vite config doesn't work inside docker
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+// Determine the current hostname or IP address
+const hostnameOrIp = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+// Check if hostnameOrIp is valid
+const isValidHostnameOrIp = hostnameOrIp && hostnameOrIp !== '';
+// Construct the backend URL with HTTPS protocol and port 8080, or use the environment variable as a fallback
+const apiBaseUrl = isValidHostnameOrIp ? `https://${hostnameOrIp}:8080` : import.meta.env.VITE_API_BASE_URL;
+
 const apiClient = axios.create({
   baseURL: apiBaseUrl,
 });
