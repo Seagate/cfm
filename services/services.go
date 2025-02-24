@@ -24,17 +24,11 @@ const (
 )
 
 // StartWebUIService: Launch the Vue.js web service using local distribution files, if they are present.
-func StartWebUIService(ctx context.Context, webuiPort *string, servicePort *string, webuiDistPath *string, hostIpOverride *string) {
+func StartWebUIService(ctx context.Context, webuiPort *string, servicePort *string, webuiDistPath *string) {
 	logger := klog.FromContext(ctx)
 
-	var hostIp string
-
 	// Obtain host IP
-	if *hostIpOverride == "" {
-		hostIp = GetHostIp(ctx)
-	} else {
-		hostIp = *hostIpOverride
-	}
+	hostIp := GetHostIp(ctx)
 
 	webuiSocket := fmt.Sprintf("%s:%s", hostIp, *webuiPort)
 	serviceSocket := fmt.Sprintf("%s:%s", hostIp, *servicePort)
