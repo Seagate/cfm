@@ -496,12 +496,39 @@ export default {
         if (node.type == "appliance") {
           applianceStore.selectAppliance(node.data.label);
         }
+
         if (node.type == "blade") {
           applianceStore.selectAppliance(node.data.associatedAppliance);
-          bladeStore.selectBlade(node.data.label);
+          const selectedBlade = bladeStore.blades.find(
+            (blade) => blade.id === node.data.label
+          );
+
+          if (selectedBlade) {
+            bladeStore.selectBlade(
+              selectedBlade.id,
+              selectedBlade.ipAddress,
+              selectedBlade.port,
+              Number(selectedBlade.totalMemoryAvailableMiB),
+              Number(selectedBlade.totalMemoryAllocatedMiB),
+              selectedBlade.status
+            );
+          }
         }
+        
         if (node.type == "host") {
-          hostStore.selectedHostId = node.data.label;
+          const selectedHost = hostStore.hosts.find(
+            (host) => host.id === node.data.label
+          );
+
+          if (selectedHost) {
+            hostStore.selectHost(
+              selectedHost.id,
+              selectedHost.ipAddress,
+              selectedHost.port,
+              selectedHost.localMemoryMiB,
+              selectedHost.status
+            );
+          }
         }
 
         router.push(url);
