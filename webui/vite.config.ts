@@ -77,7 +77,6 @@ export default defineConfig({
           proxy.on('proxyReq', (proxyReq, req) => {
             const targetUrl = new URL(parsedConfig.api.base_path);
             targetUrl.hostname = req.headers.host.split(':')[0]; // Use the hostname from the incoming request
-            console.log(`Proxying request to: ${targetUrl.href}`);
             proxyReq.setHeader('host', targetUrl.hostname);
             proxyReq.setHeader('origin', targetUrl.origin);
             proxyReq.setHeader('referer', targetUrl.origin);

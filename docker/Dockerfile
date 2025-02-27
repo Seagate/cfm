@@ -56,7 +56,7 @@ COPY --from=go ${BASEPATH}/webui ${BASEPATH}/webui
 WORKDIR ${BASEPATH}/webui
 RUN npm install
 # Set the environment variable
-ENV NODE_ENV=production
+ENV NODE_ENV=docker
 RUN npm run build
 
 FROM alpine:latest
