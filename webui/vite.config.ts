@@ -69,18 +69,11 @@ export default defineConfig({
     // Proxy is used to redirect certain requests from webui server to cfm-service server
     proxy: {
       '/api': { // Requests to /api will be proxied to the target URL
-        target: parsedConfig.api.base_path,  // This is the placeholder URL, it will not be used, proxy configure will point the webui to the correct backendUrl based on the webui requests. 
+        target: parsedConfig.api.base_path,
         secure: false, // This will ignore the self-signed certificate
         changeOrigin: true, // Ensures the host header of the request is changed to the target URL
         rewrite: (path) => path.replace(/^\/api/, ''),
         configure: (proxy) => {
-          proxy.on('proxyReq', (proxyReq, req) => {
-            const hostnameOrIp = req.headers.host.split(':')[0];
-            const backendUrl = `https://${hostnameOrIp}:8080`;
-            proxyReq.setHeader('Host', hostnameOrIp);
-            proxyReq.setHeader('Referer', backendUrl);
-            proxyReq.setHeader('X-Forwarded-Host', hostnameOrIp);
-          });
           proxy.on('proxyRes', (proxyRes) => {
             // Remove the strict-transport-security header
             delete proxyRes.headers['strict-transport-security'];
