@@ -59,7 +59,7 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 3000,
-    
+
     // Switch to https protocol with self-signed certificate and private key
     https: {
       key: fs.existsSync(path.resolve(__dirname, 'incoming/key.pem')) ? fs.readFileSync(path.resolve(__dirname, 'incoming/key.pem')) : undefined,
@@ -74,6 +74,14 @@ export default defineConfig({
         changeOrigin: true, // Ensures the host header of the request is changed to the target URL
         rewrite: (path) => path.replace(/^\/api/, ''),
         configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq, req) => {
+            const targetUrl = new URL(parsedConfig.api.base_path);
+            targetUrl.hostname = req.headers.host.split(':')[0]; // Use the hostname from the incoming request
+            console.log(`Proxying request to: ${targetUrl.href}`);
+            proxyReq.setHeader('host', targetUrl.hostname);
+            proxyReq.setHeader('origin', targetUrl.origin);
+            proxyReq.setHeader('referer', targetUrl.origin);
+          });
           proxy.on('proxyRes', (proxyRes) => {
             // Remove the strict-transport-security header
             delete proxyRes.headers['strict-transport-security'];
