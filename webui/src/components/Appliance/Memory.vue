@@ -407,11 +407,19 @@ export default {
         if (this.selectedMemoryRegion.memoryAppliancePort) {
           this.assignUnassignMemory.port =
             this.selectedMemoryRegion.memoryAppliancePort;
-          // If the memory region is unassigned, use the input port to assign
         } else {
-          this.assignUnassignMemory.port = this.assignPort;
-          // Reset assignPort
-          this.assignPort = "";
+          // If the memory region is unassigned, use the input port to assign if it is not empty
+          if (this.assignPort) {
+            this.assignUnassignMemory.port = this.assignPort;
+            // Reset assignPort
+            this.assignPort = "";
+            // If the input port is empty, stop assigning memory
+          } else {
+            this.assignUnassignMemoryError = "Assign port need to be selected.";
+            this.waitAssignUnassignMemory = false;
+            this.assignUnassignFailure = true;
+            return;
+          }
         }
 
         this.assignUnassignMemory.operation = operation;
