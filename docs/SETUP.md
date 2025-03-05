@@ -3,7 +3,7 @@
 ## Golang setup
 
 - It is recomended to follow the [Download and install](https://go.dev/doc/install) page from go.dev
-  - Version 1.22.1 is currently used for development
+  - Version 1.23.7 is currently used for development
 
 ## openapi-generator-cli setup
 

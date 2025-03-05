@@ -28,7 +28,7 @@ RUN docker-entrypoint.sh generate -i ${BASEPATH}/${OPENAPI_REDFISH_YAML} -g go-s
 RUN docker-entrypoint.sh generate -i ${BASEPATH}/${OPENAPI_YAML} -g typescript-axios -o ${BASEPATH}/webui/src/axios --skip-validate-spec
 
 
-FROM golang:1.22.1-alpine AS go
+FROM golang:1.23.7-alpine AS go
 ENV BASEPATH=/cfm
 
 RUN apk add git make
