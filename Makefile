@@ -104,6 +104,7 @@ generate-client:
 	# workaround for withGoMod=false not functioning with openapi-generator
 	rm pkg/client/go.mod
 	rm pkg/client/go.sum
+	rm -rf pkg/client/test # not currently used and have conflict with generated path (github.com/GIT_USER_ID/GIT_REPO_ID/client)
 
 	@echo "Format files after generation to conform to project standard"
 	docker run --rm -v ${PWD}:/local golang:$(GO_VERSION) $(GOFMT_OPTS)
