@@ -2,6 +2,7 @@
   "name": "webui",
   "version": "1.x.x",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "sh generate-cert.sh && vite",
     "build": "vue-tsc --noEmit && vite build",
