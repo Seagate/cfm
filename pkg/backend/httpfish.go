@@ -310,7 +310,7 @@ func (session *Session) queryWithJSON(operation HTTPOperationType, path string, 
 
 	response.StatusCode = httpresponse.StatusCode
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		response.err = fmt.Errorf(http.StatusText(response.StatusCode))
+		response.err = fmt.Errorf("%s", http.StatusText(response.StatusCode))
 	}
 	response.header = httpresponse.Header
 
